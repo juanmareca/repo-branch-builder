@@ -136,7 +136,7 @@ const HolidaysUpload = () => {
                 <Info className="h-4 w-4 text-amber-600" />
                 <AlertDescription>
                   <div className="text-amber-800">
-                    <p className="font-semibold mb-2">Columnas requeridas en el orden deseado:</p>
+                    <p className="font-semibold mb-2">Columnas requeridas:</p>
                     <div className="grid grid-cols-2 gap-2 text-sm">
                       <div className="flex items-center gap-1">
                         <div className="w-2 h-2 bg-amber-600 rounded-full"></div>

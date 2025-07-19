@@ -13,13 +13,23 @@ import {
   FileText,
   Settings,
   BarChart3,
-  Loader2
+  Loader2,
+  LogOut
 } from 'lucide-react';
 import { useAdminStats } from '@/hooks/useAdminStats';
 import HolidaysUpload from '@/components/FileUpload/HolidaysUpload';
+import ResourcesUpload from '@/components/FileUpload/ResourcesUpload';
+import ProjectsUpload from '@/components/FileUpload/ProjectsUpload';
+import CapacitiesUpload from '@/components/FileUpload/CapacitiesUpload';
+import { useNavigate } from 'react-router-dom';
 
 const AdminDashboard = () => {
   const { stats, loading, error } = useAdminStats();
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    navigate('/');
+  };
 
   if (loading) {
     return (
@@ -58,10 +68,21 @@ const AdminDashboard = () => {
                 <p className="text-muted-foreground">Gestión Avanzada del Sistema</p>
               </div>
             </div>
-            <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-              <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
-              Sistema Activo
-            </Badge>
+            <div className="flex items-center gap-3">
+              <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
+                Sistema Activo
+              </Badge>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={handleLogout}
+                className="flex items-center gap-2 hover:bg-red-50 hover:text-red-700 hover:border-red-200"
+              >
+                <LogOut className="h-4 w-4" />
+                Salir
+              </Button>
+            </div>
           </div>
         </div>
       </div>
@@ -131,7 +152,10 @@ const AdminDashboard = () => {
         </div>
 
         {/* Subida Masiva de Archivos */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+          <ResourcesUpload />
+          <ProjectsUpload />
+          <CapacitiesUpload />
           <HolidaysUpload />
         </div>
 
