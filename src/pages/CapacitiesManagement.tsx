@@ -29,7 +29,9 @@ import {
   Home,
   LogOut,
   Zap,
-  Calendar as CalendarIcon
+  Calendar as CalendarIcon,
+  TableIcon,
+  IdCard
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -50,42 +52,35 @@ interface Capacity {
   created_at: string;
 }
 
-type SortField = keyof Capacity;
-type SortDirection = 'asc' | 'desc' | null;
+interface EmployeeCapacities {
+  person_name: string;
+  id: string;
+  capacities: Capacity[];
+  sap_modules: { [key: string]: string };
+  sap_implementation: { [key: string]: string };
+  languages: { [key: string]: string };
+  industries: { [key: string]: string };
+  evaluation_date: string | null;
+}
 
 const SKILL_LEVELS = ['Básico', 'Medio', 'Alto', 'Experto'];
-const SKILL_BLOCKS = ['Módulo SAP', 'Implantación SAP', 'Idiomas', 'Industrias'];
 
 export default function CapacitiesManagement() {
   const [capacities, setCapacities] = useState<Capacity[]>([]);
-  const [filteredCapacities, setFilteredCapacities] = useState<Capacity[]>([]);
+  const [employeeCapacities, setEmployeeCapacities] = useState<EmployeeCapacities[]>([]);
+  const [filteredEmployees, setFilteredEmployees] = useState<EmployeeCapacities[]>([]);
   const [loading, setLoading] = useState(true);
   const [showUpload, setShowUpload] = useState(false);
-  const [sortField, setSortField] = useState<SortField | null>(null);
-  const [sortDirection, setSortDirection] = useState<SortDirection>(null);
+  const [viewMode, setViewMode] = useState<'table' | 'card'>('table');
   
   // Search and filters
   const [searchTerm, setSearchTerm] = useState('');
   const [personFilter, setPersonFilter] = useState<string[]>([]);
-  const [skillFilter, setSkillFilter] = useState<string[]>([]);
-  const [levelFilter, setLevelFilter] = useState<string[]>([]);
   const [showFilters, setShowFilters] = useState(false);
-  const [showColumns, setShowColumns] = useState(false);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-  const [editingRow, setEditingRow] = useState<string | null>(null);
   
   const navigate = useNavigate();
   const { toast } = useToast();
-
-  // Column visibility state
-  const [visibleColumns, setVisibleColumns] = useState({
-    person_name: true,
-    skill: true,
-    level: true,
-    certification: true,
-    evaluation_date: true,
-    comments: true
-  });
 
   // Form state
   const [formData, setFormData] = useState({
@@ -97,69 +92,76 @@ export default function CapacitiesManagement() {
     evaluation_date: undefined as Date | undefined
   });
 
+  // Función para convertir capacidades individuales en estructura de empleado
+  const groupCapacitiesByEmployee = (caps: Capacity[]): EmployeeCapacities[] => {
+    const employeeMap = new Map<string, EmployeeCapacities>();
+
+    caps.forEach(cap => {
+      if (!employeeMap.has(cap.person_name)) {
+        employeeMap.set(cap.person_name, {
+          person_name: cap.person_name,
+          id: cap.person_name, // Usar nombre como ID único
+          capacities: [],
+          sap_modules: {},
+          sap_implementation: {},
+          languages: {},
+          industries: {},
+          evaluation_date: cap.evaluation_date
+        });
+      }
+
+      const employee = employeeMap.get(cap.person_name)!;
+      employee.capacities.push(cap);
+
+      // Clasificar capacidades por bloque
+      if (cap.skill.includes('Módulo SAP')) {
+        const skillName = cap.skill.replace('Módulo SAP - ', '');
+        employee.sap_modules[skillName] = cap.level;
+      } else if (cap.skill.includes('Implantación SAP')) {
+        const skillName = cap.skill.replace('Implantación SAP - ', '');
+        employee.sap_implementation[skillName] = cap.level;
+      } else if (cap.skill.includes('Idiomas')) {
+        const skillName = cap.skill.replace('Idiomas - ', '');
+        employee.languages[skillName] = cap.level;
+      } else if (cap.skill.includes('Industrias')) {
+        const skillName = cap.skill.replace('Industrias - ', '');
+        employee.industries[skillName] = cap.level;
+      }
+    });
+
+    return Array.from(employeeMap.values());
+  };
+
   useEffect(() => {
     fetchCapacities();
   }, []);
 
   useEffect(() => {
-    let filtered = capacities;
+    const employees = groupCapacitiesByEmployee(capacities);
+    setEmployeeCapacities(employees);
+    
+    // Aplicar filtros
+    let filtered = employees;
 
-    // Search filter
     if (searchTerm) {
-      filtered = filtered.filter(capacity =>
-        capacity.person_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        capacity.skill.toLowerCase().includes(searchTerm.toLowerCase())
+      filtered = filtered.filter(employee =>
+        employee.person_name.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
 
-    // Person filter
     if (personFilter.length > 0) {
-      filtered = filtered.filter(capacity => personFilter.includes(capacity.person_name));
+      filtered = filtered.filter(employee => personFilter.includes(employee.person_name));
     }
 
-    // Skill filter
-    if (skillFilter.length > 0) {
-      filtered = filtered.filter(capacity => skillFilter.includes(capacity.skill));
-    }
-
-    // Level filter
-    if (levelFilter.length > 0) {
-      filtered = filtered.filter(capacity => levelFilter.includes(capacity.level));
-    }
-
-    // Apply sorting
-    if (sortField) {
-      filtered.sort((a, b) => {
-        let aValue: any = a[sortField];
-        let bValue: any = b[sortField];
-        
-        // Handle date sorting
-        if (sortField === 'evaluation_date') {
-          aValue = aValue ? new Date(aValue).getTime() : 0;
-          bValue = bValue ? new Date(bValue).getTime() : 0;
-        } else {
-          // Convert to string for comparison
-          aValue = String(aValue || '').toLowerCase();
-          bValue = String(bValue || '').toLowerCase();
-        }
-        
-        if (sortDirection === 'asc') {
-          return aValue < bValue ? -1 : aValue > bValue ? 1 : 0;
-        } else {
-          return aValue > bValue ? -1 : aValue < bValue ? 1 : 0;
-        }
-      });
-    }
-
-    setFilteredCapacities(filtered);
-  }, [capacities, searchTerm, personFilter, skillFilter, levelFilter, sortField, sortDirection]);
+    setFilteredEmployees(filtered);
+  }, [capacities, searchTerm, personFilter]);
 
   const fetchCapacities = async () => {
     try {
       const { data, error } = await supabase
         .from('capacities')
         .select('*')
-        .order('created_at', { ascending: false });
+        .order('person_name', { ascending: true });
 
       if (error) throw error;
       setCapacities(data || []);
@@ -223,64 +225,45 @@ export default function CapacitiesManagement() {
     }
   };
 
-  const handleUpdateCapacity = async (id: string, field: string, value: string) => {
-    try {
-      const { error } = await supabase
-        .from('capacities')
-        .update({ [field]: value })
-        .eq('id', id);
-
-      if (error) throw error;
-
-      toast({
-        title: "Éxito",
-        description: "Capacidad actualizada correctamente",
-      });
-
-      fetchCapacities();
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "No se pudo actualizar la capacidad",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleDeleteCapacity = async (id: string) => {
+  const handleDeleteEmployee = async (employeeName: string) => {
     try {
       const { error } = await supabase
         .from('capacities')
         .delete()
-        .eq('id', id);
+        .eq('person_name', employeeName);
 
       if (error) throw error;
 
       toast({
         title: "Éxito",
-        description: "Capacidad eliminada correctamente",
+        description: "Empleado eliminado correctamente",
       });
 
       fetchCapacities();
     } catch (error) {
       toast({
         title: "Error",
-        description: "No se pudo eliminar la capacidad",
+        description: "No se pudo eliminar el empleado",
         variant: "destructive",
       });
     }
   };
 
   const handleExportExcel = () => {
-    const exportData = filteredCapacities.map((capacity, index) => ({
-      'ÍNDICE': index + 1,
-      'EMPLEADO': capacity.person_name,
-      'CAPACIDAD': capacity.skill,
-      'NIVEL': capacity.level,
-      'CERTIFICACIÓN': capacity.certification,
-      'FECHA EVALUACIÓN': capacity.evaluation_date ? format(new Date(capacity.evaluation_date), 'dd/MM/yyyy') : '',
-      'COMENTARIOS': capacity.comments
-    }));
+    const exportData = filteredEmployees.map((employee, index) => {
+      const row: any = {
+        'ÍNDICE': index + 1,
+        'EMPLEADO': employee.person_name,
+        'FECHA EVALUACIÓN': employee.evaluation_date ? format(new Date(employee.evaluation_date), 'dd/MM/yyyy') : ''
+      };
+
+      // Agregar columnas dinámicas para cada capacidad
+      employee.capacities.forEach(cap => {
+        row[cap.skill] = cap.level;
+      });
+
+      return row;
+    });
 
     const ws = XLSX.utils.json_to_sheet(exportData);
     const wb = XLSX.utils.book_new();
@@ -296,8 +279,6 @@ export default function CapacitiesManagement() {
   const clearFilters = () => {
     setSearchTerm('');
     setPersonFilter([]);
-    setSkillFilter([]);
-    setLevelFilter([]);
   };
 
   const toggleFilter = (filterArray: string[], value: string, setFilter: (arr: string[]) => void) => {
@@ -308,34 +289,135 @@ export default function CapacitiesManagement() {
     }
   };
 
-  const getUniqueValues = (field: keyof Capacity) => {
-    return [...new Set(capacities.map(capacity => capacity[field]).filter(Boolean))].sort();
-  };
-
-  const handleSort = (field: SortField) => {
-    if (sortField === field) {
-      // Si ya estamos ordenando por este campo, cambiar dirección
-      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
-    } else {
-      // Nuevo campo, empezar con ascendente
-      setSortField(field);
-      setSortDirection('asc');
-    }
-  };
-
-  const getSortIcon = (field: SortField) => {
-    if (sortField !== field) {
-      return <ChevronsUpDown className="w-4 h-4 opacity-50" />;
-    }
-    return sortDirection === 'asc' ? 
-      <ChevronUp className="w-4 h-4" /> : 
-      <ChevronDown className="w-4 h-4" />;
+  const getUniqueValues = (field: 'person_name') => {
+    return [...new Set(employeeCapacities.map(emp => emp.person_name))].sort();
   };
 
   const formatDate = (dateString: string | null) => {
     if (!dateString) return '';
     return format(new Date(dateString), 'dd/MM/yyyy');
   };
+
+  // Componente para la ficha de empleado
+  const EmployeeCard = ({ employee }: { employee: EmployeeCapacities }) => (
+    <Card className="mb-6 break-inside-avoid">
+      <CardHeader className="bg-gradient-to-r from-cyan-500 to-blue-600 text-white rounded-t-lg">
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-lg">{employee.person_name}</CardTitle>
+          <Badge variant="outline" className="bg-white text-cyan-600 border-white">
+            {employee.capacities.length} capacidades
+          </Badge>
+        </div>
+      </CardHeader>
+      <CardContent className="pt-6">
+        {/* Módulos SAP */}
+        {Object.keys(employee.sap_modules).length > 0 && (
+          <div className="mb-6">
+            <h4 className="font-semibold text-blue-800 mb-3 flex items-center gap-2">
+              <div className="w-2 h-2 bg-blue-600 rounded-full"></div>
+              Módulos SAP
+            </h4>
+            <div className="grid grid-cols-2 gap-2">
+              {Object.entries(employee.sap_modules).map(([skill, level]) => (
+                <div key={skill} className="flex justify-between items-center p-2 bg-blue-50 rounded">
+                  <span className="text-sm font-medium">{skill}</span>
+                  <Badge variant="outline" className={cn(
+                    level === 'Experto' ? "text-green-700 border-green-700" :
+                    level === 'Alto' ? "text-blue-700 border-blue-700" :
+                    level === 'Medio' ? "text-yellow-700 border-yellow-700" :
+                    "text-gray-700 border-gray-700"
+                  )}>
+                    {level}
+                  </Badge>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Implantación SAP */}
+        {Object.keys(employee.sap_implementation).length > 0 && (
+          <div className="mb-6">
+            <h4 className="font-semibold text-purple-800 mb-3 flex items-center gap-2">
+              <div className="w-2 h-2 bg-purple-600 rounded-full"></div>
+              Implantación SAP
+            </h4>
+            <div className="grid grid-cols-2 gap-2">
+              {Object.entries(employee.sap_implementation).map(([skill, level]) => (
+                <div key={skill} className="flex justify-between items-center p-2 bg-purple-50 rounded">
+                  <span className="text-sm font-medium">{skill}</span>
+                  <Badge variant="outline" className={cn(
+                    level === 'Experto' ? "text-green-700 border-green-700" :
+                    level === 'Alto' ? "text-blue-700 border-blue-700" :
+                    level === 'Medio' ? "text-yellow-700 border-yellow-700" :
+                    "text-gray-700 border-gray-700"
+                  )}>
+                    {level}
+                  </Badge>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Idiomas */}
+        {Object.keys(employee.languages).length > 0 && (
+          <div className="mb-6">
+            <h4 className="font-semibold text-green-800 mb-3 flex items-center gap-2">
+              <div className="w-2 h-2 bg-green-600 rounded-full"></div>
+              Idiomas
+            </h4>
+            <div className="grid grid-cols-2 gap-2">
+              {Object.entries(employee.languages).map(([skill, level]) => (
+                <div key={skill} className="flex justify-between items-center p-2 bg-green-50 rounded">
+                  <span className="text-sm font-medium">{skill}</span>
+                  <Badge variant="outline" className={cn(
+                    level === 'Experto' ? "text-green-700 border-green-700" :
+                    level === 'Alto' ? "text-blue-700 border-blue-700" :
+                    level === 'Medio' ? "text-yellow-700 border-yellow-700" :
+                    "text-gray-700 border-gray-700"
+                  )}>
+                    {level}
+                  </Badge>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Industrias */}
+        {Object.keys(employee.industries).length > 0 && (
+          <div className="mb-4">
+            <h4 className="font-semibold text-orange-800 mb-3 flex items-center gap-2">
+              <div className="w-2 h-2 bg-orange-600 rounded-full"></div>
+              Industrias
+            </h4>
+            <div className="grid grid-cols-2 gap-2">
+              {Object.entries(employee.industries).map(([skill, level]) => (
+                <div key={skill} className="flex justify-between items-center p-2 bg-orange-50 rounded">
+                  <span className="text-sm font-medium">{skill}</span>
+                  <Badge variant="outline" className={cn(
+                    level === 'Experto' ? "text-green-700 border-green-700" :
+                    level === 'Alto' ? "text-blue-700 border-blue-700" :
+                    level === 'Medio' ? "text-yellow-700 border-yellow-700" :
+                    "text-gray-700 border-gray-700"
+                  )}>
+                    {level}
+                  </Badge>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {employee.evaluation_date && (
+          <div className="text-xs text-muted-foreground mt-4 pt-4 border-t">
+            Última evaluación: {formatDate(employee.evaluation_date)}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
 
   if (loading) {
     return (
@@ -347,6 +429,8 @@ export default function CapacitiesManagement() {
       </div>
     );
   }
+
+  const isCardViewEnabled = personFilter.length === 1;
 
   return (
     <div className="min-h-screen bg-background">
@@ -363,7 +447,9 @@ export default function CapacitiesManagement() {
                   <Zap className="h-6 w-6 text-cyan-600" />
                 </div>
                 <div>
-                  <h1 className="text-2xl font-bold text-foreground">Gestión de Capacidades ({capacities.length})</h1>
+                  <h1 className="text-2xl font-bold text-foreground">
+                    Gestión de Capacidades ({employeeCapacities.length})
+                  </h1>
                   <p className="text-muted-foreground">Administra las capacidades y habilidades del personal</p>
                 </div>
               </div>
@@ -525,14 +611,20 @@ export default function CapacitiesManagement() {
               <Filter className="h-4 w-4 mr-2" />
               Filtros
             </Button>
-            <Button 
-              variant="outline" 
-              onClick={() => setShowColumns(!showColumns)}
-              className="text-purple-600 border-purple-600 hover:bg-purple-50"
-            >
-              <Settings2 className="h-4 w-4 mr-2" />
-              Columnas
-            </Button>
+            
+            {isCardViewEnabled && (
+              <Button 
+                variant="outline" 
+                onClick={() => setViewMode(viewMode === 'table' ? 'card' : 'table')}
+                className={cn(
+                  "text-green-600 border-green-600", 
+                  viewMode === 'card' && "bg-green-50"
+                )}
+              >
+                {viewMode === 'table' ? <IdCard className="h-4 w-4 mr-2" /> : <TableIcon className="h-4 w-4 mr-2" />}
+                {viewMode === 'table' ? 'Vista Compactada' : 'Vista Tabla'}
+              </Button>
+            )}
           </div>
         </div>
 
@@ -541,7 +633,7 @@ export default function CapacitiesManagement() {
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
             <Input
-              placeholder="Buscar capacidades..."
+              placeholder="Buscar empleados..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-10"
@@ -569,7 +661,7 @@ export default function CapacitiesManagement() {
           <Card className="mb-6">
             <CardHeader>
               <div className="flex items-center justify-between">
-                <CardTitle className="text-lg">Filtros por Columna</CardTitle>
+                <CardTitle className="text-lg">Filtros por Empleado</CardTitle>
                 <Button variant="outline" size="sm" onClick={clearFilters}>
                   <RotateCcw className="h-4 w-4 mr-2" />
                   Limpiar Filtros
@@ -577,346 +669,118 @@ export default function CapacitiesManagement() {
               </div>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {/* Person Filter */}
-                <div>
-                  <Label className="text-sm font-medium mb-2 block">Empleado</Label>
-                  <div className="space-y-2 max-h-40 overflow-y-auto border rounded-md p-2">
-                    {getUniqueValues('person_name').map(person => (
-                      <div key={person} className="flex items-center space-x-2">
-                        <Checkbox 
-                          id={`person-${person}`}
-                          checked={personFilter.includes(person)}
-                          onCheckedChange={() => toggleFilter(personFilter, person, setPersonFilter)}
-                        />
-                        <label htmlFor={`person-${person}`} className="text-sm">{person}</label>
-                      </div>
-                    ))}
-                  </div>
-                  {personFilter.length > 0 && (
-                    <div className="mt-2 flex flex-wrap gap-1">
-                      {personFilter.map(person => (
-                        <Badge key={person} variant="secondary" className="text-xs">
-                          {person}
-                          <button 
-                            onClick={() => toggleFilter(personFilter, person, setPersonFilter)}
-                            className="ml-1 hover:bg-secondary-foreground/20 rounded-full p-0.5"
-                          >
-                            <X className="h-3 w-3" />
-                          </button>
-                        </Badge>
-                      ))}
+              <div>
+                <Label className="text-sm font-medium mb-2 block">Empleado</Label>
+                <div className="space-y-2 max-h-40 overflow-y-auto border rounded-md p-2">
+                  {getUniqueValues('person_name').map(person => (
+                    <div key={person} className="flex items-center space-x-2">
+                      <Checkbox 
+                        id={`person-${person}`}
+                        checked={personFilter.includes(person)}
+                        onCheckedChange={() => toggleFilter(personFilter, person, setPersonFilter)}
+                      />
+                      <label htmlFor={`person-${person}`} className="text-sm">{person}</label>
                     </div>
-                  )}
+                  ))}
                 </div>
-
-                {/* Skill Filter */}
-                <div>
-                  <Label className="text-sm font-medium mb-2 block">Capacidad</Label>
-                  <div className="space-y-2 max-h-40 overflow-y-auto border rounded-md p-2">
-                    {getUniqueValues('skill').map(skill => (
-                      <div key={skill} className="flex items-center space-x-2">
-                        <Checkbox 
-                          id={`skill-${skill}`}
-                          checked={skillFilter.includes(skill)}
-                          onCheckedChange={() => toggleFilter(skillFilter, skill, setSkillFilter)}
-                        />
-                        <label htmlFor={`skill-${skill}`} className="text-sm">{skill}</label>
-                      </div>
-                    ))}
-                  </div>
-                  {skillFilter.length > 0 && (
-                    <div className="mt-2 flex flex-wrap gap-1">
-                      {skillFilter.map(skill => (
-                        <Badge key={skill} variant="secondary" className="text-xs bg-blue-100 text-blue-800">
-                          {skill}
-                          <button 
-                            onClick={() => toggleFilter(skillFilter, skill, setSkillFilter)}
-                            className="ml-1 hover:bg-blue-200 rounded-full p-0.5"
-                          >
-                            <X className="h-3 w-3" />
-                          </button>
-                        </Badge>
-                      ))}
-                    </div>
-                  )}
-                </div>
-
-                {/* Level Filter */}
-                <div>
-                  <Label className="text-sm font-medium mb-2 block">Nivel</Label>
-                  <div className="space-y-2 border rounded-md p-2">
-                    {getUniqueValues('level').map(level => (
-                      <div key={level} className="flex items-center space-x-2">
-                        <Checkbox 
-                          id={`level-${level}`}
-                          checked={levelFilter.includes(level)}
-                          onCheckedChange={() => toggleFilter(levelFilter, level, setLevelFilter)}
-                        />
-                        <label htmlFor={`level-${level}`} className="text-sm">{level}</label>
-                      </div>
-                    ))}
-                  </div>
-                  {levelFilter.length > 0 && (
-                    <div className="mt-2 flex flex-wrap gap-1">
-                      {levelFilter.map(level => (
-                        <Badge key={level} variant="secondary" className="text-xs bg-green-100 text-green-800">
-                          {level}
-                          <button 
-                            onClick={() => toggleFilter(levelFilter, level, setLevelFilter)}
-                            className="ml-1 hover:bg-green-200 rounded-full p-0.5"
-                          >
-                            <X className="h-3 w-3" />
-                          </button>
-                        </Badge>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Column Management */}
-        {showColumns && (
-          <Card className="mb-6">
-            <CardHeader>
-              <CardTitle className="text-lg">Gestión de Columnas</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
-                {Object.entries(visibleColumns).map(([column, visible]) => (
-                  <div key={column} className="flex items-center space-x-2">
-                    <Checkbox 
-                      id={`column-${column}`}
-                      checked={visible}
-                      onCheckedChange={(checked) => 
-                        setVisibleColumns(prev => ({ ...prev, [column]: !!checked }))
-                      }
-                    />
-                    <label htmlFor={`column-${column}`} className="text-sm capitalize">
-                      {column.replace('_', ' ')}
-                    </label>
-                  </div>
-                ))}
-              </div>
-              <div className="mt-4 flex items-center space-x-2">
-                <Checkbox id="save-default" />
-                <label htmlFor="save-default" className="text-sm text-muted-foreground">
-                  Guardar como vista por defecto
-                </label>
-                <Button variant="outline" size="sm" className="ml-4">
-                  Resetear
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Table */}
-        <Card>
-          <CardContent className="p-0">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-16 py-2">ÍNDICE</TableHead>
-                  {visibleColumns.person_name && (
-                    <TableHead 
-                      className="py-2 cursor-pointer hover:bg-muted/50 select-none"
-                      onClick={() => handleSort('person_name')}
-                    >
-                      <div className="flex items-center justify-between">
-                        <span>EMPLEADO</span>
-                        {getSortIcon('person_name')}
-                      </div>
-                    </TableHead>
-                  )}
-                  {visibleColumns.skill && (
-                    <TableHead 
-                      className="py-2 cursor-pointer hover:bg-muted/50 select-none"
-                      onClick={() => handleSort('skill')}
-                    >
-                      <div className="flex items-center justify-between">
-                        <span>CAPACIDAD</span>
-                        {getSortIcon('skill')}
-                      </div>
-                    </TableHead>
-                  )}
-                  {visibleColumns.level && (
-                    <TableHead 
-                      className="py-2 cursor-pointer hover:bg-muted/50 select-none"
-                      onClick={() => handleSort('level')}
-                    >
-                      <div className="flex items-center justify-between">
-                        <span>NIVEL</span>
-                        {getSortIcon('level')}
-                      </div>
-                    </TableHead>
-                  )}
-                  {visibleColumns.certification && (
-                    <TableHead 
-                      className="py-2 cursor-pointer hover:bg-muted/50 select-none"
-                      onClick={() => handleSort('certification')}
-                    >
-                      <div className="flex items-center justify-between">
-                        <span>CERTIFICACIÓN</span>
-                        {getSortIcon('certification')}
-                      </div>
-                    </TableHead>
-                  )}
-                  {visibleColumns.evaluation_date && (
-                    <TableHead 
-                      className="py-2 cursor-pointer hover:bg-muted/50 select-none"
-                      onClick={() => handleSort('evaluation_date')}
-                    >
-                      <div className="flex items-center justify-between">
-                        <span>FECHA EVALUACIÓN</span>
-                        {getSortIcon('evaluation_date')}
-                      </div>
-                    </TableHead>
-                  )}
-                  {visibleColumns.comments && (
-                    <TableHead 
-                      className="py-2 cursor-pointer hover:bg-muted/50 select-none"
-                      onClick={() => handleSort('comments')}
-                    >
-                      <div className="flex items-center justify-between">
-                        <span>COMENTARIOS</span>
-                        {getSortIcon('comments')}
-                      </div>
-                    </TableHead>
-                  )}
-                  <TableHead className="w-24 py-2">ACCIONES</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredCapacities.map((capacity, index) => (
-                  <TableRow key={capacity.id}>
-                    <TableCell className="font-medium py-2">{index + 1}</TableCell>
-                    {visibleColumns.person_name && (
-                      <TableCell className="py-2">
-                        {editingRow === capacity.id ? (
-                          <Input
-                            defaultValue={capacity.person_name}
-                            onBlur={(e) => handleUpdateCapacity(capacity.id, 'person_name', e.target.value)}
-                          />
-                        ) : (
-                          capacity.person_name
-                        )}
-                      </TableCell>
-                    )}
-                    {visibleColumns.skill && (
-                      <TableCell className="py-2">
-                        {editingRow === capacity.id ? (
-                          <Input
-                            defaultValue={capacity.skill}
-                            onBlur={(e) => handleUpdateCapacity(capacity.id, 'skill', e.target.value)}
-                          />
-                        ) : (
-                          capacity.skill
-                        )}
-                      </TableCell>
-                    )}
-                    {visibleColumns.level && (
-                      <TableCell className="py-2">
-                        {editingRow === capacity.id ? (
-                          <Select 
-                            defaultValue={capacity.level}
-                            onValueChange={(value) => handleUpdateCapacity(capacity.id, 'level', value)}
-                          >
-                            <SelectTrigger className="w-32">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {SKILL_LEVELS.map(level => (
-                                <SelectItem key={level} value={level}>{level}</SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        ) : (
-                          <Badge variant="outline" className={cn(
-                            capacity.level === 'Experto' ? "text-green-700 border-green-700" :
-                            capacity.level === 'Alto' ? "text-blue-700 border-blue-700" :
-                            capacity.level === 'Medio' ? "text-yellow-700 border-yellow-700" :
-                            "text-gray-700 border-gray-700"
-                          )}>
-                            {capacity.level}
-                          </Badge>
-                        )}
-                      </TableCell>
-                    )}
-                    {visibleColumns.certification && (
-                      <TableCell className="py-2">
-                        {editingRow === capacity.id ? (
-                          <Input
-                            defaultValue={capacity.certification}
-                            onBlur={(e) => handleUpdateCapacity(capacity.id, 'certification', e.target.value)}
-                          />
-                        ) : (
-                          capacity.certification
-                        )}
-                      </TableCell>
-                    )}
-                    {visibleColumns.evaluation_date && (
-                      <TableCell className="py-2">
-                        {editingRow === capacity.id ? (
-                          <Input
-                            type="date"
-                            defaultValue={capacity.evaluation_date}
-                            onBlur={(e) => handleUpdateCapacity(capacity.id, 'evaluation_date', e.target.value)}
-                            className="w-auto"
-                          />
-                        ) : (
-                          formatDate(capacity.evaluation_date)
-                        )}
-                      </TableCell>
-                    )}
-                    {visibleColumns.comments && (
-                      <TableCell className="py-2">
-                        {editingRow === capacity.id ? (
-                          <Input
-                            defaultValue={capacity.comments}
-                            onBlur={(e) => handleUpdateCapacity(capacity.id, 'comments', e.target.value)}
-                          />
-                        ) : (
-                          capacity.comments
-                        )}
-                      </TableCell>
-                    )}
-                    <TableCell className="py-2">
-                      <div className="flex items-center gap-1">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => setEditingRow(editingRow === capacity.id ? null : capacity.id)}
-                          className="h-8 w-8 p-0 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                {personFilter.length > 0 && (
+                  <div className="mt-2 flex flex-wrap gap-1">
+                    {personFilter.map(person => (
+                      <Badge key={person} variant="secondary" className="text-xs">
+                        {person}
+                        <button 
+                          onClick={() => toggleFilter(personFilter, person, setPersonFilter)}
+                          className="ml-1 hover:bg-secondary-foreground/20 rounded-full p-0.5"
                         >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleDeleteCapacity(capacity.id)}
-                          className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-                {filteredCapacities.length === 0 && (
-                  <TableRow>
-                    <TableCell colSpan={8} className="py-8 text-center text-muted-foreground">
-                      No hay capacidades registradas. Sube un archivo para comenzar.
-                    </TableCell>
-                  </TableRow>
+                          <X className="h-3 w-3" />
+                        </button>
+                      </Badge>
+                    ))}
+                  </div>
                 )}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Content - Vista de tarjetas o tabla */}
+        {isCardViewEnabled && viewMode === 'card' ? (
+          <div className="columns-1 md:columns-2 lg:columns-3 gap-6 space-y-6">
+            {filteredEmployees.map((employee) => (
+              <EmployeeCard key={employee.id} employee={employee} />
+            ))}
+          </div>
+        ) : (
+          /* Tabla de empleados */
+          <Card>
+            <CardContent className="p-0">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-16 py-2">ÍNDICE</TableHead>
+                    <TableHead className="py-2">EMPLEADO</TableHead>
+                    <TableHead className="py-2 text-center">CAPACIDADES</TableHead>
+                    <TableHead className="py-2 text-center">MÓDULOS SAP</TableHead>
+                    <TableHead className="py-2 text-center">IMPLANTACIÓN</TableHead>
+                    <TableHead className="py-2 text-center">IDIOMAS</TableHead>
+                    <TableHead className="py-2 text-center">INDUSTRIAS</TableHead>
+                    <TableHead className="w-24 py-2">ACCIONES</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredEmployees.map((employee, index) => (
+                    <TableRow key={employee.id}>
+                      <TableCell className="font-medium py-2">{index + 1}</TableCell>
+                      <TableCell className="py-2 font-medium">{employee.person_name}</TableCell>
+                      <TableCell className="py-2 text-center">
+                        <Badge variant="outline">{employee.capacities.length}</Badge>
+                      </TableCell>
+                      <TableCell className="py-2 text-center">
+                        <Badge variant="outline" className="bg-blue-50">
+                          {Object.keys(employee.sap_modules).length}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="py-2 text-center">
+                        <Badge variant="outline" className="bg-purple-50">
+                          {Object.keys(employee.sap_implementation).length}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="py-2 text-center">
+                        <Badge variant="outline" className="bg-green-50">
+                          {Object.keys(employee.languages).length}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="py-2 text-center">
+                        <Badge variant="outline" className="bg-orange-50">
+                          {Object.keys(employee.industries).length}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="py-2">
+                        <div className="flex items-center gap-1">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleDeleteEmployee(employee.person_name)}
+                            className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                  {filteredEmployees.length === 0 && (
+                    <TableRow>
+                      <TableCell colSpan={8} className="py-8 text-center text-muted-foreground">
+                        No hay empleados registrados. Sube un archivo para comenzar.
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        )}
       </div>
     </div>
   );
