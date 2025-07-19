@@ -7,17 +7,24 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import SplashScreen from "./pages/SplashScreen";
+import LoadingScreen from "./pages/LoadingScreen";
 
 const queryClient = new QueryClient();
 
 const App = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [userRole, setUserRole] = useState<string>('');
   const [userData, setUserData] = useState<any>(null);
 
   const handleLogin = (role: string, userData?: any) => {
     setUserRole(role);
     setUserData(userData);
+    setIsLoading(true);
+  };
+
+  const handleLoadingComplete = () => {
+    setIsLoading(false);
     setIsAuthenticated(true);
   };
 
@@ -27,13 +34,25 @@ const App = () => {
     setUserData(null);
   };
 
-  if (!isAuthenticated) {
+  if (!isAuthenticated && !isLoading) {
     return (
       <QueryClientProvider client={queryClient}>
         <TooltipProvider>
           <Toaster />
           <Sonner />
           <SplashScreen onLogin={handleLogin} />
+        </TooltipProvider>
+      </QueryClientProvider>
+    );
+  }
+
+  if (isLoading) {
+    return (
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <LoadingScreen onComplete={handleLoadingComplete} />
         </TooltipProvider>
       </QueryClientProvider>
     );
