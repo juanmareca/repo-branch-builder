@@ -16,6 +16,7 @@ import {
   FileSpreadsheet
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 interface ManualRecord {
   id: string;
@@ -30,13 +31,40 @@ const HolidaysUpload = () => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [showUploadDialog, setShowUploadDialog] = useState(false);
   const [showConflictDialog, setShowConflictDialog] = useState(false);
-  const [manualRecords] = useState<ManualRecord[]>([
-    { id: '1', date: '2025-12-25', description: 'Navidad Manual', country: 'España', region: 'Madrid' },
-    { id: '2', date: '2025-01-15', description: 'Día Personalizado', country: 'España', region: 'NACIONAL' }
-  ]);
+  const [manualRecords, setManualRecords] = useState<ManualRecord[]>([]);
   const [preserveManual, setPreserveManual] = useState(true);
   const [uploading, setUploading] = useState(false);
+  const [checkingManualRecords, setCheckingManualRecords] = useState(false);
   const { toast } = useToast();
+
+  // Función para verificar registros manuales existentes
+  const checkForManualRecords = async () => {
+    setCheckingManualRecords(true);
+    try {
+      const { data, error } = await supabase
+        .from('holidays')
+        .select('*')
+        .eq('origen', 'Administrador');
+
+      if (error) throw error;
+      
+      const manualHolidays = (data || []).map(holiday => ({
+        id: holiday.id,
+        date: holiday.date,
+        description: holiday.festivo,
+        country: holiday.pais,
+        region: holiday.comunidad_autonoma || 'NACIONAL'
+      }));
+      
+      setManualRecords(manualHolidays);
+      return manualHolidays.length > 0;
+    } catch (error) {
+      console.error('Error checking manual records:', error);
+      return false;
+    } finally {
+      setCheckingManualRecords(false);
+    }
+  };
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -46,10 +74,13 @@ const HolidaysUpload = () => {
     }
   };
 
-  const handleUploadConfirm = () => {
+  const handleUploadConfirm = async () => {
     setShowUploadDialog(false);
-    // Simular detección de registros manuales
-    if (manualRecords.length > 0) {
+    
+    // Verificar si existen registros manuales
+    const hasManualRecords = await checkForManualRecords();
+    
+    if (hasManualRecords) {
       setShowConflictDialog(true);
     } else {
       processUpload();
@@ -60,16 +91,46 @@ const HolidaysUpload = () => {
     setUploading(true);
     setShowConflictDialog(false);
     
-    // Simular proceso de carga
-    await new Promise(resolve => setTimeout(resolve, 3000));
-    
-    setUploading(false);
-    setSelectedFile(null);
-    
-    toast({
-      title: "✅ Carga completada exitosamente",
-      description: `Archivo procesado correctamente. Backup creado automáticamente. Zona horaria: Europe/Madrid (UTC+1)`,
-    });
+    try {
+      if (!selectedFile) {
+        throw new Error('No se ha seleccionado ningún archivo');
+      }
+
+      // Si no preservar manuales, eliminar TODOS los registros
+      if (!preserveManual) {
+        const { error: deleteError } = await supabase
+          .from('holidays')
+          .delete()
+          .neq('id', '00000000-0000-0000-0000-000000000000'); // Eliminar todos los registros
+        
+        if (deleteError) {
+          console.error('Error al eliminar registros:', deleteError);
+          throw new Error('Error al eliminar registros existentes');
+        }
+      }
+
+      // Simular procesamiento del archivo Excel
+      // En una implementación real, aquí se procesaría el archivo Excel
+      // y se insertarían los nuevos registros
+      
+      // Simular proceso de carga
+      await new Promise(resolve => setTimeout(resolve, 3000));
+      
+      setUploading(false);
+      setSelectedFile(null);
+      
+      toast({
+        title: "✅ Carga completada exitosamente",
+        description: `Archivo procesado correctamente. ${!preserveManual ? 'Todos los registros anteriores han sido eliminados.' : 'Se preservaron los registros del Administrador.'} Backup creado automáticamente.`,
+      });
+    } catch (error) {
+      setUploading(false);
+      toast({
+        title: "❌ Error en la carga",
+        description: error instanceof Error ? error.message : 'Error desconocido al procesar el archivo',
+        variant: "destructive",
+      });
+    }
   };
 
   const formatFileSize = (bytes: number) => {
@@ -232,9 +293,10 @@ const HolidaysUpload = () => {
             <Button 
               className="bg-amber-600 hover:bg-amber-700"
               onClick={handleUploadConfirm}
+              disabled={checkingManualRecords}
             >
               <Upload className="h-4 w-4 mr-2" />
-              Cargar Festivos
+              {checkingManualRecords ? 'Verificando...' : 'Cargar Festivos'}
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -136,7 +136,7 @@ const AdminDashboard = () => {
           </Card>
 
           {/* Festivos */}
-          <Card className="hover:shadow-lg transition-shadow cursor-pointer group" onClick={() => window.location.href = '/holidays'}>
+          <Card className="hover:shadow-lg transition-shadow cursor-pointer group" onClick={() => navigate('/holidays')}>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">FESTIVOS</CardTitle>
               <Calendar className="h-5 w-5 text-orange-600 group-hover:scale-110 transition-transform" />
@@ -163,7 +163,7 @@ const AdminDashboard = () => {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
           {/* Backups */}
-          <Card className="hover:shadow-lg transition-all group border-gray-200 hover:border-gray-300 cursor-pointer" onClick={() => window.location.href = '/backups'}>
+          <Card className="hover:shadow-lg transition-all group border-gray-200 hover:border-gray-300 cursor-pointer" onClick={() => navigate('/backups')}>
             <CardHeader className="bg-gray-50 rounded-t-lg">
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-gray-600 rounded-lg">
@@ -207,7 +207,7 @@ const AdminDashboard = () => {
           </Card>
 
           {/* Logs de Auditoría */}
-          <Card className="hover:shadow-lg transition-all group border-blue-200 hover:border-blue-300 cursor-pointer" onClick={() => window.location.href = '/audit-logs'}>
+          <Card className="hover:shadow-lg transition-all group border-blue-200 hover:border-blue-300 cursor-pointer" onClick={() => navigate('/audit-logs')}>
             <CardHeader className="bg-blue-50 rounded-t-lg">
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-blue-600 rounded-lg">
