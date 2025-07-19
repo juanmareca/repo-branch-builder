@@ -16,6 +16,7 @@ import {
   Loader2
 } from 'lucide-react';
 import { useAdminStats } from '@/hooks/useAdminStats';
+import HolidaysUpload from '@/components/FileUpload/HolidaysUpload';
 
 const AdminDashboard = () => {
   const { stats, loading, error } = useAdminStats();
@@ -129,51 +130,13 @@ const AdminDashboard = () => {
           </Card>
         </div>
 
+        {/* Subida Masiva de Archivos */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 gap-6 mb-8">
+          <HolidaysUpload />
+        </div>
+
         {/* Action Buttons */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Subida Masiva de Archivos */}
-          <Card className="hover:shadow-lg transition-all group border-green-200 hover:border-green-300">
-            <CardHeader className="bg-green-50 rounded-t-lg">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-green-500 rounded-lg">
-                  <Upload className="h-6 w-6 text-white" />
-                </div>
-                <div>
-                  <CardTitle className="text-green-800">Subida Masiva de Archivos</CardTitle>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent className="pt-6">
-              <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-4 mb-4">
-                  <Button variant="outline" size="sm" className="justify-start text-xs">
-                    <BarChart3 className="h-4 w-4 mr-2" />
-                    Cargar Recursos
-                  </Button>
-                  <Button variant="outline" size="sm" className="justify-start text-xs">
-                    <FolderOpen className="h-4 w-4 mr-2" />
-                    Cargar Proyectos
-                  </Button>
-                </div>
-                
-                <div className="p-4 border-2 border-dashed border-green-300 rounded-lg text-center group-hover:border-green-400 transition-colors">
-                  <Upload className="h-8 w-8 text-green-500 mx-auto mb-2" />
-                  <p className="text-sm text-green-700 mb-1">Arrastra el archivo Excel aquí</p>
-                  <p className="text-xs text-green-600">Archivo Excel con datos de recursos humanos</p>
-                </div>
-                
-                <div className="bg-blue-50 p-3 rounded-lg">
-                  <p className="text-xs text-blue-700 mb-1">
-                    <span className="font-semibold">ℹ️ Formato requerido:</span> Excel (.xlsx)
-                  </p>
-                </div>
-                
-                <Button className="w-full bg-green-600 hover:bg-green-700">
-                  Seleccionar Archivo
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
           {/* Backups */}
           <Card className="hover:shadow-lg transition-all group border-gray-200 hover:border-gray-300">
