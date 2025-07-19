@@ -12,6 +12,7 @@ import AdminDashboard from "./pages/AdminDashboard";
 import HolidaysManagement from "./pages/HolidaysManagement";
 import BackupsManagement from "./pages/BackupsManagement";
 import AuditLogs from "./pages/AuditLogs";
+import CapacitiesManagement from "./pages/CapacitiesManagement";
 
 const queryClient = new QueryClient();
 
@@ -70,9 +71,10 @@ const App = () => {
         <BrowserRouter>
           <Routes>
             <Route path="/" element={userRole === 'admin' ? <AdminDashboard /> : <Index />} />
-            <Route path="/holidays" element={<HolidaysManagement />} />
-            <Route path="/backups" element={<BackupsManagement />} />
-            <Route path="/audit-logs" element={<AuditLogs />} />
+          <Route path="/holidays" element={<HolidaysManagement />} />
+          <Route path="/backups" element={<BackupsManagement />} />
+          <Route path="/audit-logs" element={<AuditLogs />} />
+          <Route path="/capacities" element={<CapacitiesManagement />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

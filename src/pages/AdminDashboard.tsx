@@ -121,7 +121,7 @@ const AdminDashboard = () => {
           </Card>
 
           {/* Capacidades */}
-          <Card className="hover:shadow-lg transition-shadow cursor-pointer group">
+          <Card className="hover:shadow-lg transition-shadow cursor-pointer group" onClick={() => navigate('/capacities')}>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">CAPACIDADES</CardTitle>
               <Zap className="h-5 w-5 text-cyan-600 group-hover:scale-110 transition-transform" />

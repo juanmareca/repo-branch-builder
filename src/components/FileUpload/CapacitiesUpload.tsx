@@ -5,7 +5,11 @@ import { Input } from '@/components/ui/input';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Zap, Upload, FileText, Info } from 'lucide-react';
 
-const CapacitiesUpload = () => {
+interface CapacitiesUploadProps {
+  onUploadComplete?: () => void;
+}
+
+const CapacitiesUpload = ({ onUploadComplete }: CapacitiesUploadProps) => {
   const [file, setFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
   const [showDetails, setShowDetails] = useState(false);
@@ -25,6 +29,7 @@ const CapacitiesUpload = () => {
     setTimeout(() => {
       setUploading(false);
       setFile(null);
+      onUploadComplete?.();
     }, 2000);
   };
 
