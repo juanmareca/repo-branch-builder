@@ -69,22 +69,10 @@ const App = () => {
         <Sonner />
         <BrowserRouter>
           <Routes>
-            <Route 
-              path="/" 
-              element={userRole === 'admin' ? <AdminDashboard /> : <Index />} 
-            />
-            <Route 
-              path="/holidays" 
-              element={userRole === 'admin' ? <AdminDashboard /> : <HolidaysManagement />} 
-            />
-            <Route 
-              path="/backups" 
-              element={userRole === 'admin' ? <AdminDashboard /> : <BackupsManagement />} 
-            />
-            <Route 
-              path="/audit-logs" 
-              element={userRole === 'admin' ? <AdminDashboard /> : <AuditLogs />} 
-            />
+            <Route path="/" element={userRole === 'admin' ? <AdminDashboard /> : <Index />} />
+            <Route path="/holidays" element={<HolidaysManagement />} />
+            <Route path="/backups" element={<BackupsManagement />} />
+            <Route path="/audit-logs" element={<AuditLogs />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
