@@ -142,16 +142,28 @@ const HolidaysUpload = () => {
         throw new Error('No se ha seleccionado ningún archivo');
       }
 
-      // Si no preservar manuales, eliminar TODOS los registros
+      // Manejar eliminación según la opción seleccionada
       if (!preserveManual) {
+        // Si NO preservar manuales, eliminar TODOS los registros
         const { error: deleteError } = await supabase
           .from('holidays')
           .delete()
           .neq('id', '00000000-0000-0000-0000-000000000000'); // Eliminar todos los registros
         
         if (deleteError) {
-          console.error('Error al eliminar registros:', deleteError);
+          console.error('Error al eliminar todos los registros:', deleteError);
           throw new Error('Error al eliminar registros existentes');
+        }
+      } else if (hasManualRecords) {
+        // Si SÍ preservar manuales, eliminar SOLO los registros con origen "Fichero"
+        const { error: deleteError } = await supabase
+          .from('holidays')
+          .delete()
+          .eq('origen', 'Fichero');
+        
+        if (deleteError) {
+          console.error('Error al eliminar registros de archivo:', deleteError);
+          throw new Error('Error al eliminar registros del archivo');
         }
       }
 
