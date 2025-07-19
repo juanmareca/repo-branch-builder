@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import * as XLSX from 'xlsx';
 
 interface ManualRecord {
   id: string;
@@ -29,6 +30,8 @@ interface ManualRecord {
 const HolidaysUpload = () => {
   const [isFormatExpanded, setIsFormatExpanded] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [fileRecordsCount, setFileRecordsCount] = useState<number>(0);
+  const [processingFile, setProcessingFile] = useState(false);
   const [showUploadDialog, setShowUploadDialog] = useState(false);
   const [showConflictDialog, setShowConflictDialog] = useState(false);
   const [manualRecords, setManualRecords] = useState<ManualRecord[]>([]);
@@ -36,6 +39,55 @@ const HolidaysUpload = () => {
   const [uploading, setUploading] = useState(false);
   const [checkingManualRecords, setCheckingManualRecords] = useState(false);
   const { toast } = useToast();
+
+  // Función para procesar el archivo Excel y contar registros
+  const processExcelFile = async (file: File): Promise<number> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const data = new Uint8Array(e.target?.result as ArrayBuffer);
+          const workbook = XLSX.read(data, { type: 'array' });
+          const firstSheetName = workbook.SheetNames[0];
+          const worksheet = workbook.Sheets[firstSheetName];
+          const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+          
+          // Contar filas con datos (excluyendo header si existe)
+          const dataRows = jsonData.filter((row: any) => row && row.length > 0 && row.some((cell: any) => cell !== null && cell !== undefined && cell !== ''));
+          const recordCount = dataRows.length > 0 ? dataRows.length - 1 : 0; // -1 para excluir header
+          
+          resolve(Math.max(0, recordCount));
+        } catch (error) {
+          reject(error);
+        }
+      };
+      reader.onerror = () => reject(new Error('Error al leer el archivo'));
+      reader.readAsArrayBuffer(file);
+    });
+  };
+
+  const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      setSelectedFile(file);
+      setProcessingFile(true);
+      
+      try {
+        const recordsCount = await processExcelFile(file);
+        setFileRecordsCount(recordsCount);
+        setShowUploadDialog(true);
+      } catch (error) {
+        toast({
+          title: "Error al procesar archivo",
+          description: "No se pudo leer el archivo Excel. Verifique que sea un archivo válido.",
+          variant: "destructive",
+        });
+        setSelectedFile(null);
+      } finally {
+        setProcessingFile(false);
+      }
+    }
+  };
 
   // Función para verificar registros manuales existentes
   const checkForManualRecords = async () => {
@@ -63,14 +115,6 @@ const HolidaysUpload = () => {
       return false;
     } finally {
       setCheckingManualRecords(false);
-    }
-  };
-
-  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      setSelectedFile(file);
-      setShowUploadDialog(true);
     }
   };
 
@@ -237,12 +281,14 @@ const HolidaysUpload = () => {
               onChange={handleFileSelect}
               className="hidden"
               id="holidays-file-input"
+              disabled={processingFile}
             />
             <Button 
               className="bg-amber-600 hover:bg-amber-700 text-white"
               onClick={() => document.getElementById('holidays-file-input')?.click()}
+              disabled={processingFile}
             >
-              Seleccionar Archivo
+              {processingFile ? 'Procesando...' : 'Seleccionar Archivo'}
             </Button>
           </div>
         </CardContent>
@@ -260,18 +306,18 @@ const HolidaysUpload = () => {
           
           {selectedFile && (
             <div className="py-4">
-              <div className="flex items-center gap-3 p-4 bg-amber-50 rounded-lg border border-amber-200">
-                <FileSpreadsheet className="h-8 w-8 text-amber-600" />
-                <div className="flex-1">
-                  <p className="font-medium text-amber-800">{selectedFile.name}</p>
-                  <p className="text-sm text-amber-600">
-                    Archivo seleccionado: {formatFileSize(selectedFile.size)}
-                  </p>
-                  <div className="flex items-center gap-1 mt-1">
-                    <CheckCircle className="h-4 w-4 text-green-600" />
-                    <span className="text-sm text-green-700">Listo para cargar</span>
+                <div className="flex items-center gap-3 p-4 bg-amber-50 rounded-lg border border-amber-200">
+                  <FileSpreadsheet className="h-8 w-8 text-amber-600" />
+                  <div className="flex-1">
+                    <p className="font-medium text-amber-800">{selectedFile.name}</p>
+                    <p className="text-sm text-amber-600">
+                      Archivo: {formatFileSize(selectedFile.size)} • {fileRecordsCount} registros
+                    </p>
+                    <div className="flex items-center gap-1 mt-1">
+                      <CheckCircle className="h-4 w-4 text-green-600" />
+                      <span className="text-sm text-green-700">Listo para cargar</span>
+                    </div>
                   </div>
-                </div>
                 <Button
                   variant="ghost"
                   size="sm"
