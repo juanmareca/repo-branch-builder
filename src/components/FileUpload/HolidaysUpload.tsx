@@ -165,7 +165,7 @@ const HolidaysUpload = () => {
       
       toast({
         title: "✅ Carga completada exitosamente",
-        description: `Archivo procesado correctamente. ${!preserveManual ? 'Todos los registros anteriores han sido eliminados.' : 'Se preservaron los registros del Administrador.'} Backup creado automáticamente.`,
+        description: `Se ha creado el backup automáticamente y se han cargado ${fileRecordsCount} registros. ${!preserveManual ? 'Todos los registros anteriores han sido eliminados.' : 'Se preservaron los registros del Administrador.'}`,
       });
     } catch (error) {
       setUploading(false);
