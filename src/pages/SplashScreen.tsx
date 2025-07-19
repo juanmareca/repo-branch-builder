@@ -131,10 +131,10 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ onLogin }) => {
       </div>
 
       <Card className="w-full max-w-md p-8 bg-gray-900/95 backdrop-blur-md border-gray-700/50 shadow-2xl relative z-10 animate-fade-in">
-        {/* Header with glow effect */}
+        {/* Header with corporate logo styling */}
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-400 via-purple-500 to-cyan-400 bg-clip-text text-transparent mb-2 drop-shadow-lg">
-            Stratesys
+          <h1 className="text-4xl font-light tracking-wide text-white mb-3 font-sans" style={{ letterSpacing: '2px' }}>
+            stratesys
           </h1>
           <div className="w-16 h-0.5 bg-gradient-to-r from-blue-400 to-purple-500 mx-auto mb-3"></div>
           <p className="text-white text-sm mb-1 font-medium">Sistema de Gestión de Recursos</p>
