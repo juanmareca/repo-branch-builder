@@ -44,9 +44,9 @@ const CapacitiesUpload = ({ onUploadComplete }: CapacitiesUploadProps) => {
           const worksheet = workbook.Sheets[firstSheetName];
           const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
           
-          // Contar filas con datos (excluyendo header si existe)
-          const dataRows = jsonData.filter((row: any) => row && row.length > 0 && row.some((cell: any) => cell !== null && cell !== undefined && cell !== ''));
-          const recordCount = dataRows.length > 0 ? dataRows.length - 1 : 0; // -1 para excluir header
+          // Contar filas con datos (excluyendo las 2 primeras filas que son headers)
+          const dataRows = jsonData.slice(2).filter((row: any) => row && row.length > 0 && row.some((cell: any) => cell !== null && cell !== undefined && cell !== ''));
+          const recordCount = dataRows.length;
           
           resolve(Math.max(0, recordCount));
         } catch (error) {
