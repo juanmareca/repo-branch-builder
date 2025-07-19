@@ -10,6 +10,8 @@ import SplashScreen from "./pages/SplashScreen";
 import LoadingScreen from "./pages/LoadingScreen";
 import AdminDashboard from "./pages/AdminDashboard";
 import HolidaysManagement from "./pages/HolidaysManagement";
+import BackupsManagement from "./pages/BackupsManagement";
+import AuditLogs from "./pages/AuditLogs";
 
 const queryClient = new QueryClient();
 
@@ -69,6 +71,8 @@ const App = () => {
           <Routes>
             <Route path="/" element={userRole === 'admin' ? <AdminDashboard /> : <Index />} />
             <Route path="/holidays" element={<HolidaysManagement />} />
+            <Route path="/backups" element={<BackupsManagement />} />
+            <Route path="/audit-logs" element={<AuditLogs />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

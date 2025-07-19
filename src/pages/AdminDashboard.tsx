@@ -139,7 +139,7 @@ const AdminDashboard = () => {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
           {/* Backups */}
-          <Card className="hover:shadow-lg transition-all group border-gray-200 hover:border-gray-300">
+          <Card className="hover:shadow-lg transition-all group border-gray-200 hover:border-gray-300 cursor-pointer" onClick={() => window.location.href = '/backups'}>
             <CardHeader className="bg-gray-50 rounded-t-lg">
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-gray-600 rounded-lg">
@@ -183,7 +183,7 @@ const AdminDashboard = () => {
           </Card>
 
           {/* Logs de Auditoría */}
-          <Card className="hover:shadow-lg transition-all group border-blue-200 hover:border-blue-300">
+          <Card className="hover:shadow-lg transition-all group border-blue-200 hover:border-blue-300 cursor-pointer" onClick={() => window.location.href = '/audit-logs'}>
             <CardHeader className="bg-blue-50 rounded-t-lg">
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-blue-600 rounded-lg">
