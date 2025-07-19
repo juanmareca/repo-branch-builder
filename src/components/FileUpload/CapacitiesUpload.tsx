@@ -44,12 +44,24 @@ const CapacitiesUpload = ({ onUploadComplete }: CapacitiesUploadProps) => {
           const worksheet = workbook.Sheets[firstSheetName];
           const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
           
+          console.log('Total rows in Excel:', jsonData.length);
+          console.log('First 3 rows:', jsonData.slice(0, 3));
+          
           // Contar filas con datos (excluyendo la primera fila que es cabecera)
-          const dataRows = jsonData.slice(1).filter((row: any) => row && row.length > 0 && row.some((cell: any) => cell !== null && cell !== undefined && cell !== ''));
+          const dataRows = jsonData.slice(1).filter((row: any) => {
+            const hasData = row && row.length > 0 && row.some((cell: any) => cell !== null && cell !== undefined && cell !== '');
+            if (hasData) {
+              console.log('Valid row found:', row.slice(0, 5)); // Solo primeras 5 columnas para ver
+            }
+            return hasData;
+          });
           const recordCount = dataRows.length;
+          
+          console.log('Filtered data rows count:', recordCount);
           
           resolve(Math.max(0, recordCount));
         } catch (error) {
+          console.error('Error processing file:', error);
           reject(error);
         }
       };
