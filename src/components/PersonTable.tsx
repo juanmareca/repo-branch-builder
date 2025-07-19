@@ -1,12 +1,53 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Person } from '../types';
-import { User, Mail, Calendar, MapPin } from 'lucide-react';
+import { User, Mail, Calendar, MapPin, ChevronUp, ChevronDown, ChevronsUpDown } from 'lucide-react';
 
 interface PersonTableProps {
   persons: Person[];
 }
 
 const PersonTable: React.FC<PersonTableProps> = ({ persons }) => {
+  const [sortedPersons, setSortedPersons] = useState<Person[]>(persons);
+  const [sortField, setSortField] = useState<keyof Person | null>(null);
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
+
+  // Update sorted persons when persons prop changes
+  React.useEffect(() => {
+    setSortedPersons(persons);
+  }, [persons]);
+
+  const handleSort = (field: keyof Person) => {
+    const newDirection = sortField === field && sortDirection === 'asc' ? 'desc' : 'asc';
+    setSortField(field);
+    setSortDirection(newDirection);
+
+    const sorted = [...persons].sort((a, b) => {
+      let aValue: any = a[field];
+      let bValue: any = b[field];
+      
+      // Convert to string for comparison
+      aValue = String(aValue).toLowerCase();
+      bValue = String(bValue).toLowerCase();
+      
+      if (newDirection === 'asc') {
+        return aValue < bValue ? -1 : aValue > bValue ? 1 : 0;
+      } else {
+        return aValue > bValue ? -1 : aValue < bValue ? 1 : 0;
+      }
+    });
+    
+    setSortedPersons(sorted);
+  };
+
+  const getSortIcon = (field: keyof Person) => {
+    if (sortField !== field) {
+      return <ChevronsUpDown className="w-4 h-4 opacity-50" />;
+    }
+    return sortDirection === 'asc' ? 
+      <ChevronUp className="w-4 h-4" /> : 
+      <ChevronDown className="w-4 h-4" />;
+  };
+
   if (persons.length === 0) {
     return (
       <div className="text-center py-12">
@@ -25,40 +66,94 @@ const PersonTable: React.FC<PersonTableProps> = ({ persons }) => {
             <th className="px-3 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider w-20 bg-muted sticky left-0 z-20 border-r border-border">
               Índice
             </th>
-            <th className="px-6 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider bg-muted">
-              Nombre
+            <th 
+              className="px-6 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider bg-muted cursor-pointer hover:bg-muted/80 select-none"
+              onClick={() => handleSort('nombre')}
+            >
+              <div className="flex items-center justify-between">
+                <span>Nombre</span>
+                {getSortIcon('nombre')}
+              </div>
             </th>
-            <th className="px-6 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider bg-muted">
-              CEX
+            <th 
+              className="px-6 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider bg-muted cursor-pointer hover:bg-muted/80 select-none"
+              onClick={() => handleSort('cex')}
+            >
+              <div className="flex items-center justify-between">
+                <span>CEX</span>
+                {getSortIcon('cex')}
+              </div>
             </th>
-            <th className="px-6 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider bg-muted">
-              Nº Pers.
+            <th 
+              className="px-6 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider bg-muted cursor-pointer hover:bg-muted/80 select-none"
+              onClick={() => handleSort('num_pers')}
+            >
+              <div className="flex items-center justify-between">
+                <span>Nº Pers.</span>
+                {getSortIcon('num_pers')}
+              </div>
             </th>
-            <th className="px-6 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider bg-muted">
-              Fecha Inc.
+            <th 
+              className="px-6 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider bg-muted cursor-pointer hover:bg-muted/80 select-none"
+              onClick={() => handleSort('fecha_incorporacion')}
+            >
+              <div className="flex items-center justify-between">
+                <span>Fecha Inc.</span>
+                {getSortIcon('fecha_incorporacion')}
+              </div>
             </th>
-            <th className="px-6 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider bg-muted">
-              Email
+            <th 
+              className="px-6 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider bg-muted cursor-pointer hover:bg-muted/80 select-none"
+              onClick={() => handleSort('mail_empresa')}
+            >
+              <div className="flex items-center justify-between">
+                <span>Email</span>
+                {getSortIcon('mail_empresa')}
+              </div>
             </th>
-            <th className="px-6 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider bg-muted">
-              Grupo
+            <th 
+              className="px-6 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider bg-muted cursor-pointer hover:bg-muted/80 select-none"
+              onClick={() => handleSort('grupo')}
+            >
+              <div className="flex items-center justify-between">
+                <span>Grupo</span>
+                {getSortIcon('grupo')}
+              </div>
             </th>
-            <th className="px-6 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider bg-muted">
-              Categoría
+            <th 
+              className="px-6 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider bg-muted cursor-pointer hover:bg-muted/80 select-none"
+              onClick={() => handleSort('categoria')}
+            >
+              <div className="flex items-center justify-between">
+                <span>Categoría</span>
+                {getSortIcon('categoria')}
+              </div>
             </th>
-            <th className="px-6 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider bg-muted">
-              Oficina
+            <th 
+              className="px-6 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider bg-muted cursor-pointer hover:bg-muted/80 select-none"
+              onClick={() => handleSort('oficina')}
+            >
+              <div className="flex items-center justify-between">
+                <span>Oficina</span>
+                {getSortIcon('oficina')}
+              </div>
             </th>
             <th className="px-6 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider bg-muted">
               Skills
             </th>
-            <th className="px-6 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider bg-muted">
-              Inglés
+            <th 
+              className="px-6 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider bg-muted cursor-pointer hover:bg-muted/80 select-none"
+              onClick={() => handleSort('nivel_ingles')}
+            >
+              <div className="flex items-center justify-between">
+                <span>Inglés</span>
+                {getSortIcon('nivel_ingles')}
+              </div>
             </th>
           </tr>
         </thead>
           <tbody className="bg-background divide-y divide-border">
-          {persons.map((person, index) => (
+          {sortedPersons.map((person, index) => (
             <tr key={person.id || index} className="hover:bg-muted/50 transition-colors duration-150">
               <td className="px-3 py-2 whitespace-nowrap text-xs text-muted-foreground font-mono bg-background sticky left-0 z-10 border-r border-border">
                 {index + 1}

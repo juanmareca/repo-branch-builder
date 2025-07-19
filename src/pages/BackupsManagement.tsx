@@ -23,7 +23,10 @@ import {
   ArrowLeft,
   Filter,
   Home,
-  LogOut
+  LogOut,
+  ChevronUp,
+  ChevronDown,
+  ChevronsUpDown
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
@@ -49,6 +52,8 @@ const BackupsManagement = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [typeFilter, setTypeFilter] = useState('all');
   const [selectedBackups, setSelectedBackups] = useState<string[]>([]);
+  const [sortField, setSortField] = useState<keyof Backup | null>(null);
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -93,8 +98,36 @@ const BackupsManagement = () => {
       filtered = filtered.filter(backup => backup.table_name === typeFilter);
     }
 
+    // Apply sorting
+    if (sortField) {
+      filtered.sort((a, b) => {
+        let aValue: any = a[sortField];
+        let bValue: any = b[sortField];
+        
+        // Handle date sorting
+        if (sortField === 'created_at') {
+          aValue = new Date(aValue).getTime();
+          bValue = new Date(bValue).getTime();
+        } else if (sortField === 'record_count') {
+          // Numeric sorting
+          aValue = Number(aValue);
+          bValue = Number(bValue);
+        } else {
+          // String sorting
+          aValue = String(aValue).toLowerCase();
+          bValue = String(bValue).toLowerCase();
+        }
+        
+        if (sortDirection === 'asc') {
+          return aValue < bValue ? -1 : aValue > bValue ? 1 : 0;
+        } else {
+          return aValue > bValue ? -1 : aValue < bValue ? 1 : 0;
+        }
+      });
+    }
+
     setFilteredBackups(filtered);
-  }, [backups, searchTerm, typeFilter]);
+  }, [backups, searchTerm, typeFilter, sortField, sortDirection]);
 
   const handleDownloadBackup = async (backup: Backup) => {
     try {
@@ -204,6 +237,24 @@ const BackupsManagement = () => {
       capacities: 'Capacidades'
     };
     return labels[tableName as keyof typeof labels] || tableName;
+  };
+
+  const handleSort = (field: keyof Backup) => {
+    if (sortField === field) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortDirection('asc');
+    }
+  };
+
+  const getSortIcon = (field: keyof Backup) => {
+    if (sortField !== field) {
+      return <ChevronsUpDown className="w-4 h-4 opacity-50" />;
+    }
+    return sortDirection === 'asc' ? 
+      <ChevronUp className="w-4 h-4" /> : 
+      <ChevronDown className="w-4 h-4" />;
   };
 
   if (loading) {
@@ -316,11 +367,51 @@ const BackupsManagement = () => {
                       }}
                     />
                   </TableHead>
-                  <TableHead className="py-2">ARCHIVO</TableHead>
-                  <TableHead className="py-2">TIPO</TableHead>
-                  <TableHead className="py-2">FECHA DE CREACIÓN</TableHead>
-                  <TableHead className="py-2">TAMAÑO</TableHead>
-                  <TableHead className="py-2">REGISTROS</TableHead>
+                  <TableHead 
+                    className="py-2 cursor-pointer hover:bg-muted/50 select-none"
+                    onClick={() => handleSort('file_name')}
+                  >
+                    <div className="flex items-center justify-between">
+                      <span>ARCHIVO</span>
+                      {getSortIcon('file_name')}
+                    </div>
+                  </TableHead>
+                  <TableHead 
+                    className="py-2 cursor-pointer hover:bg-muted/50 select-none"
+                    onClick={() => handleSort('table_name')}
+                  >
+                    <div className="flex items-center justify-between">
+                      <span>TIPO</span>
+                      {getSortIcon('table_name')}
+                    </div>
+                  </TableHead>
+                  <TableHead 
+                    className="py-2 cursor-pointer hover:bg-muted/50 select-none"
+                    onClick={() => handleSort('created_at')}
+                  >
+                    <div className="flex items-center justify-between">
+                      <span>FECHA DE CREACIÓN</span>
+                      {getSortIcon('created_at')}
+                    </div>
+                  </TableHead>
+                  <TableHead 
+                    className="py-2 cursor-pointer hover:bg-muted/50 select-none"
+                    onClick={() => handleSort('file_size')}
+                  >
+                    <div className="flex items-center justify-between">
+                      <span>TAMAÑO</span>
+                      {getSortIcon('file_size')}
+                    </div>
+                  </TableHead>
+                  <TableHead 
+                    className="py-2 cursor-pointer hover:bg-muted/50 select-none"
+                    onClick={() => handleSort('record_count')}
+                  >
+                    <div className="flex items-center justify-between">
+                      <span>REGISTROS</span>
+                      {getSortIcon('record_count')}
+                    </div>
+                  </TableHead>
                   <TableHead className="w-32 py-2">ACCIONES</TableHead>
                 </TableRow>
               </TableHeader>

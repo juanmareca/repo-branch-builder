@@ -94,6 +94,53 @@ All colors MUST be HSL.
   }
 }
 
+/* Table Column Resizing */
+.resizable-header {
+  position: relative;
+}
+
+.resizable-header::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  top: 0;
+  width: 4px;
+  height: 100%;
+  cursor: col-resize;
+  background: transparent;
+  user-select: none;
+}
+
+.resizable-header:hover::after {
+  background: rgba(59, 130, 246, 0.5);
+}
+
+/* Column resize handle */
+.resize-handle {
+  position: absolute;
+  right: 0;
+  top: 0;
+  width: 4px;
+  height: 100%;
+  cursor: col-resize;
+  background: transparent;
+  user-select: none;
+  z-index: 10;
+}
+
+.resize-handle:hover {
+  background: rgba(59, 130, 246, 0.5);
+}
+
+/* Table sorting indicators */
+.sortable-header {
+  transition: background-color 0.2s ease;
+}
+
+.sortable-header:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
 @layer base {
   * {
     @apply border-border;

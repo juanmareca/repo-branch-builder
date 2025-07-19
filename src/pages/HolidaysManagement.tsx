@@ -31,7 +31,10 @@ import {
   Save,
   RotateCcw,
   Home,
-  LogOut
+  LogOut,
+  ChevronUp,
+  ChevronDown,
+  ChevronsUpDown
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
@@ -94,6 +97,8 @@ const HolidaysManagement = () => {
   const [showColumns, setShowColumns] = useState(false);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [editingRow, setEditingRow] = useState<string | null>(null);
+  const [sortField, setSortField] = useState<keyof Holiday | null>(null);
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -164,8 +169,32 @@ const HolidaysManagement = () => {
       filtered = filtered.filter(holiday => originFilter.includes(holiday.origen));
     }
 
+    // Apply sorting
+    if (sortField) {
+      filtered.sort((a, b) => {
+        let aValue: any = a[sortField];
+        let bValue: any = b[sortField];
+        
+        // Handle date sorting
+        if (sortField === 'date') {
+          aValue = new Date(aValue).getTime();
+          bValue = new Date(bValue).getTime();
+        } else {
+          // Convert to string for comparison
+          aValue = String(aValue).toLowerCase();
+          bValue = String(bValue).toLowerCase();
+        }
+        
+        if (sortDirection === 'asc') {
+          return aValue < bValue ? -1 : aValue > bValue ? 1 : 0;
+        } else {
+          return aValue > bValue ? -1 : aValue < bValue ? 1 : 0;
+        }
+      });
+    }
+
     setFilteredHolidays(filtered);
-  }, [holidays, searchTerm, countryFilter, communityFilter, originFilter]);
+  }, [holidays, searchTerm, countryFilter, communityFilter, originFilter, sortField, sortDirection]);
 
   const handleAddHoliday = async () => {
     if (!formData.date || !formData.festivo || !formData.pais) {
@@ -281,6 +310,26 @@ const HolidaysManagement = () => {
 
   const getUniqueValues = (field: keyof Holiday) => {
     return [...new Set(holidays.map(holiday => holiday[field]))].sort();
+  };
+
+  const handleSort = (field: keyof Holiday) => {
+    if (sortField === field) {
+      // Si ya estamos ordenando por este campo, cambiar dirección
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      // Nuevo campo, empezar con ascendente
+      setSortField(field);
+      setSortDirection('asc');
+    }
+  };
+
+  const getSortIcon = (field: keyof Holiday) => {
+    if (sortField !== field) {
+      return <ChevronsUpDown className="w-4 h-4 opacity-50" />;
+    }
+    return sortDirection === 'asc' ? 
+      <ChevronUp className="w-4 h-4" /> : 
+      <ChevronDown className="w-4 h-4" />;
   };
 
   if (loading) {
@@ -635,11 +684,61 @@ const HolidaysManagement = () => {
               <TableHeader>
                 <TableRow>
                   <TableHead className="w-16 py-2">ÍNDICE</TableHead>
-                  {visibleColumns.fecha && <TableHead className="py-2">FECHA (DD/MM/YYYY)</TableHead>}
-                  {visibleColumns.festivo && <TableHead className="py-2">FESTIVO</TableHead>}
-                  {visibleColumns.pais && <TableHead className="py-2">PAÍS</TableHead>}
-                  {visibleColumns.comunidad_autonoma && <TableHead className="py-2">COMUNIDAD AUTÓNOMA</TableHead>}
-                  {visibleColumns.origen && <TableHead className="py-2">ORIGEN</TableHead>}
+                  {visibleColumns.fecha && (
+                    <TableHead 
+                      className="py-2 cursor-pointer hover:bg-muted/50 select-none"
+                      onClick={() => handleSort('date')}
+                    >
+                      <div className="flex items-center justify-between">
+                        <span>FECHA (DD/MM/YYYY)</span>
+                        {getSortIcon('date')}
+                      </div>
+                    </TableHead>
+                  )}
+                  {visibleColumns.festivo && (
+                    <TableHead 
+                      className="py-2 cursor-pointer hover:bg-muted/50 select-none"
+                      onClick={() => handleSort('festivo')}
+                    >
+                      <div className="flex items-center justify-between">
+                        <span>FESTIVO</span>
+                        {getSortIcon('festivo')}
+                      </div>
+                    </TableHead>
+                  )}
+                  {visibleColumns.pais && (
+                    <TableHead 
+                      className="py-2 cursor-pointer hover:bg-muted/50 select-none"
+                      onClick={() => handleSort('pais')}
+                    >
+                      <div className="flex items-center justify-between">
+                        <span>PAÍS</span>
+                        {getSortIcon('pais')}
+                      </div>
+                    </TableHead>
+                  )}
+                  {visibleColumns.comunidad_autonoma && (
+                    <TableHead 
+                      className="py-2 cursor-pointer hover:bg-muted/50 select-none"
+                      onClick={() => handleSort('comunidad_autonoma')}
+                    >
+                      <div className="flex items-center justify-between">
+                        <span>COMUNIDAD AUTÓNOMA</span>
+                        {getSortIcon('comunidad_autonoma')}
+                      </div>
+                    </TableHead>
+                  )}
+                  {visibleColumns.origen && (
+                    <TableHead 
+                      className="py-2 cursor-pointer hover:bg-muted/50 select-none"
+                      onClick={() => handleSort('origen')}
+                    >
+                      <div className="flex items-center justify-between">
+                        <span>ORIGEN</span>
+                        {getSortIcon('origen')}
+                      </div>
+                    </TableHead>
+                  )}
                   <TableHead className="w-24 py-2">ACCIONES</TableHead>
                 </TableRow>
               </TableHeader>
