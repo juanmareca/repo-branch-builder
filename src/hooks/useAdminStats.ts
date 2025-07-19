@@ -65,7 +65,8 @@ export const useAdminStats = () => {
         },
         () => {
           console.log('Holidays table changed, refreshing stats...');
-          fetchStats();
+          // Usar un pequeño delay para asegurar que la transacción se complete
+          setTimeout(() => fetchStats(), 100);
         }
       )
       .on(
