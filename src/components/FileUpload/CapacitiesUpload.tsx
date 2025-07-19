@@ -40,22 +40,52 @@ const CapacitiesUpload = ({ onUploadComplete }: CapacitiesUploadProps) => {
         try {
           console.log('=== INICIANDO PROCESAMIENTO DEL ARCHIVO ===');
           const data = new Uint8Array(e.target?.result as ArrayBuffer);
-          const workbook = XLSX.read(data, { type: 'array' });
+          console.log('Archivo leído, tamaño:', data.length, 'bytes');
+          
+          const workbook = XLSX.read(data, { 
+            type: 'array',
+            cellDates: true,
+            cellNF: false,
+            cellText: false
+          });
+          
+          console.log('Hojas disponibles:', workbook.SheetNames);
           const firstSheetName = workbook.SheetNames[0];
+          console.log('Usando hoja:', firstSheetName);
+          
           const worksheet = workbook.Sheets[firstSheetName];
-          const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+          
+          // Intentar diferentes métodos de lectura
+          const jsonData = XLSX.utils.sheet_to_json(worksheet, { 
+            header: 1,
+            defval: '',
+            blankrows: false,
+            range: undefined
+          });
           
           console.log('Total rows in Excel:', jsonData.length);
-          console.log('Primera fila (cabecera):', jsonData[0]);
-          console.log('Segunda fila (primer empleado):', jsonData[1]);
-          console.log('Tercera fila (segundo empleado):', jsonData[2]);
+          console.log('Primeras 5 filas completas:', jsonData.slice(0, 5));
+          
+          // También intentar con range específico
+          const range = XLSX.utils.decode_range(worksheet['!ref'] || 'A1');
+          console.log('Rango del Excel:', worksheet['!ref'], range);
           
           // Filtrado muy simple - solo verificar que no sean filas completamente vacías
           const dataRows = jsonData.slice(1).filter((row: any, index: number) => {
-            console.log(`Fila ${index + 2}:`, row);
-            const isEmpty = !row || row.length === 0 || row.every((cell: any) => !cell || cell === '');
-            console.log(`¿Está vacía?`, isEmpty);
-            return !isEmpty;
+            console.log(`Evaluando fila ${index + 2}:`, row);
+            
+            if (!row || !Array.isArray(row)) {
+              console.log(`Fila ${index + 2} no es array válido`);
+              return false;
+            }
+            
+            // Verificar que tenga al menos ID y nombre en las primeras 2 posiciones
+            const hasEmployeeData = row.length >= 2 && 
+              row[0] !== null && row[0] !== undefined && String(row[0]).trim() !== '' &&
+              row[1] !== null && row[1] !== undefined && String(row[1]).trim() !== '';
+            
+            console.log(`Fila ${index + 2} - ID: "${row[0]}", Nombre: "${row[1]}", ¿Válida?: ${hasEmployeeData}`);
+            return hasEmployeeData;
           });
           
           console.log('Filas válidas encontradas:', dataRows.length);
