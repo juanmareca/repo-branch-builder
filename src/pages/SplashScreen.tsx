@@ -5,6 +5,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Card } from '@/components/ui/card';
 import { Eye, EyeOff, User } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { cn } from '@/lib/utils';
 import techBackground from '@/assets/tech-background.jpg';
 
 interface SplashScreenProps {
@@ -146,21 +147,36 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ onLogin }) => {
             <Button
               variant={selectedRole === 'admin' ? 'default' : 'outline'}
               onClick={() => setSelectedRole('admin')}
-              className="text-xs py-2"
+              className={cn(
+                "text-xs py-2 transition-all duration-300",
+                selectedRole === 'admin' 
+                  ? "bg-gradient-to-r from-blue-500 to-purple-600 text-white border-0 shadow-lg" 
+                  : "bg-gray-800/60 border-gray-600 text-gray-300 hover:bg-gray-700 hover:text-white"
+              )}
             >
               Administrador
             </Button>
             <Button
               variant={selectedRole === 'squad_lead' ? 'default' : 'outline'}
               onClick={() => setSelectedRole('squad_lead')}
-              className="text-xs py-2"
+              className={cn(
+                "text-xs py-2 transition-all duration-300",
+                selectedRole === 'squad_lead' 
+                  ? "bg-gradient-to-r from-blue-500 to-purple-600 text-white border-0 shadow-lg" 
+                  : "bg-gray-800/60 border-gray-600 text-gray-300 hover:bg-gray-700 hover:text-white"
+              )}
             >
               Squad Lead
             </Button>
             <Button
               variant={selectedRole === 'operations' ? 'default' : 'outline'}
               onClick={() => setSelectedRole('operations')}
-              className="text-xs py-2"
+              className={cn(
+                "text-xs py-2 transition-all duration-300",
+                selectedRole === 'operations' 
+                  ? "bg-gradient-to-r from-blue-500 to-purple-600 text-white border-0 shadow-lg" 
+                  : "bg-gray-800/60 border-gray-600 text-gray-300 hover:bg-gray-700 hover:text-white"
+              )}
             >
               Operaciones
             </Button>
@@ -297,6 +313,18 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ onLogin }) => {
           {selectedRole === 'squad_lead' && (
             <p className="text-xs text-gray-300 text-center mt-4">
               Seleccione su nombre y use su número de empleado como contraseña
+            </p>
+          )}
+
+          {selectedRole === 'admin' && (
+            <p className="text-xs text-gray-300 text-center mt-4">
+              Use sus credenciales de administrador para acceder al sistema
+            </p>
+          )}
+
+          {selectedRole === 'operations' && (
+            <p className="text-xs text-gray-300 text-center mt-4">
+              Use sus credenciales de operaciones para acceder al sistema
             </p>
           )}
         </div>
