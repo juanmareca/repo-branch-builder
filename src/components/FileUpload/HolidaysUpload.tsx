@@ -38,6 +38,7 @@ const HolidaysUpload = () => {
   const [preserveManual, setPreserveManual] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [checkingManualRecords, setCheckingManualRecords] = useState(false);
+  const [hasManualRecords, setHasManualRecords] = useState(false);
   const { toast } = useToast();
 
   // Función para procesar el archivo Excel y contar registros
@@ -122,9 +123,10 @@ const HolidaysUpload = () => {
     setShowUploadDialog(false);
     
     // Verificar si existen registros manuales
-    const hasManualRecords = await checkForManualRecords();
+    const hasManualRecordsResult = await checkForManualRecords();
+    setHasManualRecords(hasManualRecordsResult);
     
-    if (hasManualRecords) {
+    if (hasManualRecordsResult) {
       setShowConflictDialog(true);
     } else {
       processUpload();
@@ -163,9 +165,17 @@ const HolidaysUpload = () => {
       setUploading(false);
       setSelectedFile(null);
       
+      // Construir mensaje dinámico según el contexto
+      let additionalMessage = '';
+      if (!preserveManual) {
+        additionalMessage = 'Todos los registros anteriores han sido eliminados.';
+      } else if (hasManualRecords && preserveManual) {
+        additionalMessage = 'Se preservaron los registros del Administrador.';
+      }
+      
       toast({
         title: "✅ Carga completada exitosamente",
-        description: `Se ha creado el backup automáticamente y se han cargado ${fileRecordsCount} registros. ${!preserveManual ? 'Todos los registros anteriores han sido eliminados.' : 'Se preservaron los registros del Administrador.'}`,
+        description: `Se ha creado el backup automáticamente y se han cargado ${fileRecordsCount} registros.${additionalMessage ? ' ' + additionalMessage : ''}`,
       });
     } catch (error) {
       setUploading(false);
