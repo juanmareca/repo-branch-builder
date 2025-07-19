@@ -128,9 +128,9 @@ const CapacitiesUpload = ({ onUploadComplete }: CapacitiesUploadProps) => {
           const worksheet = workbook.Sheets[firstSheetName];
           const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
           
-          // Obtener headers (primera fila)
-          const headers = jsonData[0] as any[];
-          const dataRows = jsonData.slice(1).filter((row: any) => 
+          // Obtener headers (segunda fila, ya que la primera puede ser título)
+          const headers = jsonData[1] as any[];
+          const dataRows = jsonData.slice(2).filter((row: any) => 
             row && row.length > 0 && row.some((cell: any) => cell !== null && cell !== undefined && cell !== '')
           );
           
