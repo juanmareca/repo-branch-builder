@@ -49,11 +49,15 @@ const CapacitiesUpload = ({ onUploadComplete }: CapacitiesUploadProps) => {
           
           // Contar filas con datos (excluyendo la primera fila que es cabecera)
           const dataRows = jsonData.slice(1).filter((row: any) => {
-            const hasData = row && row.length > 0 && row.some((cell: any) => cell !== null && cell !== undefined && cell !== '');
-            if (hasData) {
-              console.log('Valid row found:', row.slice(0, 5)); // Solo primeras 5 columnas para ver
+            // Verificar si la fila tiene al menos ID y nombre
+            const hasValidEmployeeData = row && row.length >= 2 && 
+              row[0] && String(row[0]).trim() !== '' && // ID empleado
+              row[1] && String(row[1]).trim() !== '';   // Nombre empleado
+            
+            if (hasValidEmployeeData) {
+              console.log('Valid employee row found:', row[0], row[1]);
             }
-            return hasData;
+            return hasValidEmployeeData;
           });
           const recordCount = dataRows.length;
           
@@ -142,9 +146,12 @@ const CapacitiesUpload = ({ onUploadComplete }: CapacitiesUploadProps) => {
           
           // Obtener headers (una sola fila de cabecera)
           const skillHeaders = jsonData[0] as any[];
-          const dataRows = jsonData.slice(1).filter((row: any) => 
-            row && row.length > 0 && row.some((cell: any) => cell !== null && cell !== undefined && cell !== '')
-          );
+          const dataRows = jsonData.slice(1).filter((row: any) => {
+            // Verificar si la fila tiene al menos ID y nombre
+            return row && row.length >= 2 && 
+              row[0] && String(row[0]).trim() !== '' && // ID empleado
+              row[1] && String(row[1]).trim() !== '';   // Nombre empleado
+          });
           
           // Función para obtener el bloque según la posición de la columna
           const getBlockName = (columnIndex: number): string => {
