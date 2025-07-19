@@ -44,8 +44,8 @@ const CapacitiesUpload = ({ onUploadComplete }: CapacitiesUploadProps) => {
           const worksheet = workbook.Sheets[firstSheetName];
           const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
           
-          // Contar filas con datos (excluyendo las 2 primeras filas que son headers)
-          const dataRows = jsonData.slice(2).filter((row: any) => row && row.length > 0 && row.some((cell: any) => cell !== null && cell !== undefined && cell !== ''));
+          // Contar filas con datos (excluyendo la primera fila que es cabecera)
+          const dataRows = jsonData.slice(1).filter((row: any) => row && row.length > 0 && row.some((cell: any) => cell !== null && cell !== undefined && cell !== ''));
           const recordCount = dataRows.length;
           
           resolve(Math.max(0, recordCount));
@@ -128,12 +128,20 @@ const CapacitiesUpload = ({ onUploadComplete }: CapacitiesUploadProps) => {
           const worksheet = workbook.Sheets[firstSheetName];
           const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
           
-          // Obtener headers (primera fila = bloques, segunda fila = capacidades específicas)
-          const blockHeaders = jsonData[0] as any[];
-          const skillHeaders = jsonData[1] as any[];
-          const dataRows = jsonData.slice(2).filter((row: any) => 
+          // Obtener headers (una sola fila de cabecera)
+          const skillHeaders = jsonData[0] as any[];
+          const dataRows = jsonData.slice(1).filter((row: any) => 
             row && row.length > 0 && row.some((cell: any) => cell !== null && cell !== undefined && cell !== '')
           );
+          
+          // Función para obtener el bloque según la posición de la columna
+          const getBlockName = (columnIndex: number): string => {
+            if (columnIndex >= 2 && columnIndex <= 17) return 'Módulo SAP';
+            if (columnIndex >= 18 && columnIndex <= 20) return 'Implantación SAP';
+            if (columnIndex >= 21 && columnIndex <= 26) return 'Idiomas';
+            if (columnIndex >= 27 && columnIndex <= 33) return 'Industrias';
+            return '';
+          };
           
           // Preparar datos para insertar
           const capacitiesToInsert = [];
@@ -144,20 +152,18 @@ const CapacitiesUpload = ({ onUploadComplete }: CapacitiesUploadProps) => {
             
             // Procesar cada capacidad (columnas 2 en adelante)
             for (let i = 2; i < skillHeaders.length; i++) {
-              const blockName = blockHeaders[i] || '';
               const skillName = skillHeaders[i] || '';
               const skillLevel = row[i];
+              const blockName = getBlockName(i);
               
               // Verificar que hay datos válidos
-              if (skillName && skillLevel && 
+              if (skillName && skillLevel && blockName &&
                   String(skillLevel).trim() !== '' && 
                   String(skillLevel).toLowerCase() !== 'nulo' && 
                   String(skillLevel).toLowerCase() !== 'null') {
                 
                 // Combinar bloque y capacidad para crear el nombre completo
-                const fullSkillName = blockName && blockName.trim() !== '' 
-                  ? `${blockName.trim()} - ${skillName.trim()}`
-                  : skillName.trim();
+                const fullSkillName = `${blockName} - ${skillName.trim()}`;
                 
                 capacitiesToInsert.push({
                   person_name: String(employeeName || '').trim(),
