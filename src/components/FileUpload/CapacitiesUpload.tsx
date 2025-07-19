@@ -38,6 +38,7 @@ const CapacitiesUpload = ({ onUploadComplete }: CapacitiesUploadProps) => {
       const reader = new FileReader();
       reader.onload = (e) => {
         try {
+          console.log('=== INICIANDO PROCESAMIENTO DEL ARCHIVO ===');
           const data = new Uint8Array(e.target?.result as ArrayBuffer);
           const workbook = XLSX.read(data, { type: 'array' });
           const firstSheetName = workbook.SheetNames[0];
@@ -45,25 +46,22 @@ const CapacitiesUpload = ({ onUploadComplete }: CapacitiesUploadProps) => {
           const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
           
           console.log('Total rows in Excel:', jsonData.length);
-          console.log('First 3 rows:', jsonData.slice(0, 3));
+          console.log('Primera fila (cabecera):', jsonData[0]);
+          console.log('Segunda fila (primer empleado):', jsonData[1]);
+          console.log('Tercera fila (segundo empleado):', jsonData[2]);
           
-          // Contar filas con datos (excluyendo la primera fila que es cabecera)
-          const dataRows = jsonData.slice(1).filter((row: any) => {
-            // Verificar si la fila tiene al menos ID y nombre
-            const hasValidEmployeeData = row && row.length >= 2 && 
-              row[0] && String(row[0]).trim() !== '' && // ID empleado
-              row[1] && String(row[1]).trim() !== '';   // Nombre empleado
-            
-            if (hasValidEmployeeData) {
-              console.log('Valid employee row found:', row[0], row[1]);
-            }
-            return hasValidEmployeeData;
+          // Filtrado muy simple - solo verificar que no sean filas completamente vacías
+          const dataRows = jsonData.slice(1).filter((row: any, index: number) => {
+            console.log(`Fila ${index + 2}:`, row);
+            const isEmpty = !row || row.length === 0 || row.every((cell: any) => !cell || cell === '');
+            console.log(`¿Está vacía?`, isEmpty);
+            return !isEmpty;
           });
-          const recordCount = dataRows.length;
           
-          console.log('Filtered data rows count:', recordCount);
+          console.log('Filas válidas encontradas:', dataRows.length);
+          console.log('=== FIN PROCESAMIENTO ARCHIVO ===');
           
-          resolve(Math.max(0, recordCount));
+          resolve(dataRows.length);
         } catch (error) {
           console.error('Error processing file:', error);
           reject(error);
