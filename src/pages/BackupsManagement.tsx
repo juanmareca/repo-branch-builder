@@ -21,12 +21,15 @@ import {
   Eye,
   Trash2,
   ArrowLeft,
-  Filter
+  Filter,
+  Home,
+  LogOut
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
+import { useNavigate } from 'react-router-dom';
 
 interface Backup {
   id: string;
@@ -47,6 +50,7 @@ const BackupsManagement = () => {
   const [typeFilter, setTypeFilter] = useState('all');
   const [selectedBackups, setSelectedBackups] = useState<string[]>([]);
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   const fetchBackups = async () => {
     try {
@@ -220,7 +224,7 @@ const BackupsManagement = () => {
         <div className="container mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <Button variant="ghost" size="sm" onClick={() => window.history.back()}>
+              <Button variant="ghost" size="sm" onClick={() => navigate('/')}>
                 <ArrowLeft className="h-4 w-4" />
               </Button>
               <div className="flex items-center gap-3">
@@ -233,10 +237,32 @@ const BackupsManagement = () => {
                 </div>
               </div>
             </div>
-            <Button onClick={fetchBackups} className="bg-blue-600 hover:bg-blue-700 text-white">
-              <RefreshCw className="h-4 w-4 mr-2" />
-              Actualizar
-            </Button>
+            <div className="flex items-center gap-3">
+              <Button onClick={fetchBackups} variant="outline">
+                <RefreshCw className="h-4 w-4 mr-2" />
+                Actualizar
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => navigate('/')}
+                className="flex items-center gap-2 hover:bg-blue-50 hover:text-blue-700 hover:border-blue-200"
+              >
+                <Home className="h-4 w-4" />
+                Panel de Administración
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => {
+                  window.location.href = '/';
+                }}
+                className="flex items-center gap-2 hover:bg-red-50 hover:text-red-700 hover:border-red-200"
+              >
+                <LogOut className="h-4 w-4" />
+                Salir
+              </Button>
+            </div>
           </div>
         </div>
       </div>
@@ -278,7 +304,7 @@ const BackupsManagement = () => {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="w-12">
+                  <TableHead className="w-12 py-2">
                     <Checkbox
                       checked={selectedBackups.length === filteredBackups.length}
                       onCheckedChange={(checked) => {
@@ -290,24 +316,24 @@ const BackupsManagement = () => {
                       }}
                     />
                   </TableHead>
-                  <TableHead>ARCHIVO</TableHead>
-                  <TableHead>TIPO</TableHead>
-                  <TableHead>FECHA DE CREACIÓN</TableHead>
-                  <TableHead>TAMAÑO</TableHead>
-                  <TableHead>REGISTROS</TableHead>
-                  <TableHead className="w-32">ACCIONES</TableHead>
+                  <TableHead className="py-2">ARCHIVO</TableHead>
+                  <TableHead className="py-2">TIPO</TableHead>
+                  <TableHead className="py-2">FECHA DE CREACIÓN</TableHead>
+                  <TableHead className="py-2">TAMAÑO</TableHead>
+                  <TableHead className="py-2">REGISTROS</TableHead>
+                  <TableHead className="w-32 py-2">ACCIONES</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredBackups.map((backup) => (
                   <TableRow key={backup.id}>
-                    <TableCell>
+                    <TableCell className="py-2">
                       <Checkbox
                         checked={selectedBackups.includes(backup.id)}
                         onCheckedChange={() => toggleBackupSelection(backup.id)}
                       />
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="py-2">
                       <div className="flex items-center gap-2">
                         <Database className="h-4 w-4 text-gray-500" />
                         <div>
@@ -318,19 +344,19 @@ const BackupsManagement = () => {
                         </div>
                       </div>
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="py-2">
                       <Badge className={cn("text-xs", getTypeColor(backup.table_name))}>
                         📁 {getTypeLabel(backup.table_name)}
                       </Badge>
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="py-2">
                       <div className="flex items-center gap-1">
                         📅 {format(new Date(backup.created_at), 'dd/MM/yyyy, HH:mm')}
                       </div>
                     </TableCell>
-                    <TableCell>{backup.file_size}</TableCell>
-                    <TableCell className="font-mono">{backup.record_count}</TableCell>
-                    <TableCell>
+                    <TableCell className="py-2">{backup.file_size}</TableCell>
+                    <TableCell className="font-mono py-2">{backup.record_count}</TableCell>
+                    <TableCell className="py-2">
                       <div className="flex items-center gap-1">
                         <Button
                           variant="ghost"

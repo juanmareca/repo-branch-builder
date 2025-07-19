@@ -19,12 +19,15 @@ import {
   Clock,
   Edit,
   Plus,
-  Info
+  Info,
+  Home,
+  LogOut
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useNavigate } from 'react-router-dom';
 
 interface AuditLog {
   id: string;
@@ -51,6 +54,7 @@ const AuditLogs = () => {
   const [dateTo, setDateTo] = useState<Date | undefined>();
   const [expandedLogs, setExpandedLogs] = useState<string[]>([]);
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   const fetchAuditLogs = async () => {
     try {
@@ -216,7 +220,7 @@ const AuditLogs = () => {
         <div className="container mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <Button variant="ghost" size="sm" onClick={() => window.history.back()}>
+              <Button variant="ghost" size="sm" onClick={() => navigate('/')}>
                 <ArrowLeft className="h-4 w-4" />
               </Button>
               <div className="flex items-center gap-3">
@@ -229,14 +233,34 @@ const AuditLogs = () => {
                 </div>
               </div>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3">
               <Button onClick={fetchAuditLogs} variant="outline">
                 <RefreshCw className="h-4 w-4 mr-2" />
                 Actualizar
               </Button>
-              <Button onClick={exportToExcel} className="bg-green-600 hover:bg-green-700 text-white">
+              <Button onClick={exportToExcel} variant="outline">
                 <Download className="h-4 w-4 mr-2" />
                 Exportar Excel
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => navigate('/')}
+                className="flex items-center gap-2 hover:bg-blue-50 hover:text-blue-700 hover:border-blue-200"
+              >
+                <Home className="h-4 w-4" />
+                Panel de Administración
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => {
+                  window.location.href = '/';
+                }}
+                className="flex items-center gap-2 hover:bg-red-50 hover:text-red-700 hover:border-red-200"
+              >
+                <LogOut className="h-4 w-4" />
+                Salir
               </Button>
             </div>
           </div>
