@@ -146,11 +146,15 @@ const CapacitiesUpload = ({ onUploadComplete }: CapacitiesUploadProps) => {
               const skillName = headers[i];
               const skillLevel = row[i];
               
-              if (skillName && skillLevel && skillLevel !== 'Nulo' && skillLevel !== '') {
+              // Verificar que hay datos válidos
+              if (skillName && skillLevel && 
+                  String(skillLevel).trim() !== '' && 
+                  String(skillLevel).toLowerCase() !== 'nulo' && 
+                  String(skillLevel).toLowerCase() !== 'null') {
                 capacitiesToInsert.push({
-                  person_name: employeeName || '',
-                  skill: skillName || '',
-                  level: skillLevel || '',
+                  person_name: String(employeeName || '').trim(),
+                  skill: String(skillName || '').trim(),
+                  level: String(skillLevel || '').trim(),
                   certification: '',
                   comments: '',
                   evaluation_date: null
