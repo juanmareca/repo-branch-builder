@@ -120,7 +120,7 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ onLogin }) => {
       }}
     >
       {/* Dark overlay for better readability */}
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-[2px]"></div>
+      <div className="absolute inset-0 bg-black/80 backdrop-blur-[2px]"></div>
       
       {/* Animated background decorations */}
       <div className="absolute inset-0 overflow-hidden">
@@ -129,15 +129,15 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ onLogin }) => {
         <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-cyan-500/5 rounded-full blur-3xl animate-pulse delay-500"></div>
       </div>
 
-      <Card className="w-full max-w-md p-8 bg-card/90 backdrop-blur-md border-border/30 shadow-2xl relative z-10 animate-fade-in">
+      <Card className="w-full max-w-md p-8 bg-gray-900/95 backdrop-blur-md border-gray-700/50 shadow-2xl relative z-10 animate-fade-in">
         {/* Header with glow effect */}
         <div className="text-center mb-8">
           <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-400 via-purple-500 to-cyan-400 bg-clip-text text-transparent mb-2 drop-shadow-lg">
             Stratesys
           </h1>
           <div className="w-16 h-0.5 bg-gradient-to-r from-blue-400 to-purple-500 mx-auto mb-3"></div>
-          <p className="text-gray-300 text-sm mb-1 font-medium">Sistema de Gestión de Recursos</p>
-          <p className="text-gray-400 text-xs">STAFFING CC05 - Finanzas</p>
+          <p className="text-white text-sm mb-1 font-medium">Sistema de Gestión de Recursos</p>
+          <p className="text-gray-300 text-xs">STAFFING CC05 - Finanzas</p>
         </div>
 
         {/* Role Selection */}
@@ -172,32 +172,32 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ onLogin }) => {
           {selectedRole === 'admin' && (
             <>
               <div>
-                <label className="text-sm font-medium text-gray-200">Usuario:</label>
+                <label className="text-sm font-medium text-white">Usuario:</label>
                 <div className="relative mt-1">
-                  <User className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                  <User className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-300" />
                   <Input
                     type="text"
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
                     placeholder="Ingrese usuario"
-                    className="pl-10 bg-black/20 border-gray-600 text-white placeholder:text-gray-400 focus:border-blue-400 focus:ring-blue-400/20"
+                    className="pl-10 bg-gray-800/80 border-gray-600 text-white placeholder:text-gray-300 focus:border-blue-400 focus:ring-blue-400/20 focus:bg-gray-800"
                   />
                 </div>
               </div>
               <div>
-                <label className="text-sm font-medium text-gray-200">Contraseña:</label>
+                <label className="text-sm font-medium text-white">Contraseña:</label>
                 <div className="relative mt-1">
                   <Input
                     type={showPassword ? 'text' : 'password'}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="Ingrese contraseña"
-                    className="pr-10 bg-black/20 border-gray-600 text-white placeholder:text-gray-400 focus:border-blue-400 focus:ring-blue-400/20"
+                    className="pr-10 bg-gray-800/80 border-gray-600 text-white placeholder:text-gray-300 focus:border-blue-400 focus:ring-blue-400/20 focus:bg-gray-800"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-200 transition-colors"
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-300 hover:text-white transition-colors"
                   >
                     {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
@@ -209,20 +209,20 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ onLogin }) => {
           {selectedRole === 'squad_lead' && (
             <>
               <div>
-                <label className="text-sm font-medium text-gray-200">Squad Lead:</label>
+                <label className="text-sm font-medium text-white">Squad Lead:</label>
                 <Select value={selectedSquadLead} onValueChange={setSelectedSquadLead}>
-                  <SelectTrigger className="mt-1 bg-black/20 border-gray-600 text-white focus:border-blue-400 focus:ring-blue-400/20">
+                  <SelectTrigger className="mt-1 bg-gray-800/80 border-gray-600 text-white focus:border-blue-400 focus:ring-blue-400/20">
                     <div className="flex items-center gap-2">
-                      <User className="h-4 w-4 text-gray-400" />
-                      <SelectValue placeholder="Seleccionar Squad Lead" className="text-gray-400" />
+                      <User className="h-4 w-4 text-gray-300" />
+                      <SelectValue placeholder="Seleccionar Squad Lead" className="text-gray-300" />
                     </div>
                   </SelectTrigger>
-                  <SelectContent className="bg-gray-900 border-gray-700 text-white">
+                  <SelectContent className="bg-gray-800 border-gray-600 text-white max-h-48">
                     {squadLeads.map((lead) => (
                       <SelectItem 
                         key={lead.code} 
                         value={lead.name}
-                        className="text-white hover:bg-gray-800 focus:bg-gray-800"
+                        className="text-white hover:bg-gray-700 focus:bg-gray-700"
                       >
                         {lead.name}
                       </SelectItem>
@@ -231,14 +231,14 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ onLogin }) => {
                 </Select>
               </div>
               <div>
-                <label className="text-sm font-medium text-gray-200">Número de Empleado:</label>
+                <label className="text-sm font-medium text-white">Número de Empleado:</label>
                 <div className="relative mt-1">
                   <Input
                     type="text"
                     value={employeeCode}
                     onChange={(e) => setEmployeeCode(e.target.value)}
                     placeholder="Ingrese número de empleado"
-                    className="bg-black/20 border-gray-600 text-white placeholder:text-gray-400 focus:border-blue-400 focus:ring-blue-400/20"
+                    className="bg-gray-800/80 border-gray-600 text-white placeholder:text-gray-300 focus:border-blue-400 focus:ring-blue-400/20 focus:bg-gray-800"
                   />
                 </div>
               </div>
@@ -248,32 +248,32 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ onLogin }) => {
           {selectedRole === 'operations' && (
             <>
               <div>
-                <label className="text-sm font-medium text-gray-200">Usuario:</label>
+                <label className="text-sm font-medium text-white">Usuario:</label>
                 <div className="relative mt-1">
-                  <User className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                  <User className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-300" />
                   <Input
                     type="text"
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
                     placeholder="Ingrese usuario"
-                    className="pl-10 bg-black/20 border-gray-600 text-white placeholder:text-gray-400 focus:border-blue-400 focus:ring-blue-400/20"
+                    className="pl-10 bg-gray-800/80 border-gray-600 text-white placeholder:text-gray-300 focus:border-blue-400 focus:ring-blue-400/20 focus:bg-gray-800"
                   />
                 </div>
               </div>
               <div>
-                <label className="text-sm font-medium text-gray-200">Contraseña:</label>
+                <label className="text-sm font-medium text-white">Contraseña:</label>
                 <div className="relative mt-1">
                   <Input
                     type={showPassword ? 'text' : 'password'}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="Ingrese contraseña"
-                    className="pr-10 bg-black/20 border-gray-600 text-white placeholder:text-gray-400 focus:border-blue-400 focus:ring-blue-400/20"
+                    className="pr-10 bg-gray-800/80 border-gray-600 text-white placeholder:text-gray-300 focus:border-blue-400 focus:ring-blue-400/20 focus:bg-gray-800"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-200 transition-colors"
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-300 hover:text-white transition-colors"
                   >
                     {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
@@ -295,7 +295,7 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ onLogin }) => {
           </Button>
 
           {selectedRole === 'squad_lead' && (
-            <p className="text-xs text-gray-400 text-center mt-4">
+            <p className="text-xs text-gray-300 text-center mt-4">
               Seleccione su nombre y use su número de empleado como contraseña
             </p>
           )}
@@ -304,7 +304,7 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ onLogin }) => {
         {/* Footer with tech styling */}
         <div className="text-center mt-8">
           <div className="w-12 h-0.5 bg-gradient-to-r from-transparent via-blue-400 to-transparent mx-auto mb-3"></div>
-          <p className="text-xs text-gray-400">
+          <p className="text-xs text-gray-300">
             Versión 2.0 • <span className="text-blue-400">Tecnología de Vanguardia</span>
           </p>
         </div>
