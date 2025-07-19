@@ -50,10 +50,43 @@ const CapacitiesUpload = ({ onUploadComplete }: CapacitiesUploadProps) => {
           });
           
           console.log('Hojas disponibles:', workbook.SheetNames);
-          const firstSheetName = workbook.SheetNames[0];
-          console.log('Usando hoja:', firstSheetName);
           
-          const worksheet = workbook.Sheets[firstSheetName];
+          // Buscar la hoja correcta (probablemente 'PERSONAL' o similar)
+          let targetSheet = null;
+          let targetSheetName = '';
+          
+          // Priorizar hojas que podrían contener datos de personal/capacidades
+          const possibleSheets = ['PERSONAL', 'CAPACIDADES', 'PERSONAS', 'EMPLEADOS', 'STAFF'];
+          
+          for (const sheetName of possibleSheets) {
+            if (workbook.SheetNames.includes(sheetName)) {
+              targetSheetName = sheetName;
+              targetSheet = workbook.Sheets[sheetName];
+              break;
+            }
+          }
+          
+          // Si no encuentra hojas específicas, buscar la primera hoja con datos
+          if (!targetSheet) {
+            for (const sheetName of workbook.SheetNames) {
+              const sheet = workbook.Sheets[sheetName];
+              const testData = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '', blankrows: false });
+              
+              if (testData.length > 1) { // Al menos header + 1 fila de datos
+                targetSheetName = sheetName;
+                targetSheet = sheet;
+                console.log(`Encontrada hoja con datos: ${sheetName} (${testData.length} filas)`);
+                break;
+              }
+            }
+          }
+          
+          if (!targetSheet) {
+            throw new Error('No se encontró ninguna hoja con datos en el archivo Excel');
+          }
+          
+          console.log('Usando hoja:', targetSheetName);
+          const worksheet = targetSheet;
           
           // Intentar diferentes métodos de lectura
           const jsonData = XLSX.utils.sheet_to_json(worksheet, { 
@@ -168,8 +201,39 @@ const CapacitiesUpload = ({ onUploadComplete }: CapacitiesUploadProps) => {
         try {
           const data = new Uint8Array(e.target?.result as ArrayBuffer);
           const workbook = XLSX.read(data, { type: 'array' });
-          const firstSheetName = workbook.SheetNames[0];
-          const worksheet = workbook.Sheets[firstSheetName];
+          
+          // Buscar la hoja correcta usando la misma lógica
+          let targetSheet = null;
+          let targetSheetName = '';
+          
+          const possibleSheets = ['PERSONAL', 'CAPACIDADES', 'PERSONAS', 'EMPLEADOS', 'STAFF'];
+          
+          for (const sheetName of possibleSheets) {
+            if (workbook.SheetNames.includes(sheetName)) {
+              targetSheetName = sheetName;
+              targetSheet = workbook.Sheets[sheetName];
+              break;
+            }
+          }
+          
+          if (!targetSheet) {
+            for (const sheetName of workbook.SheetNames) {
+              const sheet = workbook.Sheets[sheetName];
+              const testData = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '', blankrows: false });
+              
+              if (testData.length > 1) {
+                targetSheetName = sheetName;
+                targetSheet = sheet;
+                break;
+              }
+            }
+          }
+          
+          if (!targetSheet) {
+            throw new Error('No se encontró ninguna hoja con datos válidos');
+          }
+          
+          const worksheet = targetSheet;
           const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
           
           // Obtener headers (una sola fila de cabecera)
