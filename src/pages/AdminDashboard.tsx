@@ -115,7 +115,7 @@ const AdminDashboard = () => {
           </Card>
 
           {/* Festivos */}
-          <Card className="hover:shadow-lg transition-shadow cursor-pointer group">
+          <Card className="hover:shadow-lg transition-shadow cursor-pointer group" onClick={() => window.location.href = '/holidays'}>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">FESTIVOS</CardTitle>
               <Calendar className="h-5 w-5 text-orange-600 group-hover:scale-110 transition-transform" />

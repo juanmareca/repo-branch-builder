@@ -9,6 +9,7 @@ import NotFound from "./pages/NotFound";
 import SplashScreen from "./pages/SplashScreen";
 import LoadingScreen from "./pages/LoadingScreen";
 import AdminDashboard from "./pages/AdminDashboard";
+import HolidaysManagement from "./pages/HolidaysManagement";
 
 const queryClient = new QueryClient();
 
@@ -67,6 +68,7 @@ const App = () => {
         <BrowserRouter>
           <Routes>
             <Route path="/" element={userRole === 'admin' ? <AdminDashboard /> : <Index />} />
+            <Route path="/holidays" element={<HolidaysManagement />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
