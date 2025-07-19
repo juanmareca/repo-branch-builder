@@ -134,7 +134,7 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ onLogin }) => {
         {/* Header with corporate logo styling */}
         <div className="text-center mb-8">
           <h1 className="text-4xl font-light tracking-wide text-white mb-3 font-sans" style={{ letterSpacing: '2px' }}>
-            stratesys
+            Stratesys
           </h1>
           <div className="w-16 h-0.5 bg-gradient-to-r from-blue-400 to-purple-500 mx-auto mb-3"></div>
           <p className="text-white text-sm mb-1 font-medium">Sistema de Gestión de Recursos</p>
