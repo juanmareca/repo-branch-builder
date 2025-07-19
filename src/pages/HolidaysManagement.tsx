@@ -634,13 +634,13 @@ const HolidaysManagement = () => {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="w-16">ÍNDICE</TableHead>
-                  {visibleColumns.fecha && <TableHead>FECHA (DD/MM/YYYY)</TableHead>}
-                  {visibleColumns.festivo && <TableHead>FESTIVO</TableHead>}
-                  {visibleColumns.pais && <TableHead>PAÍS</TableHead>}
-                  {visibleColumns.comunidad_autonoma && <TableHead>COMUNIDAD AUTÓNOMA</TableHead>}
-                  {visibleColumns.origen && <TableHead>ORIGEN</TableHead>}
-                  <TableHead className="w-24">ACCIONES</TableHead>
+                  <TableHead className="w-16 py-2">ÍNDICE</TableHead>
+                  {visibleColumns.fecha && <TableHead className="py-2">FECHA (DD/MM/YYYY)</TableHead>}
+                  {visibleColumns.festivo && <TableHead className="py-2">FESTIVO</TableHead>}
+                  {visibleColumns.pais && <TableHead className="py-2">PAÍS</TableHead>}
+                  {visibleColumns.comunidad_autonoma && <TableHead className="py-2">COMUNIDAD AUTÓNOMA</TableHead>}
+                  {visibleColumns.origen && <TableHead className="py-2">ORIGEN</TableHead>}
+                  <TableHead className="w-24 py-2">ACCIONES</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -651,9 +651,9 @@ const HolidaysManagement = () => {
                       holiday.origen === 'Administrador' && "bg-red-50 hover:bg-red-100"
                     )}
                   >
-                    <TableCell className="font-medium">{index + 1}</TableCell>
+                    <TableCell className="font-medium py-2">{index + 1}</TableCell>
                     {visibleColumns.fecha && (
-                      <TableCell>
+                      <TableCell className="py-2">
                         {editingRow === holiday.id ? (
                           <Input
                             type="date"
@@ -667,7 +667,7 @@ const HolidaysManagement = () => {
                       </TableCell>
                     )}
                     {visibleColumns.festivo && (
-                      <TableCell>
+                      <TableCell className="py-2">
                         {editingRow === holiday.id ? (
                           <Input
                             defaultValue={holiday.festivo}
@@ -678,10 +678,10 @@ const HolidaysManagement = () => {
                         )}
                       </TableCell>
                     )}
-                    {visibleColumns.pais && <TableCell>{holiday.pais}</TableCell>}
-                    {visibleColumns.comunidad_autonoma && <TableCell>{holiday.comunidad_autonoma}</TableCell>}
+                    {visibleColumns.pais && <TableCell className="py-2">{holiday.pais}</TableCell>}
+                    {visibleColumns.comunidad_autonoma && <TableCell className="py-2">{holiday.comunidad_autonoma}</TableCell>}
                     {visibleColumns.origen && (
-                      <TableCell>
+                      <TableCell className="py-2">
                         <Badge 
                           variant="outline" 
                           className={cn(
@@ -692,7 +692,7 @@ const HolidaysManagement = () => {
                         </Badge>
                       </TableCell>
                     )}
-                    <TableCell>
+                    <TableCell className="py-2">
                       <div className="flex items-center gap-1">
                         <Button
                           variant="ghost"
