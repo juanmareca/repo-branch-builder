@@ -155,28 +155,96 @@ const HolidaysUpload = () => {
         }
       }
 
-      // Simular procesamiento del archivo Excel
-      // En una implementación real, aquí se procesaría el archivo Excel
-      // y se insertarían los nuevos registros
+      // Leer y procesar el archivo Excel
+      const reader = new FileReader();
+      reader.onload = async (e) => {
+        try {
+          const data = new Uint8Array(e.target?.result as ArrayBuffer);
+          const workbook = XLSX.read(data, { type: 'array' });
+          const firstSheetName = workbook.SheetNames[0];
+          const worksheet = workbook.Sheets[firstSheetName];
+          const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+          
+          // Filtrar filas vacías y omitir header
+          const dataRows = jsonData.slice(1).filter((row: any) => 
+            row && row.length > 0 && row.some((cell: any) => cell !== null && cell !== undefined && cell !== '')
+          );
+          
+          // Preparar datos para insertar
+          const holidaysToInsert = dataRows.map((row: any) => {
+            const [fecha, festivo, pais, comunidadAutonoma] = row;
+            
+            // Convertir fecha al formato correcto
+            let formattedDate;
+            if (typeof fecha === 'number') {
+              // Es una fecha de Excel (número serial)
+              const date = new Date((fecha - 25569) * 86400 * 1000);
+              formattedDate = date.toISOString().split('T')[0];
+            } else if (typeof fecha === 'string') {
+              // Es una fecha en formato string, intentar parsearlo
+              const dateParts = fecha.split('/');
+              if (dateParts.length === 3) {
+                const [day, month, year] = dateParts;
+                formattedDate = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+              }
+            }
+            
+            return {
+              date: formattedDate,
+              festivo: festivo || '',
+              pais: pais || '',
+              comunidad_autonoma: comunidadAutonoma || '',
+              origen: 'Fichero'
+            };
+          }).filter(holiday => holiday.date); // Solo incluir registros con fecha válida
+          
+          // Insertar en Supabase
+          const { error: insertError } = await supabase
+            .from('holidays')
+            .insert(holidaysToInsert);
+          
+          if (insertError) {
+            console.error('Error inserting holidays:', insertError);
+            throw new Error('Error al insertar los festivos en la base de datos');
+          }
+          
+          setUploading(false);
+          setSelectedFile(null);
+          
+          // Construir mensaje dinámico según el contexto
+          let additionalMessage = '';
+          if (!preserveManual) {
+            additionalMessage = 'Todos los registros anteriores han sido eliminados.';
+          } else if (hasManualRecords && preserveManual) {
+            additionalMessage = 'Se preservaron los registros del Administrador.';
+          }
+          
+          toast({
+            title: "✅ Carga completada exitosamente",
+            description: `Se ha creado el backup automáticamente y se han cargado ${holidaysToInsert.length} registros.${additionalMessage ? ' ' + additionalMessage : ''}`,
+          });
+          
+        } catch (error) {
+          setUploading(false);
+          console.error('Error processing file:', error);
+          toast({
+            title: "❌ Error en la carga",
+            description: error instanceof Error ? error.message : 'Error al procesar el archivo Excel',
+            variant: "destructive",
+          });
+        }
+      };
       
-      // Simular proceso de carga
-      await new Promise(resolve => setTimeout(resolve, 3000));
+      reader.onerror = () => {
+        setUploading(false);
+        toast({
+          title: "❌ Error en la carga",
+          description: 'Error al leer el archivo',
+          variant: "destructive",
+        });
+      };
       
-      setUploading(false);
-      setSelectedFile(null);
-      
-      // Construir mensaje dinámico según el contexto
-      let additionalMessage = '';
-      if (!preserveManual) {
-        additionalMessage = 'Todos los registros anteriores han sido eliminados.';
-      } else if (hasManualRecords && preserveManual) {
-        additionalMessage = 'Se preservaron los registros del Administrador.';
-      }
-      
-      toast({
-        title: "✅ Carga completada exitosamente",
-        description: `Se ha creado el backup automáticamente y se han cargado ${fileRecordsCount} registros.${additionalMessage ? ' ' + additionalMessage : ''}`,
-      });
+      reader.readAsArrayBuffer(selectedFile);
     } catch (error) {
       setUploading(false);
       toast({
