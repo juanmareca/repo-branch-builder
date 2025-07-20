@@ -122,10 +122,11 @@ const ProjectsManagement = () => {
         console.log(`📊 Total de proyectos en la base de datos: ${count}`);
       }
 
-      // Luego obtener todos los proyectos sin límite
+      // Obtener todos los proyectos sin límite usando range
       const { data, error } = await supabase
         .from('projects')
         .select('*')
+        .range(0, 4999) // Rango amplio para obtener hasta 5000 registros
         .order('created_at', { ascending: false });
 
       if (error) throw error;
