@@ -1,14 +1,21 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { format } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Slider } from '@/components/ui/slider';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Label } from '@/components/ui/label';
-import { Calendar } from '@/components/ui/calendar';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Checkbox } from '@/components/ui/checkbox';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
 import { 
   Table, 
   TableBody, 
@@ -27,7 +34,6 @@ import {
   X,
   Edit,
   Trash2,
-  ArrowLeft,
   Save,
   RotateCcw,
   Home,
@@ -39,13 +45,15 @@ import {
   ChevronRight,
   ChevronsLeft,
   ChevronsRight,
-  GripVertical
+  Type,
+  GripVertical,
+  ArrowLeft
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { format } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
+import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
 import HolidaysUpload from '@/components/FileUpload/HolidaysUpload';
 import * as XLSX from 'xlsx';
 
@@ -106,31 +114,35 @@ const HolidaysManagement = () => {
   const [filteredHolidays, setFilteredHolidays] = useState<Holiday[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  
+  // Filters
   const [countryFilter, setCountryFilter] = useState<string[]>([]);
   const [communityFilter, setCommunityFilter] = useState<string[]>([]);
   const [originFilter, setOriginFilter] = useState<string[]>([]);
-  const [showFilters, setShowFilters] = useState(false);
-  const [showColumns, setShowColumns] = useState(false);
-  const [showUpload, setShowUpload] = useState(false);
-  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-  const [editingRow, setEditingRow] = useState<string | null>(null);
-  const [sortField, setSortField] = useState<keyof Holiday | null>(null);
+  const [festivoFilter, setFestivoFilter] = useState<string[]>([]);
+  
+  // Sorting
+  const [sortField, setSortField] = useState<keyof Holiday>('date');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
   
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(50);
   
-  // Column management
-  const [columns, setColumns] = useState<ColumnConfig[]>([
-    { key: 'date', label: 'Fecha', visible: true, width: 150, minWidth: 120, resizable: true },
-    { key: 'festivo', label: 'Festivo', visible: true, width: 250, minWidth: 200, resizable: true },
-    { key: 'pais', label: 'País / Comunidad', visible: true, width: 200, minWidth: 160, resizable: true },
-    { key: 'origen', label: 'Origen', visible: true, width: 120, minWidth: 100, resizable: true }
-  ]);
+  // UI states
+  const [showFilters, setShowFilters] = useState(false);
+  const [showColumns, setShowColumns] = useState(false);
+  const [showUpload, setShowUpload] = useState(false);
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [isDefaultViewSaved, setIsDefaultViewSaved] = useState(false);
   
-  const [resizing, setResizing] = useState<{ columnKey: keyof Holiday; startX: number; startWidth: number } | null>(null);
-  const [draggedColumn, setDraggedColumn] = useState<keyof Holiday | null>(null);
+  // Font size control
+  const [fontSize, setFontSize] = useState(12);
+  
+  // Column resizing
+  const [resizingColumn, setResizingColumn] = useState<string | null>(null);
+  const [startX, setStartX] = useState(0);
+  const [startWidth, setStartWidth] = useState(0);
   
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -143,6 +155,50 @@ const HolidaysManagement = () => {
     comunidad_autonoma: '',
     origen: 'Administrador'
   });
+
+  // Column management with persistence
+  const getInitialColumns = (): ColumnConfig[] => {
+    const savedColumns = localStorage.getItem('holidays-columns-config');
+    if (savedColumns) {
+      try {
+        const parsed = JSON.parse(savedColumns);
+        // Filter out any obsolete columns
+        const validKeys: (keyof Holiday)[] = ['date', 'festivo', 'pais', 'origen'];
+        return parsed.filter((col: ColumnConfig) => validKeys.includes(col.key));
+      } catch (error) {
+        console.error('Error parsing saved columns config:', error);
+      }
+    }
+    // Default configuration
+    return [
+      { key: 'date', label: 'FECHA', visible: true, width: 150, minWidth: 120, resizable: true },
+      { key: 'festivo', label: 'FESTIVO', visible: true, width: 250, minWidth: 200, resizable: true },
+      { key: 'pais', label: 'PAÍS / COMUNIDAD', visible: true, width: 200, minWidth: 160, resizable: true },
+      { key: 'origen', label: 'ORIGEN', visible: false, width: 120, minWidth: 100, resizable: true }
+    ];
+  };
+
+  const [columns, setColumns] = useState<ColumnConfig[]>(getInitialColumns());
+  const [resizing, setResizing] = useState<{ columnKey: keyof Holiday; startX: number; startWidth: number } | null>(null);
+  const [draggedColumn, setDraggedColumn] = useState<keyof Holiday | null>(null);
+  const [editingRow, setEditingRow] = useState<string | null>(null);
+
+  // Save columns configuration to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem('holidays-columns-config', JSON.stringify(columns));
+  }, [columns]);
+
+  // Clean up obsolete columns configuration on component mount
+  useEffect(() => {
+    const validKeys: (keyof Holiday)[] = ['date', 'festivo', 'pais', 'origen'];
+    const hasObsoleteColumns = columns.some(col => !validKeys.includes(col.key));
+    
+    if (hasObsoleteColumns) {
+      const cleanedColumns = columns.filter(col => validKeys.includes(col.key));
+      setColumns(cleanedColumns);
+      localStorage.setItem('holidays-columns-config', JSON.stringify(cleanedColumns));
+    }
+  }, []);
 
   const fetchHolidays = async () => {
     try {
@@ -169,7 +225,11 @@ const HolidaysManagement = () => {
   }, []);
 
   useEffect(() => {
-    let filtered = holidays;
+    applyFilters();
+  }, [holidays, searchTerm, countryFilter, communityFilter, originFilter, festivoFilter, sortField, sortDirection]);
+
+  const applyFilters = useCallback(() => {
+    let filtered = [...holidays];
 
     // Search filter
     if (searchTerm) {
@@ -193,6 +253,11 @@ const HolidaysManagement = () => {
     // Origin filter
     if (originFilter.length > 0) {
       filtered = filtered.filter(holiday => originFilter.includes(holiday.origen));
+    }
+
+    // Festivo filter
+    if (festivoFilter.length > 0) {
+      filtered = filtered.filter(holiday => festivoFilter.includes(holiday.festivo));
     }
 
     // Apply sorting
@@ -221,7 +286,77 @@ const HolidaysManagement = () => {
 
     setFilteredHolidays(filtered);
     setCurrentPage(1); // Reset to first page when filters change
-  }, [holidays, searchTerm, countryFilter, communityFilter, originFilter, sortField, sortDirection]);
+  }, [holidays, searchTerm, countryFilter, communityFilter, originFilter, festivoFilter, sortField, sortDirection]);
+
+  // Column resizing functions
+  const handleMouseDown = (e: React.MouseEvent, columnKey: string) => {
+    e.preventDefault();
+    e.stopPropagation(); // Evitar que se active el drag&drop
+    const column = columns.find(col => col.key === columnKey);
+    if (column) {
+      setResizingColumn(columnKey);
+      setStartX(e.clientX);
+      setStartWidth(column.width);
+      document.body.style.cursor = 'col-resize';
+    }
+  };
+
+  const handleMouseMove = useCallback((e: MouseEvent) => {
+    if (!resizingColumn) return;
+    
+    const diff = e.clientX - startX;
+    const newWidth = Math.max(startWidth + diff, 80); // Mínimo 80px
+    
+    setColumns(prevColumns =>
+      prevColumns.map(col =>
+        col.key === resizingColumn ? { ...col, width: newWidth } : col
+      )
+    );
+  }, [resizingColumn, startX, startWidth]);
+
+  const handleMouseUp = useCallback(() => {
+    setResizingColumn(null);
+    document.body.style.cursor = 'default';
+  }, []);
+
+  useEffect(() => {
+    if (resizingColumn) {
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+      return () => {
+        document.removeEventListener('mousemove', handleMouseMove);
+        document.removeEventListener('mouseup', handleMouseUp);
+      };
+    }
+  }, [resizingColumn, handleMouseMove, handleMouseUp]);
+
+  // Column reordering function
+  const handleDragEnd = (result: any) => {
+    if (!result.destination) return;
+
+    const sourceIndex = result.source.index;
+    const destinationIndex = result.destination.index;
+
+    if (sourceIndex === destinationIndex) return;
+
+    // Solo reordenar las columnas visibles
+    const visibleColumns = columns.filter(col => col.visible);
+    const hiddenColumns = columns.filter(col => !col.visible);
+    
+    const [reorderedColumn] = visibleColumns.splice(sourceIndex, 1);
+    visibleColumns.splice(destinationIndex, 0, reorderedColumn);
+    
+    // Reconstruir el array de columnas manteniendo las ocultas al final
+    setColumns([...visibleColumns, ...hiddenColumns]);
+  };
+
+  const toggleColumnVisibility = (key: keyof Holiday) => {
+    setColumns(prevColumns =>
+      prevColumns.map(col =>
+        col.key === key ? { ...col, visible: !col.visible } : col
+      )
+    );
+  };
 
   const handleAddHoliday = async () => {
     if (!formData.date || !formData.festivo || !formData.pais) {
@@ -346,6 +481,7 @@ const HolidaysManagement = () => {
     setCountryFilter([]);
     setCommunityFilter([]);
     setOriginFilter([]);
+    setFestivoFilter([]);
   };
 
   const toggleFilter = (filterArray: string[], value: string, setFilter: (arr: string[]) => void) => {
@@ -384,106 +520,37 @@ const HolidaysManagement = () => {
   const endIndex = startIndex + itemsPerPage;
   const currentHolidays = filteredHolidays.slice(startIndex, endIndex);
 
-  // Column resize handlers
-  const handleMouseDown = useCallback((e: React.MouseEvent, columnKey: keyof Holiday) => {
-    e.preventDefault();
-    const column = columns.find(col => col.key === columnKey);
-    if (!column) return;
-
-    setResizing({
-      columnKey,
-      startX: e.clientX,
-      startWidth: column.width
-    });
-  }, [columns]);
-
-  const handleMouseMove = useCallback((e: MouseEvent) => {
-    if (!resizing) return;
-
-    const deltaX = e.clientX - resizing.startX;
-    const newWidth = Math.max(resizing.startWidth + deltaX, 
-      columns.find(col => col.key === resizing.columnKey)?.minWidth || 100);
-
-    setColumns(prev => prev.map(col => 
-      col.key === resizing.columnKey 
-        ? { ...col, width: newWidth }
-        : col
-    ));
-  }, [resizing, columns]);
-
-  const handleMouseUp = useCallback(() => {
-    setResizing(null);
-  }, []);
-
-  useEffect(() => {
-    if (resizing) {
-      document.addEventListener('mousemove', handleMouseMove);
-      document.addEventListener('mouseup', handleMouseUp);
-      return () => {
-        document.removeEventListener('mousemove', handleMouseMove);
-        document.removeEventListener('mouseup', handleMouseUp);
-      };
-    }
-  }, [resizing, handleMouseMove, handleMouseUp]);
-
-  // Column drag and drop handlers
-  const handleDragStart = (e: React.DragEvent, columnKey: keyof Holiday) => {
-    setDraggedColumn(columnKey);
-    e.dataTransfer.effectAllowed = 'move';
-  };
-
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = 'move';
-  };
-
-  const handleDrop = (e: React.DragEvent, targetColumnKey: keyof Holiday) => {
-    e.preventDefault();
-    if (!draggedColumn || draggedColumn === targetColumnKey) return;
-
-    const draggedIndex = columns.findIndex(col => col.key === draggedColumn);
-    const targetIndex = columns.findIndex(col => col.key === targetColumnKey);
-
-    const newColumns = [...columns];
-    const [draggedCol] = newColumns.splice(draggedIndex, 1);
-    newColumns.splice(targetIndex, 0, draggedCol);
-
-    setColumns(newColumns);
-    setDraggedColumn(null);
-  };
 
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin w-8 h-8 border-2 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Cargando festivos...</p>
+        <div className="flex items-center gap-2">
+          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+          <span className="text-muted-foreground">Cargando festivos...</span>
         </div>
       </div>
     );
   }
 
   return (
+    <TooltipProvider>
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <div className="border-b bg-card">
-        <div className="container mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <Button variant="ghost" size="sm" onClick={() => navigate('/')}>
-                <ArrowLeft className="h-4 w-4" />
-              </Button>
+      <div className="container mx-auto py-6 px-4 max-w-7xl">
+        {/* Header */}
+        <div className="mb-6">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-4">
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-orange-100 rounded-lg">
-                  <CalendarIcon className="h-6 w-6 text-orange-600" />
+                <div className="p-2 bg-orange-600 rounded-lg">
+                  <CalendarIcon className="h-6 w-6 text-white" />
                 </div>
                 <div>
-                  <h1 className="text-2xl font-bold text-foreground">Gestión de Festivos ({filteredHolidays.length})</h1>
+                  <h1 className="text-3xl font-bold text-foreground">Gestión de Festivos ({filteredHolidays.length})</h1>
                   <p className="text-muted-foreground">Administra los días festivos del calendario</p>
                 </div>
               </div>
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-4">
               <Button 
                 variant="outline" 
                 size="sm"
@@ -507,15 +574,13 @@ const HolidaysManagement = () => {
             </div>
           </div>
         </div>
-      </div>
-
-      <div className="container mx-auto px-6 py-8">
-        {/* Actions Bar */}
-        <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
-          <div className="flex items-center gap-2">
+        {/* Action Buttons */}
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-4">
+            {/* Add Holiday Dialog */}
             <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
               <DialogTrigger asChild>
-                <Button className="bg-amber-600 hover:bg-amber-700 text-white">
+                <Button className="bg-orange-600 hover:bg-orange-700 text-white">
                   <Plus className="h-4 w-4 mr-2" />
                   Agregar Festivo
                 </Button>
@@ -596,7 +661,7 @@ const HolidaysManagement = () => {
                     <Button variant="outline" onClick={() => setIsAddDialogOpen(false)} className="flex-1">
                       Cancelar
                     </Button>
-                    <Button onClick={handleAddHoliday} className="flex-1 bg-amber-600 hover:bg-amber-700">
+                    <Button onClick={handleAddHoliday} className="flex-1 bg-orange-600 hover:bg-orange-700">
                       Agregar Festivo
                     </Button>
                   </div>
@@ -607,7 +672,7 @@ const HolidaysManagement = () => {
             <Button
               onClick={() => setShowUpload(!showUpload)}
               variant="outline"
-              className="text-amber-600 border-amber-600 hover:bg-amber-50"
+              className="text-orange-600 border-orange-600 hover:bg-orange-50"
             >
               <Download className="h-4 w-4 mr-2" />
               Cargar Excel
@@ -617,11 +682,25 @@ const HolidaysManagement = () => {
               variant="outline" 
               onClick={handleExportExcel}
               disabled={filteredHolidays.length === 0}
-              className="text-amber-600 border-amber-600 hover:bg-amber-50"
+              className="text-orange-600 border-orange-600 hover:bg-orange-50"
             >
               <Download className="h-4 w-4 mr-2" />
               Exportar Excel
             </Button>
+            
+            {/* Font Size Control */}
+            <div className="flex items-center gap-2">
+              <Type className="h-4 w-4 text-muted-foreground" />
+              <Slider
+                value={[fontSize]}
+                onValueChange={(value) => setFontSize(value[0])}
+                max={20}
+                min={8}
+                step={1}
+                className="w-20"
+              />
+              <span className="text-xs text-muted-foreground w-8">{fontSize}px</span>
+            </div>
           </div>
 
           <div className="flex items-center gap-2">
@@ -874,44 +953,51 @@ const HolidaysManagement = () => {
         {/* Enhanced Table */}
         <Card>
           <CardContent className="p-0">
-            <div className="overflow-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-16 py-3 px-4 font-semibold text-xs text-muted-foreground bg-muted/30">
-                      ÍNDICE
-                    </TableHead>
-                    {columns.filter(col => col.visible).map((column) => (
-                      <TableHead 
-                        key={column.key}
-                        className="py-3 px-4 font-semibold text-xs text-muted-foreground bg-muted/30 cursor-pointer hover:bg-muted/50 select-none relative group"
-                        style={{ width: column.width }}
-                        onClick={() => handleSort(column.key)}
-                        draggable
-                        onDragStart={(e) => handleDragStart(e, column.key)}
-                        onDragOver={handleDragOver}
-                        onDrop={(e) => handleDrop(e, column.key)}
-                      >
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <GripVertical className="w-3 h-3 opacity-50 cursor-move" />
-                            <span>{column.label.toUpperCase()}</span>
-                          </div>
-                          {getSortIcon(column.key)}
-                        </div>
-                        {column.resizable && (
-                          <div
-                            className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-primary/20 group-hover:bg-primary/20"
-                            onMouseDown={(e) => handleMouseDown(e, column.key)}
-                          />
-                        )}
-                      </TableHead>
-                    ))}
-                    <TableHead className="w-24 py-3 px-4 font-semibold text-xs text-muted-foreground bg-muted/30">
-                      ACCIONES
-                    </TableHead>
-                  </TableRow>
-                </TableHeader>
+            <div className="overflow-auto" style={{ fontSize: `${fontSize}px` }}>
+              <DragDropContext onDragEnd={handleDragEnd}>
+                <Droppable droppableId="columns" direction="horizontal">
+                  {(provided) => (
+                    <Table {...provided.droppableProps} ref={provided.innerRef}>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead className="w-16 py-3 px-4 font-semibold text-xs text-muted-foreground bg-muted/30">
+                            ÍNDICE
+                          </TableHead>
+                          {columns.filter(col => col.visible).map((column, index) => (
+                            <Draggable key={column.key} draggableId={column.key} index={index}>
+                              {(provided) => (
+                                <TableHead 
+                                  ref={provided.innerRef}
+                                  {...provided.draggableProps}
+                                  className="py-3 px-4 font-semibold text-xs text-muted-foreground bg-muted/30 cursor-pointer hover:bg-muted/50 select-none relative group border-r"
+                                  style={{ width: column.width, ...provided.draggableProps.style }}
+                                  onClick={() => handleSort(column.key)}
+                                >
+                                  <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-2">
+                                      <div {...provided.dragHandleProps}>
+                                        <GripVertical className="w-3 h-3 opacity-50 cursor-move" />
+                                      </div>
+                                      <span>{column.label.toUpperCase()}</span>
+                                    </div>
+                                    {getSortIcon(column.key)}
+                                  </div>
+                                  {column.resizable && (
+                                    <div
+                                      className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-primary/20 group-hover:bg-primary/20"
+                                      onMouseDown={(e) => handleMouseDown(e, column.key)}
+                                    />
+                                  )}
+                                </TableHead>
+                              )}
+                            </Draggable>
+                          ))}
+                          {provided.placeholder}
+                          <TableHead className="w-24 py-3 px-4 font-semibold text-xs text-muted-foreground bg-muted/30">
+                            ACCIONES
+                          </TableHead>
+                        </TableRow>
+                      </TableHeader>
                 <TableBody>
                   {currentHolidays.map((holiday, index) => (
                     <TableRow 
@@ -925,66 +1011,80 @@ const HolidaysManagement = () => {
                         {startIndex + index + 1}
                       </TableCell>
                       
-                      {/* Fecha */}
-                      {columns.find(col => col.key === 'date')?.visible && (
-                        <TableCell 
-                          className="py-4 px-4"
-                          style={{ width: columns.find(col => col.key === 'date')?.width }}
-                        >
-                          <div className="text-sm font-medium text-foreground">
-                            {format(new Date(holiday.date), 'dd/MM/yyyy')}
-                          </div>
-                        </TableCell>
-                      )}
-                      
-                      {/* Festivo */}
-                      {columns.find(col => col.key === 'festivo')?.visible && (
-                        <TableCell 
-                          className="py-4 px-4"
-                          style={{ width: columns.find(col => col.key === 'festivo')?.width }}
-                        >
-                          <div className="font-semibold text-foreground text-sm leading-tight">
-                            {holiday.festivo}
-                          </div>
-                        </TableCell>
-                      )}
-                      
-                      {/* País / Comunidad */}
-                      {columns.find(col => col.key === 'pais')?.visible && (
-                        <TableCell 
-                          className="py-4 px-4"
-                          style={{ width: columns.find(col => col.key === 'pais')?.width }}
-                        >
-                          <div className="space-y-1">
-                            <div className="font-medium text-foreground text-sm leading-tight">
-                              {holiday.pais}
-                            </div>
-                            {holiday.comunidad_autonoma && holiday.comunidad_autonoma !== 'NACIONAL' && (
-                              <div className="text-xs text-muted-foreground leading-tight">
-                                {holiday.comunidad_autonoma}
+                      {columns.filter(col => col.visible).map((column) => {
+                        const isLastVisible = columns.filter(col => col.visible).indexOf(column) === columns.filter(col => col.visible).length - 1;
+                        
+                        if (column.key === 'date') {
+                          return (
+                            <TableCell 
+                              key={column.key}
+                              className={cn("py-4 px-4", !isLastVisible && "border-r")}
+                              style={{ width: column.width }}
+                            >
+                              <div className="text-sm font-medium text-foreground">
+                                {format(new Date(holiday.date), 'dd/MM/yyyy')}
                               </div>
-                            )}
-                          </div>
-                        </TableCell>
-                      )}
-                      
-                      {/* Origen */}
-                      {columns.find(col => col.key === 'origen')?.visible && (
-                        <TableCell 
-                          className="py-4 px-4"
-                          style={{ width: columns.find(col => col.key === 'origen')?.width }}
-                        >
-                          <Badge 
-                            variant="outline" 
-                            className={cn(
-                              "text-xs",
-                              holiday.origen === 'Administrador' ? "text-red-700 border-red-700" : "text-blue-700 border-blue-700"
-                            )}
-                          >
-                            {holiday.origen}
-                          </Badge>
-                        </TableCell>
-                      )}
+                            </TableCell>
+                          );
+                        }
+                        
+                        if (column.key === 'festivo') {
+                          return (
+                            <TableCell 
+                              key={column.key}
+                              className={cn("py-4 px-4", !isLastVisible && "border-r")}
+                              style={{ width: column.width }}
+                            >
+                              <div className="font-semibold text-foreground text-sm leading-tight">
+                                {holiday.festivo}
+                              </div>
+                            </TableCell>
+                          );
+                        }
+                        
+                        if (column.key === 'pais') {
+                          return (
+                            <TableCell 
+                              key={column.key}
+                              className={cn("py-4 px-4", !isLastVisible && "border-r")}
+                              style={{ width: column.width }}
+                            >
+                              <div className="space-y-1">
+                                <div className="font-medium text-foreground text-sm leading-tight">
+                                  {holiday.pais}
+                                </div>
+                                {holiday.comunidad_autonoma && holiday.comunidad_autonoma !== 'NACIONAL' && (
+                                  <div className="text-xs text-muted-foreground leading-tight">
+                                    {holiday.comunidad_autonoma}
+                                  </div>
+                                )}
+                              </div>
+                            </TableCell>
+                          );
+                        }
+                        
+                        if (column.key === 'origen') {
+                          return (
+                            <TableCell 
+                              key={column.key}
+                              className={cn("py-4 px-4", !isLastVisible && "border-r")}
+                              style={{ width: column.width }}
+                            >
+                              <Badge 
+                                variant="outline" 
+                                className={cn(
+                                  "text-xs",
+                                  holiday.origen === 'Administrador' ? "text-red-700 border-red-700" : "text-blue-700 border-blue-700"
+                                )}
+                              >
+                                {holiday.origen}
+                              </Badge>
+                            </TableCell>
+                          );
+                        }
+                        
+                        return null;
+                      })}
                       
                       {/* Acciones */}
                       <TableCell className="py-4 px-4">
@@ -1011,9 +1111,12 @@ const HolidaysManagement = () => {
                   ))}
                 </TableBody>
               </Table>
-            </div>
-          </CardContent>
-        </Card>
+            )}
+          </Droppable>
+        </DragDropContext>
+      </div>
+    </CardContent>
+  </Card>
 
         {/* Bottom Pagination */}
         <div className="flex items-center justify-center mt-6">
@@ -1057,6 +1160,7 @@ const HolidaysManagement = () => {
         </div>
       </div>
     </div>
+    </TooltipProvider>
   );
 };
 
