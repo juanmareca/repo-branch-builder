@@ -888,15 +888,30 @@ const ResourcesManagement = () => {
                                <span className="text-sm text-muted-foreground">{resource.squad_lead}</span>
                              </div>
                             ) : column.key === 'fecha_incorporacion' ? (
-                              resource.fecha_incorporacion ? (
-                                // Si es un número (timestamp de Excel), convertirlo
-                                typeof resource.fecha_incorporacion === 'number' ? 
-                                  format(new Date((resource.fecha_incorporacion - 25569) * 86400 * 1000), 'dd/MM/yyyy') :
-                                  // Si es una cadena, intentar parsearla
-                                  (resource.fecha_incorporacion.includes('/') ? 
-                                    resource.fecha_incorporacion : 
-                                    format(new Date(resource.fecha_incorporacion), 'dd/MM/yyyy'))
-                              ) : '-'
+                              (() => {
+                                if (!resource.fecha_incorporacion) return '-';
+                                
+                                const fechaStr = String(resource.fecha_incorporacion);
+                                
+                                // Si ya está en formato DD/MM/YYYY, devolverla tal como está
+                                if (fechaStr.match(/^\d{2}\/\d{2}\/\d{4}$/)) {
+                                  return fechaStr;
+                                }
+                                
+                                // Si es un número (timestamp de Excel)
+                                if (!isNaN(Number(fechaStr))) {
+                                  const excelDate = Number(fechaStr);
+                                  const jsDate = new Date((excelDate - 25569) * 86400 * 1000);
+                                  return format(jsDate, 'dd/MM/yyyy');
+                                }
+                                
+                                // Para otros formatos, intentar parsear
+                                try {
+                                  return format(new Date(fechaStr), 'dd/MM/yyyy');
+                                } catch {
+                                  return fechaStr; // Si falla, devolver el original
+                                }
+                              })()
                            ) : column.key === 'grupo' ? (
                              <div className="flex flex-col">
                                <span className="font-medium">{resource.grupo}</span>
