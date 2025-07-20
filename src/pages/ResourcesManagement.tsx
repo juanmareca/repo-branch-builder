@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Slider } from '@/components/ui/slider';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { 
@@ -495,6 +496,7 @@ const ResourcesManagement = () => {
   }
 
   return (
+    <TooltipProvider>
     <div className="min-h-screen bg-background">
       <div className="container mx-auto py-6 px-4 max-w-7xl">
         {/* Header */}
@@ -1045,89 +1047,104 @@ const ResourcesManagement = () => {
                              </span>
                            </td>
                           
-                          {/* Celdas de datos */}
-                          {columns.filter(col => col.visible).map(column => (
-                            <td 
-                              key={column.key}
-                              className="border-r border-gray-200 p-3"
-                              style={{ 
-                                width: column.width,
-                                minWidth: column.minWidth,
-                                maxWidth: column.width
-                              }}
-                            >
-                               <div 
-                                 className="overflow-hidden text-ellipsis font-arial"
-                                 style={{ fontSize: `${fontSize}px` }}
-                               >
-                                 {column.key === 'nombre' ? (
-                                   <div className="flex flex-col">
-                                     <span className="font-medium">{resource.nombre}</span>
-                                     <span className="text-muted-foreground opacity-75">{resource.squad_lead}</span>
-                                   </div>
-                                 ) : column.key === 'fecha_incorporacion' ? (
-                                   (() => {
-                                     if (!resource.fecha_incorporacion) return '-';
-                                     
-                                     const fechaStr = String(resource.fecha_incorporacion);
-                                     
-                                     // Si ya está en formato DD/MM/YYYY, devolverla tal como está
-                                     if (fechaStr.match(/^\d{2}\/\d{2}\/\d{4}$/)) {
-                                       return fechaStr;
-                                     }
-                                     
-                                     // Si es un número (timestamp de Excel)
-                                     if (!isNaN(Number(fechaStr))) {
-                                       const excelDate = Number(fechaStr);
-                                       const jsDate = new Date((excelDate - 25569) * 86400 * 1000);
-                                       return format(jsDate, 'dd/MM/yyyy');
-                                     }
-                                     
-                                     // Para otros formatos, intentar parsear
-                                     try {
-                                       return format(new Date(fechaStr), 'dd/MM/yyyy');
-                                     } catch {
-                                       return fechaStr; // Si falla, devolver el original
-                                     }
-                                   })()
-                                 ) : column.key === 'grupo' ? (
-                                   <div className="flex flex-col">
-                                     <span className="font-medium">{resource.grupo}</span>
-                                     <span className="text-muted-foreground opacity-75">{resource.categoria}</span>
-                                   </div>
-                                 ) : (
-                                   resource[column.key] || '-'
-                                 )}
-                               </div>
-                            </td>
-                          ))}
+                           {/* Celdas de datos */}
+                           {columns.filter(col => col.visible).map(column => (
+                             <td 
+                               key={column.key}
+                               className={`border-r border-gray-200 p-3 ${column.key === 'fecha_incorporacion' ? 'text-center' : ''}`}
+                               style={{ 
+                                 width: column.width,
+                                 minWidth: column.minWidth,
+                                 maxWidth: column.width
+                               }}
+                             >
+                                <div 
+                                  className="overflow-hidden text-ellipsis font-arial"
+                                  style={{ fontSize: `${fontSize}px` }}
+                                >
+                                  {column.key === 'nombre' ? (
+                                    <div className="flex flex-col">
+                                      <span className="font-medium">{resource.nombre}</span>
+                                      <span className="text-muted-foreground opacity-75">{resource.squad_lead}</span>
+                                    </div>
+                                  ) : column.key === 'fecha_incorporacion' ? (
+                                    (() => {
+                                      if (!resource.fecha_incorporacion) return '-';
+                                      
+                                      const fechaStr = String(resource.fecha_incorporacion);
+                                      
+                                      // Si ya está en formato DD/MM/YYYY, devolverla tal como está
+                                      if (fechaStr.match(/^\d{2}\/\d{2}\/\d{4}$/)) {
+                                        return fechaStr;
+                                      }
+                                      
+                                      // Si es un número (timestamp de Excel)
+                                      if (!isNaN(Number(fechaStr))) {
+                                        const excelDate = Number(fechaStr);
+                                        const jsDate = new Date((excelDate - 25569) * 86400 * 1000);
+                                        return format(jsDate, 'dd/MM/yyyy');
+                                      }
+                                      
+                                      // Para otros formatos, intentar parsear
+                                      try {
+                                        return format(new Date(fechaStr), 'dd/MM/yyyy');
+                                      } catch {
+                                        return fechaStr; // Si falla, devolver el original
+                                      }
+                                    })()
+                                  ) : column.key === 'grupo' ? (
+                                    <div className="flex flex-col">
+                                      <span className="font-medium">{resource.grupo}</span>
+                                      <span className="text-muted-foreground opacity-75">{resource.categoria}</span>
+                                    </div>
+                                  ) : (
+                                    resource[column.key] || '-'
+                                  )}
+                                </div>
+                             </td>
+                           ))}
                           
                           {/* Columna acciones fija */}
                           <td 
                             className="sticky right-0 z-10 bg-white border-l border-gray-200 p-3"
                             style={{ width: 96 }}
                           >
-                            <div className="flex items-center gap-2 justify-center">
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => {
-                                  // Handle edit
-                                  console.log('Edit resource:', resource.id);
-                                }}
-                                className="h-8 w-8 p-0"
-                              >
-                                <Edit className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleDeleteResource(resource.id)}
-                                className="text-red-600 hover:text-red-700 h-8 w-8 p-0"
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </div>
+                             <div className="flex items-center gap-2 justify-center">
+                               <Tooltip>
+                                 <TooltipTrigger asChild>
+                                   <Button
+                                     variant="ghost"
+                                     size="sm"
+                                     onClick={() => {
+                                       // Handle edit
+                                       console.log('Edit resource:', resource.id);
+                                     }}
+                                     className="h-8 w-8 p-0"
+                                   >
+                                     <Edit className="h-4 w-4" />
+                                   </Button>
+                                 </TooltipTrigger>
+                                 <TooltipContent>
+                                   <p>Modificar</p>
+                                 </TooltipContent>
+                               </Tooltip>
+                               
+                               <Tooltip>
+                                 <TooltipTrigger asChild>
+                                   <Button
+                                     variant="ghost"
+                                     size="sm"
+                                     onClick={() => handleDeleteResource(resource.id)}
+                                     className="text-red-600 hover:text-red-700 h-8 w-8 p-0"
+                                   >
+                                     <Trash2 className="h-4 w-4" />
+                                   </Button>
+                                 </TooltipTrigger>
+                                 <TooltipContent>
+                                   <p>Eliminar</p>
+                                 </TooltipContent>
+                               </Tooltip>
+                             </div>
                           </td>
                         </tr>
                       ))}
@@ -1146,6 +1163,7 @@ const ResourcesManagement = () => {
         </Card>
       </div>
     </div>
+    </TooltipProvider>
   );
 };
 
