@@ -84,6 +84,7 @@ const ResourcesManagement = () => {
   const [grupoFilter, setGrupoFilter] = useState<string[]>([]);
   const [categoriaFilter, setCategoriaFilter] = useState<string[]>([]);
   const [oficinaFilter, setOficinaFilter] = useState<string[]>([]);
+  const [cexFilter, setCexFilter] = useState<string[]>([]);
   
   // Sorting
   const [sortField, setSortField] = useState<keyof Person>('nombre');
@@ -140,7 +141,7 @@ const ResourcesManagement = () => {
 
   useEffect(() => {
     applyFilters();
-  }, [resources, searchTerm, squadFilter, grupoFilter, categoriaFilter, oficinaFilter, sortField, sortDirection]);
+  }, [resources, searchTerm, squadFilter, grupoFilter, categoriaFilter, oficinaFilter, cexFilter, sortField, sortDirection]);
 
   const fetchResources = async () => {
     try {
@@ -198,6 +199,11 @@ const ResourcesManagement = () => {
     // Oficina filter
     if (oficinaFilter.length > 0) {
       filtered = filtered.filter(resource => oficinaFilter.includes(resource.oficina));
+    }
+
+    // CEX filter
+    if (cexFilter.length > 0) {
+      filtered = filtered.filter(resource => cexFilter.includes(resource.cex));
     }
 
     // Apply sorting
@@ -345,6 +351,7 @@ const ResourcesManagement = () => {
     setGrupoFilter([]);
     setCategoriaFilter([]);
     setOficinaFilter([]);
+    setCexFilter([]);
   };
 
   const getUniqueValues = (field: keyof Person) => {
@@ -721,7 +728,7 @@ const ResourcesManagement = () => {
               </div>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
                 {/* Squad Lead Filter */}
                 <div>
                   <Label className="text-sm font-medium mb-2 block">Squad Lead</Label>
@@ -847,9 +854,41 @@ const ResourcesManagement = () => {
                         </Badge>
                       ))}
                     </div>
-                  )}
-                </div>
-              </div>
+                   )}
+                 </div>
+
+                 {/* CEX Filter */}
+                 <div>
+                   <Label className="text-sm font-medium mb-2 block">CEX</Label>
+                   <div className="space-y-2 max-h-40 overflow-y-auto border rounded-md p-2">
+                     {getUniqueValues('cex').map(cex => (
+                       <div key={cex} className="flex items-center space-x-2">
+                         <Checkbox 
+                           id={`cex-${cex}`}
+                           checked={cexFilter.includes(cex)}
+                           onCheckedChange={() => toggleFilter(cexFilter, cex, setCexFilter)}
+                         />
+                         <label htmlFor={`cex-${cex}`} className="text-sm">{cex}</label>
+                       </div>
+                     ))}
+                   </div>
+                   {cexFilter.length > 0 && (
+                     <div className="mt-2 flex flex-wrap gap-1">
+                       {cexFilter.map(cex => (
+                         <Badge key={cex} variant="secondary" className="text-xs bg-purple-100 text-purple-800">
+                           {cex}
+                           <button 
+                             onClick={() => toggleFilter(cexFilter, cex, setCexFilter)}
+                             className="ml-1 hover:bg-purple-200 rounded-full p-0.5"
+                           >
+                             <X className="h-3 w-3" />
+                           </button>
+                         </Badge>
+                       ))}
+                     </div>
+                   )}
+                 </div>
+               </div>
             </CardContent>
           </Card>
         )}
