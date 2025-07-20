@@ -1131,167 +1131,164 @@ export default function CapacitiesManagement() {
 
         {/* Content based on view mode */}
         {viewMode === 'table' ? (
-          /* Enhanced Table */
+          /* Compact Table like Reference */
           <Card>
             <CardContent className="p-0">
-              <div className="overflow-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="w-16 py-3 px-4 font-semibold text-xs text-muted-foreground bg-muted/30">
-                        ÍNDICE
-                      </TableHead>
-                      {columns.filter(col => col.visible).map((column) => (
-                        <TableHead 
-                          key={column.key}
-                          className="py-3 px-4 font-semibold text-xs text-muted-foreground bg-muted/30 cursor-pointer hover:bg-muted/50 select-none relative group"
-                          style={{ width: column.width }}
-                          draggable
-                          onDragStart={(e) => handleDragStart(e, column.key)}
-                          onDragOver={handleDragOver}
-                          onDrop={(e) => handleDrop(e, column.key)}
-                        >
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                              <GripVertical className="w-3 h-3 opacity-50 cursor-move" />
-                              <span>{column.label.toUpperCase()}</span>
-                            </div>
-                          </div>
-                          {column.resizable && (
-                            <div
-                              className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-primary/20 group-hover:bg-primary/20"
-                              onMouseDown={(e) => handleMouseDown(e, column.key)}
-                            />
-                          )}
-                        </TableHead>
-                      ))}
-                      <TableHead className="w-24 py-3 px-4 font-semibold text-xs text-muted-foreground bg-muted/30">
-                        ACCIONES
-                      </TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {currentEmployees.map((employee, index) => (
-                      <TableRow key={employee.id} className="hover:bg-muted/30 transition-colors">
-                        <TableCell className="font-medium py-4 px-4 text-sm text-center">
-                          {startIndex + index + 1}
-                        </TableCell>
-                        
-                        {/* Empleado */}
-                        {columns.find(col => col.key === 'person_name')?.visible && (
-                          <TableCell 
-                            className="py-4 px-4"
-                            style={{ width: columns.find(col => col.key === 'person_name')?.width }}
-                          >
-                            <div className="font-semibold text-foreground text-sm">
-                              {employee.person_name}
-                            </div>
-                          </TableCell>
-                        )}
-                        
-                        {/* Módulos SAP */}
-                        {columns.find(col => col.key === 'sap_modules')?.visible && (
-                          <TableCell 
-                            className="py-4 px-4"
-                            style={{ width: columns.find(col => col.key === 'sap_modules')?.width }}
-                          >
-                            <div className="flex flex-wrap gap-1">
-                              {Object.entries(employee.sap_modules).map(([skill, level]) => (
-                                <div key={skill} className="text-xs bg-blue-50 rounded px-2 py-1">
-                                  <span className="font-medium">{skill}:</span>{' '}
-                                  <Badge variant="outline" className={cn("text-xs ml-1", getLevelBadgeColor(level))}>
-                                    {level}
-                                  </Badge>
-                                </div>
-                              ))}
-                            </div>
-                          </TableCell>
-                        )}
-                        
-                        {/* Implantación SAP */}
-                        {columns.find(col => col.key === 'sap_implementation')?.visible && (
-                          <TableCell 
-                            className="py-4 px-4"
-                            style={{ width: columns.find(col => col.key === 'sap_implementation')?.width }}
-                          >
-                            <div className="flex flex-wrap gap-1">
-                              {Object.entries(employee.sap_implementation).map(([skill, level]) => (
-                                <div key={skill} className="text-xs bg-purple-50 rounded px-2 py-1">
-                                  <span className="font-medium">{skill}:</span>{' '}
-                                  <Badge variant="outline" className={cn("text-xs ml-1", getLevelBadgeColor(level))}>
-                                    {level}
-                                  </Badge>
-                                </div>
-                              ))}
-                            </div>
-                          </TableCell>
-                        )}
-                        
-                        {/* Idiomas */}
-                        {columns.find(col => col.key === 'languages')?.visible && (
-                          <TableCell 
-                            className="py-4 px-4"
-                            style={{ width: columns.find(col => col.key === 'languages')?.width }}
-                          >
-                            <div className="flex flex-wrap gap-1">
-                              {Object.entries(employee.languages).map(([skill, level]) => (
-                                <div key={skill} className="text-xs bg-green-50 rounded px-2 py-1">
-                                  <span className="font-medium">{skill}:</span>{' '}
-                                  <Badge variant="outline" className={cn("text-xs ml-1", getLevelBadgeColor(level))}>
-                                    {level}
-                                  </Badge>
-                                </div>
-                              ))}
-                            </div>
-                          </TableCell>
-                        )}
-                        
-                        {/* Industrias */}
-                        {columns.find(col => col.key === 'industries')?.visible && (
-                          <TableCell 
-                            className="py-4 px-4"
-                            style={{ width: columns.find(col => col.key === 'industries')?.width }}
-                          >
-                            <div className="flex flex-wrap gap-1">
-                              {Object.entries(employee.industries).map(([skill, level]) => (
-                                <div key={skill} className="text-xs bg-orange-50 rounded px-2 py-1">
-                                  <span className="font-medium">{skill}:</span>{' '}
-                                  <Badge variant="outline" className={cn("text-xs ml-1", getLevelBadgeColor(level))}>
-                                    {level}
-                                  </Badge>
-                                </div>
-                              ))}
-                            </div>
-                          </TableCell>
-                        )}
-                        
-                        {/* Fecha Evaluación */}
-                        {columns.find(col => col.key === 'evaluation_date')?.visible && (
-                          <TableCell 
-                            className="py-4 px-4 text-sm"
-                            style={{ width: columns.find(col => col.key === 'evaluation_date')?.width }}
-                          >
-                            {formatDate(employee.evaluation_date)}
-                          </TableCell>
-                        )}
-                        
-                        {/* Acciones */}
-                        <TableCell className="py-4 px-4">
-                          <div className="flex items-center gap-1">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleDeleteEmployee(employee.person_name)}
-                              className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
+              <div className="overflow-x-auto">
+                <div className="min-w-full">
+                  {/* Header */}
+                  <div className="grid grid-cols-5 gap-1 p-2 bg-slate-100 border-b font-bold text-sm">
+                    <div className="bg-slate-200 p-2 text-center rounded font-semibold">EMPLEADO</div>
+                    <div className="bg-yellow-200 p-2 text-center rounded font-semibold">Módulos SAP e IMPLANTACIONES</div>
+                    <div className="bg-blue-200 p-2 text-center rounded font-semibold">IDIOMAS</div>
+                    <div className="bg-green-200 p-2 text-center rounded font-semibold">INDUSTRIAS</div>
+                    <div className="bg-slate-200 p-2 text-center rounded font-semibold">ACCIONES</div>
+                  </div>
+                  
+                  {/* Data Rows */}
+                  {currentEmployees.map((employee, index) => (
+                    <div key={employee.id} className="grid grid-cols-5 gap-1 p-2 border-b hover:bg-gray-50">
+                      {/* Employee Name */}
+                      <div className="p-2 text-sm font-medium flex items-center">
+                        <span className="text-xs text-gray-500 mr-2">{startIndex + index + 1}.</span>
+                        {employee.person_name}
+                      </div>
+                      
+                      {/* SAP Modules & Implementation */}
+                      <div className="p-2 space-y-1">
+                        {/* SAP Modules */}
+                        {Object.entries(employee.sap_modules).map(([skill, level]) => (
+                          <div key={skill} className="flex items-center gap-2 text-xs">
+                            <span 
+                              className={cn(
+                                "px-2 py-1 rounded text-white font-medium min-w-[80px] text-center",
+                                level === 'Básico' && "bg-yellow-500",
+                                level === 'Medio' && "bg-orange-500", 
+                                level === 'Alto' && "bg-blue-500",
+                                level === 'Experto' && "bg-green-600",
+                                level === 'Nulo' && "bg-red-500"
+                              )}
                             >
-                              <Trash2 className="h-3 w-3" />
-                            </Button>
+                              {skill}
+                            </span>
+                            <span 
+                              className={cn(
+                                "px-2 py-1 rounded text-white font-medium",
+                                level === 'Básico' && "bg-yellow-600",
+                                level === 'Medio' && "bg-orange-600",
+                                level === 'Alto' && "bg-blue-600", 
+                                level === 'Experto' && "bg-green-700",
+                                level === 'Nulo' && "bg-red-600"
+                              )}
+                            >
+                              {level}
+                            </span>
                           </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                        ))}
+                        
+                        {/* SAP Implementation */}
+                        {Object.entries(employee.sap_implementation).map(([skill, level]) => (
+                          <div key={skill} className="flex items-center gap-2 text-xs">
+                            <span 
+                              className={cn(
+                                "px-2 py-1 rounded text-white font-medium min-w-[80px] text-center",
+                                level === 'Básico' && "bg-red-400",
+                                level === 'Medio' && "bg-orange-400",
+                                level === 'Alto' && "bg-blue-400", 
+                                level === 'Experto' && "bg-green-400",
+                                level === 'Nulo' && "bg-red-400"
+                              )}
+                            >
+                              {skill}
+                            </span>
+                            <span 
+                              className={cn(
+                                "px-2 py-1 rounded text-white font-medium",
+                                level === 'Básico' && "bg-red-500",
+                                level === 'Medio' && "bg-orange-500",
+                                level === 'Alto' && "bg-blue-500",
+                                level === 'Experto' && "bg-green-500", 
+                                level === 'Nulo' && "bg-red-500"
+                              )}
+                            >
+                              {level}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                      
+                      {/* Languages */}
+                      <div className="p-2 space-y-1">
+                        {Object.entries(employee.languages).map(([skill, level]) => (
+                          <div key={skill} className="flex items-center gap-2 text-xs">
+                            <span 
+                              className={cn(
+                                "px-2 py-1 rounded text-white font-medium min-w-[60px] text-center",
+                                level === 'B1' && "bg-yellow-500",
+                                level === 'Básico' && "bg-yellow-500",
+                                level === 'Bilingüe' && "bg-green-600",
+                                level === 'Nulo' && "bg-gray-500",
+                                !['B1', 'Básico', 'Bilingüe', 'Nulo'].includes(level) && "bg-blue-500"
+                              )}
+                            >
+                              {skill}
+                            </span>
+                            <span 
+                              className={cn(
+                                "px-2 py-1 rounded text-white font-medium",
+                                level === 'B1' && "bg-yellow-600",
+                                level === 'Básico' && "bg-yellow-600", 
+                                level === 'Bilingüe' && "bg-green-700",
+                                level === 'Nulo' && "bg-gray-600",
+                                !['B1', 'Básico', 'Bilingüe', 'Nulo'].includes(level) && "bg-blue-600"
+                              )}
+                            >
+                              {level}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                      
+                      {/* Industries */}
+                      <div className="p-2 space-y-1">
+                        {Object.entries(employee.industries).map(([skill, level]) => (
+                          <div key={skill} className="flex items-center gap-2 text-xs">
+                            <span 
+                              className={cn(
+                                "px-2 py-1 rounded text-white font-medium min-w-[80px] text-center",
+                                level === 'Sí' && "bg-green-500",
+                                level === 'No' && "bg-red-500"
+                              )}
+                            >
+                              {skill}
+                            </span>
+                            <span 
+                              className={cn(
+                                "px-2 py-1 rounded text-white font-medium",
+                                level === 'Sí' && "bg-green-600",
+                                level === 'No' && "bg-red-600"
+                              )}
+                            >
+                              {level}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                      
+                      {/* Actions */}
+                      <div className="p-2 flex items-center justify-center">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleDeleteEmployee(employee.person_name)}
+                          className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
             </CardContent>
           </Card>

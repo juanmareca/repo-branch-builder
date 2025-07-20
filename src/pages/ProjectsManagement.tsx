@@ -114,7 +114,7 @@ const ProjectsManagement = () => {
       const { data, error } = await supabase
         .from('projects')
         .select('*')
-        .limit(5000) // Aumentar límite para obtener todos los registros
+        .limit(50000) // Límite alto para producción
         .order('created_at', { ascending: false });
 
       if (error) throw error;
