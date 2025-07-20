@@ -76,6 +76,10 @@ export default function CapacitiesManagement() {
   // Search and filters
   const [searchTerm, setSearchTerm] = useState('');
   const [personFilter, setPersonFilter] = useState<string[]>([]);
+  const [skillFilter, setSkillFilter] = useState<string[]>([]);
+  const [languageFilter, setLanguageFilter] = useState<string[]>([]);
+  const [industryFilter, setIndustryFilter] = useState<string[]>([]);
+  const [levelFilter, setLevelFilter] = useState<string[]>([]);
   const [showFilters, setShowFilters] = useState(false);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   
@@ -153,8 +157,43 @@ export default function CapacitiesManagement() {
       filtered = filtered.filter(employee => personFilter.includes(employee.person_name));
     }
 
+    if (skillFilter.length > 0) {
+      filtered = filtered.filter(employee => 
+        skillFilter.some(skill => 
+          Object.keys(employee.sap_modules).includes(skill) ||
+          Object.keys(employee.sap_implementation).includes(skill)
+        )
+      );
+    }
+
+    if (languageFilter.length > 0) {
+      filtered = filtered.filter(employee => 
+        languageFilter.some(language => Object.keys(employee.languages).includes(language))
+      );
+    }
+
+    if (industryFilter.length > 0) {
+      filtered = filtered.filter(employee => 
+        industryFilter.some(industry => 
+          Object.keys(employee.industries).includes(industry) && 
+          employee.industries[industry] === 'Sí'
+        )
+      );
+    }
+
+    if (levelFilter.length > 0) {
+      filtered = filtered.filter(employee => 
+        levelFilter.some(level => 
+          Object.values(employee.sap_modules).includes(level) ||
+          Object.values(employee.sap_implementation).includes(level) ||
+          Object.values(employee.languages).includes(level) ||
+          Object.values(employee.industries).includes(level)
+        )
+      );
+    }
+
     setFilteredEmployees(filtered);
-  }, [capacities, searchTerm, personFilter]);
+  }, [capacities, searchTerm, personFilter, skillFilter, languageFilter, industryFilter, levelFilter]);
 
   const fetchCapacities = async () => {
     try {
@@ -279,6 +318,10 @@ export default function CapacitiesManagement() {
   const clearFilters = () => {
     setSearchTerm('');
     setPersonFilter([]);
+    setSkillFilter([]);
+    setLanguageFilter([]);
+    setIndustryFilter([]);
+    setLevelFilter([]);
   };
 
   const toggleFilter = (filterArray: string[], value: string, setFilter: (arr: string[]) => void) => {
@@ -291,6 +334,42 @@ export default function CapacitiesManagement() {
 
   const getUniqueValues = (field: 'person_name') => {
     return [...new Set(employeeCapacities.map(emp => emp.person_name))].sort();
+  };
+
+  const getUniqueSkills = () => {
+    const skills = new Set<string>();
+    employeeCapacities.forEach(emp => {
+      Object.keys(emp.sap_modules).forEach(skill => skills.add(skill));
+      Object.keys(emp.sap_implementation).forEach(skill => skills.add(skill));
+    });
+    return Array.from(skills).sort();
+  };
+
+  const getUniqueLanguages = () => {
+    const languages = new Set<string>();
+    employeeCapacities.forEach(emp => {
+      Object.keys(emp.languages).forEach(lang => languages.add(lang));
+    });
+    return Array.from(languages).sort();
+  };
+
+  const getUniqueIndustries = () => {
+    const industries = new Set<string>();
+    employeeCapacities.forEach(emp => {
+      Object.keys(emp.industries).forEach(industry => industries.add(industry));
+    });
+    return Array.from(industries).sort();
+  };
+
+  const getUniqueLevels = () => {
+    const levels = new Set<string>();
+    employeeCapacities.forEach(emp => {
+      Object.values(emp.sap_modules).forEach(level => levels.add(level));
+      Object.values(emp.sap_implementation).forEach(level => levels.add(level));
+      Object.values(emp.languages).forEach(level => levels.add(level));
+      Object.values(emp.industries).forEach(level => levels.add(level));
+    });
+    return Array.from(levels).sort();
   };
 
   const formatDate = (dateString: string | null) => {
@@ -661,7 +740,7 @@ export default function CapacitiesManagement() {
           <Card className="mb-6">
             <CardHeader>
               <div className="flex items-center justify-between">
-                <CardTitle className="text-lg">Filtros por Empleado</CardTitle>
+                <CardTitle className="text-lg">Filtros Avanzados</CardTitle>
                 <Button variant="outline" size="sm" onClick={clearFilters}>
                   <RotateCcw className="h-4 w-4 mr-2" />
                   Limpiar Filtros
@@ -669,36 +748,181 @@ export default function CapacitiesManagement() {
               </div>
             </CardHeader>
             <CardContent>
-              <div>
-                <Label className="text-sm font-medium mb-2 block">Empleado</Label>
-                <div className="space-y-2 max-h-40 overflow-y-auto border rounded-md p-2">
-                  {getUniqueValues('person_name').map(person => (
-                    <div key={person} className="flex items-center space-x-2">
-                      <Checkbox 
-                        id={`person-${person}`}
-                        checked={personFilter.includes(person)}
-                        onCheckedChange={() => toggleFilter(personFilter, person, setPersonFilter)}
-                      />
-                      <label htmlFor={`person-${person}`} className="text-sm">{person}</label>
-                    </div>
-                  ))}
-                </div>
-                {personFilter.length > 0 && (
-                  <div className="mt-2 flex flex-wrap gap-1">
-                    {personFilter.map(person => (
-                      <Badge key={person} variant="secondary" className="text-xs">
-                        {person}
-                        <button 
-                          onClick={() => toggleFilter(personFilter, person, setPersonFilter)}
-                          className="ml-1 hover:bg-secondary-foreground/20 rounded-full p-0.5"
-                        >
-                          <X className="h-3 w-3" />
-                        </button>
-                      </Badge>
+              <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+                
+                {/* Filtro por Empleado */}
+                <div>
+                  <Label className="text-sm font-medium mb-2 block">Empleado</Label>
+                  <div className="space-y-2 max-h-40 overflow-y-auto border rounded-md p-2">
+                    {getUniqueValues('person_name').map(person => (
+                      <div key={person} className="flex items-center space-x-2">
+                        <Checkbox 
+                          id={`person-${person}`}
+                          checked={personFilter.includes(person)}
+                          onCheckedChange={() => toggleFilter(personFilter, person, setPersonFilter)}
+                        />
+                        <label htmlFor={`person-${person}`} className="text-sm">{person}</label>
+                      </div>
                     ))}
                   </div>
-                )}
+                  {personFilter.length > 0 && (
+                    <div className="mt-2 flex flex-wrap gap-1">
+                      {personFilter.map(person => (
+                        <Badge key={person} variant="secondary" className="text-xs">
+                          {person}
+                          <button 
+                            onClick={() => toggleFilter(personFilter, person, setPersonFilter)}
+                            className="ml-1 hover:bg-secondary-foreground/20 rounded-full p-0.5"
+                          >
+                            <X className="h-3 w-3" />
+                          </button>
+                        </Badge>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Filtro por Módulos SAP */}
+                <div>
+                  <Label className="text-sm font-medium mb-2 block text-yellow-700">Módulos SAP</Label>
+                  <div className="space-y-2 max-h-40 overflow-y-auto border rounded-md p-2">
+                    {getUniqueSkills().map(skill => (
+                      <div key={skill} className="flex items-center space-x-2">
+                        <Checkbox 
+                          id={`skill-${skill}`}
+                          checked={skillFilter.includes(skill)}
+                          onCheckedChange={() => toggleFilter(skillFilter, skill, setSkillFilter)}
+                        />
+                        <label htmlFor={`skill-${skill}`} className="text-sm">{skill}</label>
+                      </div>
+                    ))}
+                  </div>
+                  {skillFilter.length > 0 && (
+                    <div className="mt-2 flex flex-wrap gap-1">
+                      {skillFilter.map(skill => (
+                        <Badge key={skill} variant="secondary" className="text-xs bg-yellow-100 text-yellow-800">
+                          {skill}
+                          <button 
+                            onClick={() => toggleFilter(skillFilter, skill, setSkillFilter)}
+                            className="ml-1 hover:bg-yellow-200 rounded-full p-0.5"
+                          >
+                            <X className="h-3 w-3" />
+                          </button>
+                        </Badge>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Filtro por Idiomas */}
+                <div>
+                  <Label className="text-sm font-medium mb-2 block text-blue-700">Idiomas</Label>
+                  <div className="space-y-2 max-h-40 overflow-y-auto border rounded-md p-2">
+                    {getUniqueLanguages().map(language => (
+                      <div key={language} className="flex items-center space-x-2">
+                        <Checkbox 
+                          id={`language-${language}`}
+                          checked={languageFilter.includes(language)}
+                          onCheckedChange={() => toggleFilter(languageFilter, language, setLanguageFilter)}
+                        />
+                        <label htmlFor={`language-${language}`} className="text-sm">{language}</label>
+                      </div>
+                    ))}
+                  </div>
+                  {languageFilter.length > 0 && (
+                    <div className="mt-2 flex flex-wrap gap-1">
+                      {languageFilter.map(language => (
+                        <Badge key={language} variant="secondary" className="text-xs bg-blue-100 text-blue-800">
+                          {language}
+                          <button 
+                            onClick={() => toggleFilter(languageFilter, language, setLanguageFilter)}
+                            className="ml-1 hover:bg-blue-200 rounded-full p-0.5"
+                          >
+                            <X className="h-3 w-3" />
+                          </button>
+                        </Badge>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Filtro por Industrias */}
+                <div>
+                  <Label className="text-sm font-medium mb-2 block text-green-700">Industrias</Label>
+                  <div className="space-y-2 max-h-40 overflow-y-auto border rounded-md p-2">
+                    {getUniqueIndustries().map(industry => (
+                      <div key={industry} className="flex items-center space-x-2">
+                        <Checkbox 
+                          id={`industry-${industry}`}
+                          checked={industryFilter.includes(industry)}
+                          onCheckedChange={() => toggleFilter(industryFilter, industry, setIndustryFilter)}
+                        />
+                        <label htmlFor={`industry-${industry}`} className="text-sm">{industry}</label>
+                      </div>
+                    ))}
+                  </div>
+                  {industryFilter.length > 0 && (
+                    <div className="mt-2 flex flex-wrap gap-1">
+                      {industryFilter.map(industry => (
+                        <Badge key={industry} variant="secondary" className="text-xs bg-green-100 text-green-800">
+                          {industry}
+                          <button 
+                            onClick={() => toggleFilter(industryFilter, industry, setIndustryFilter)}
+                            className="ml-1 hover:bg-green-200 rounded-full p-0.5"
+                          >
+                            <X className="h-3 w-3" />
+                          </button>
+                        </Badge>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Filtro por Niveles */}
+                <div>
+                  <Label className="text-sm font-medium mb-2 block text-purple-700">Niveles</Label>
+                  <div className="space-y-2 max-h-40 overflow-y-auto border rounded-md p-2">
+                    {getUniqueLevels().map(level => (
+                      <div key={level} className="flex items-center space-x-2">
+                        <Checkbox 
+                          id={`level-${level}`}
+                          checked={levelFilter.includes(level)}
+                          onCheckedChange={() => toggleFilter(levelFilter, level, setLevelFilter)}
+                        />
+                        <label htmlFor={`level-${level}`} className="text-sm">{level}</label>
+                      </div>
+                    ))}
+                  </div>
+                  {levelFilter.length > 0 && (
+                    <div className="mt-2 flex flex-wrap gap-1">
+                      {levelFilter.map(level => (
+                        <Badge key={level} variant="secondary" className="text-xs bg-purple-100 text-purple-800">
+                          {level}
+                          <button 
+                            onClick={() => toggleFilter(levelFilter, level, setLevelFilter)}
+                            className="ml-1 hover:bg-purple-200 rounded-full p-0.5"
+                          >
+                            <X className="h-3 w-3" />
+                          </button>
+                        </Badge>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
               </div>
+
+              {/* Resumen de filtros activos */}
+              {(personFilter.length > 0 || skillFilter.length > 0 || languageFilter.length > 0 || industryFilter.length > 0 || levelFilter.length > 0) && (
+                <div className="mt-6 pt-4 border-t">
+                  <div className="text-sm text-muted-foreground mb-2">
+                    Filtros activos: {filteredEmployees.length} de {employeeCapacities.length} empleados
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    Buscar ejemplo: "inglés + Pharma + FI-GL nivel básico o superior"
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
         )}
