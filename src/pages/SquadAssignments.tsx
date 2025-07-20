@@ -319,9 +319,9 @@ export default function SquadAssignments() {
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="flex items-center gap-4 mb-6">
-          <Button variant="outline" onClick={() => navigate(-1)} className="gap-2">
+          <Button variant="outline" onClick={() => navigate('/squad-dashboard')} className="gap-2">
             <ArrowLeft className="h-4 w-4" />
-            Volver
+            Panel Principal
           </Button>
           <div>
             <h1 className="text-2xl font-bold">Asignaciones Avanzadas - Squad Lead</h1>
