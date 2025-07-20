@@ -201,7 +201,7 @@ const PersonTable: React.FC<PersonTableProps> = ({ persons, onEditPerson }) => {
                 />
               </th>
               <th 
-                className="px-6 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider bg-muted cursor-pointer hover:bg-muted/80 select-none relative group"
+                className="px-6 py-2 text-center text-xs font-medium text-muted-foreground uppercase tracking-wider bg-muted cursor-pointer hover:bg-muted/80 select-none relative group"
                 onClick={() => handleSort('num_pers')}
               >
                 <div className="flex items-center justify-between">
@@ -214,7 +214,7 @@ const PersonTable: React.FC<PersonTableProps> = ({ persons, onEditPerson }) => {
                 />
               </th>
               <th 
-                className="px-6 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider bg-muted cursor-pointer hover:bg-muted/80 select-none relative group"
+                className="px-6 py-2 text-center text-xs font-medium text-muted-foreground uppercase tracking-wider bg-muted cursor-pointer hover:bg-muted/80 select-none relative group"
                 onClick={() => handleSort('fecha_incorporacion')}
               >
                 <div className="flex items-center justify-between">
@@ -304,13 +304,13 @@ const PersonTable: React.FC<PersonTableProps> = ({ persons, onEditPerson }) => {
                     </div>
                   </div>
                 </td>
-                <td className={`px-6 py-2 whitespace-nowrap text-foreground ${getFontSizeClass()}`}>
+                <td className={`px-6 py-2 whitespace-nowrap text-foreground text-center ${getFontSizeClass()}`}>
                   {person.cex}
                 </td>
-                <td className={`px-6 py-2 whitespace-nowrap text-foreground ${getFontSizeClass()}`}>
+                <td className={`px-6 py-2 whitespace-nowrap text-foreground text-center ${getFontSizeClass()}`}>
                   {person.num_pers}
                 </td>
-                <td className={`px-6 py-2 whitespace-nowrap text-foreground ${getFontSizeClass()}`}>
+                <td className={`px-6 py-2 whitespace-nowrap text-foreground text-center ${getFontSizeClass()}`}>
                   <div className="flex items-center">
                     <Calendar className="w-4 h-4 text-muted-foreground mr-2" />
                     {(() => {
