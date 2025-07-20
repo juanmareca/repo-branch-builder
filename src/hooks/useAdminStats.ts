@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
 interface AdminStats {
@@ -17,8 +17,11 @@ export const useAdminStats = () => {
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  
+  // Ref para manejar el debounce timeout
+  const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  const fetchStats = async () => {
+  const fetchStats = useCallback(async () => {
     try {
       setLoading(true);
       
@@ -47,7 +50,21 @@ export const useAdminStats = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  // Función con debounce para evitar actualizaciones excesivas
+  const debouncedFetchStats = useCallback(() => {
+    // Limpiar timeout anterior si existe
+    if (debounceTimeoutRef.current) {
+      clearTimeout(debounceTimeoutRef.current);
+    }
+    
+    // Establecer nuevo timeout para actualizar stats después de 1.5 segundos
+    debounceTimeoutRef.current = setTimeout(() => {
+      console.log('Updating stats after debounce...');
+      fetchStats();
+    }, 1500);
+  }, [fetchStats]);
 
   useEffect(() => {
     // Cargar estadísticas iniciales
@@ -64,9 +81,8 @@ export const useAdminStats = () => {
           table: 'holidays'
         },
         () => {
-          console.log('Holidays table changed, refreshing stats...');
-          // Usar un pequeño delay para asegurar que la transacción se complete
-          setTimeout(() => fetchStats(), 100);
+          console.log('Holidays table changed, debouncing stats refresh...');
+          debouncedFetchStats();
         }
       )
       .on(
@@ -77,8 +93,8 @@ export const useAdminStats = () => {
           table: 'persons'
         },
         () => {
-          console.log('Persons table changed, refreshing stats...');
-          fetchStats();
+          console.log('Persons table changed, debouncing stats refresh...');
+          debouncedFetchStats();
         }
       )
       .on(
@@ -89,8 +105,8 @@ export const useAdminStats = () => {
           table: 'projects'
         },
         () => {
-          console.log('Projects table changed, refreshing stats...');
-          fetchStats();
+          console.log('Projects table changed, debouncing stats refresh...');
+          debouncedFetchStats();
         }
       )
       .on(
@@ -101,17 +117,20 @@ export const useAdminStats = () => {
           table: 'capacities'
         },
         () => {
-          console.log('Capacities table changed, refreshing stats...');
-          fetchStats();
+          console.log('Capacities table changed, debouncing stats refresh...');
+          debouncedFetchStats();
         }
       )
       .subscribe();
 
     // Cleanup al desmontar el componente
     return () => {
+      if (debounceTimeoutRef.current) {
+        clearTimeout(debounceTimeoutRef.current);
+      }
       supabase.removeChannel(channel);
     };
-  }, []);
+  }, [fetchStats, debouncedFetchStats]);
 
   return { stats, loading, error };
 };
