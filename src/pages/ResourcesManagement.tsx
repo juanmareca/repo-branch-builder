@@ -356,7 +356,7 @@ const ResourcesManagement = () => {
       'ÍNDICE': index + 1,
       'CÓDIGO': resource.num_pers,
       'NOMBRE': resource.nombre,
-      'FECHA INCORPORACIÓN': resource.fecha_incorporacion,
+      'FECHA INCORPORACIÓN': resource.fecha_incorporacion, // Ya está en formato DD/MM/YYYY
       'EMAIL': resource.mail_empresa,
       'SQUAD LEAD': resource.squad_lead,
       'CEX': resource.cex,
@@ -366,6 +366,68 @@ const ResourcesManagement = () => {
     }));
 
     const ws = XLSX.utils.json_to_sheet(exportData);
+    
+    // Aplicar estilos profesionales a las cabeceras
+    const headerRange = XLSX.utils.decode_range(ws['!ref']);
+    
+    // Estilo para las cabeceras
+    for (let col = headerRange.s.c; col <= headerRange.e.c; col++) {
+      const cellAddress = XLSX.utils.encode_cell({ r: 0, c: col });
+      if (!ws[cellAddress]) continue;
+      
+      ws[cellAddress].s = {
+        fill: {
+          patternType: "solid",
+          fgColor: { rgb: "4472C4" } // Azul profesional
+        },
+        font: {
+          color: { rgb: "FFFFFF" },
+          bold: true,
+          sz: 12
+        },
+        alignment: {
+          horizontal: "center",
+          vertical: "center"
+        },
+        border: {
+          top: { style: "thin", color: { rgb: "000000" } },
+          bottom: { style: "thin", color: { rgb: "000000" } },
+          left: { style: "thin", color: { rgb: "000000" } },
+          right: { style: "thin", color: { rgb: "000000" } }
+        }
+      };
+    }
+    
+    // Aplicar bordes a todas las celdas de datos
+    for (let row = headerRange.s.r + 1; row <= headerRange.e.r; row++) {
+      for (let col = headerRange.s.c; col <= headerRange.e.c; col++) {
+        const cellAddress = XLSX.utils.encode_cell({ r: row, c: col });
+        if (!ws[cellAddress]) continue;
+        
+        ws[cellAddress].s = {
+          border: {
+            top: { style: "thin", color: { rgb: "D9D9D9" } },
+            bottom: { style: "thin", color: { rgb: "D9D9D9" } },
+            left: { style: "thin", color: { rgb: "D9D9D9" } },
+            right: { style: "thin", color: { rgb: "D9D9D9" } }
+          }
+        };
+      }
+    }
+    
+    // Ajustar ancho de columnas automáticamente
+    const colWidths = [];
+    const headers = Object.keys(exportData[0] || {});
+    headers.forEach((header, index) => {
+      let maxLength = header.length;
+      exportData.forEach(row => {
+        const cellValue = row[header] ? row[header].toString() : '';
+        maxLength = Math.max(maxLength, cellValue.length);
+      });
+      colWidths.push({ wch: Math.min(maxLength + 2, 50) }); // Máximo 50 caracteres
+    });
+    ws['!cols'] = colWidths;
+
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Recursos');
     XLSX.writeFile(wb, `recursos_${new Date().toISOString().split('T')[0]}.xlsx`);
