@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -31,7 +31,12 @@ import {
   Zap,
   Calendar as CalendarIcon,
   TableIcon,
-  IdCard
+  IdCard,
+  ChevronLeft,
+  ChevronRight,
+  ChevronsLeft,
+  ChevronsRight,
+  GripVertical
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -63,6 +68,15 @@ interface EmployeeCapacities {
   evaluation_date: string | null;
 }
 
+interface ColumnConfig {
+  key: string;
+  label: string;
+  visible: boolean;
+  width: number;
+  minWidth: number;
+  resizable: boolean;
+}
+
 const SKILL_LEVELS = ['Básico', 'Medio', 'Alto', 'Experto'];
 
 export default function CapacitiesManagement() {
@@ -81,7 +95,25 @@ export default function CapacitiesManagement() {
   const [industryFilter, setIndustryFilter] = useState<string[]>([]);
   const [levelFilter, setLevelFilter] = useState<string[]>([]);
   const [showFilters, setShowFilters] = useState(false);
+  const [showColumns, setShowColumns] = useState(false);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  
+  // Pagination
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(50);
+  
+  // Column management
+  const [columns, setColumns] = useState<ColumnConfig[]>([
+    { key: 'person_name', label: 'Empleado', visible: true, width: 200, minWidth: 150, resizable: true },
+    { key: 'sap_modules', label: 'Módulos SAP', visible: true, width: 300, minWidth: 200, resizable: true },
+    { key: 'sap_implementation', label: 'Implantación SAP', visible: true, width: 300, minWidth: 200, resizable: true },
+    { key: 'languages', label: 'Idiomas', visible: true, width: 250, minWidth: 180, resizable: true },
+    { key: 'industries', label: 'Industrias', visible: true, width: 250, minWidth: 180, resizable: true },
+    { key: 'evaluation_date', label: 'Fecha Evaluación', visible: true, width: 150, minWidth: 120, resizable: true }
+  ]);
+  
+  const [resizing, setResizing] = useState<{ columnKey: string; startX: number; startWidth: number } | null>(null);
+  const [draggedColumn, setDraggedColumn] = useState<string | null>(null);
   
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -193,6 +225,7 @@ export default function CapacitiesManagement() {
     }
 
     setFilteredEmployees(filtered);
+    setCurrentPage(1); // Reset to first page when filters change
   }, [capacities, searchTerm, personFilter, skillFilter, languageFilter, industryFilter, levelFilter]);
 
   const fetchCapacities = async () => {
@@ -307,7 +340,7 @@ export default function CapacitiesManagement() {
     const ws = XLSX.utils.json_to_sheet(exportData);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Capacidades');
-    XLSX.writeFile(wb, 'capacidades.xlsx');
+    XLSX.writeFile(wb, `capacidades_${new Date().toISOString().split('T')[0]}.xlsx`);
 
     toast({
       title: "Éxito",
@@ -377,6 +410,92 @@ export default function CapacitiesManagement() {
     return format(new Date(dateString), 'dd/MM/yyyy');
   };
 
+  // Pagination calculations
+  const totalPages = Math.ceil(filteredEmployees.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const currentEmployees = filteredEmployees.slice(startIndex, endIndex);
+
+  // Column resize handlers
+  const handleMouseDown = useCallback((e: React.MouseEvent, columnKey: string) => {
+    e.preventDefault();
+    const column = columns.find(col => col.key === columnKey);
+    if (!column) return;
+
+    setResizing({
+      columnKey,
+      startX: e.clientX,
+      startWidth: column.width
+    });
+  }, [columns]);
+
+  const handleMouseMove = useCallback((e: MouseEvent) => {
+    if (!resizing) return;
+
+    const deltaX = e.clientX - resizing.startX;
+    const newWidth = Math.max(resizing.startWidth + deltaX, 
+      columns.find(col => col.key === resizing.columnKey)?.minWidth || 100);
+
+    setColumns(prev => prev.map(col => 
+      col.key === resizing.columnKey 
+        ? { ...col, width: newWidth }
+        : col
+    ));
+  }, [resizing, columns]);
+
+  const handleMouseUp = useCallback(() => {
+    setResizing(null);
+  }, []);
+
+  useEffect(() => {
+    if (resizing) {
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+      return () => {
+        document.removeEventListener('mousemove', handleMouseMove);
+        document.removeEventListener('mouseup', handleMouseUp);
+      };
+    }
+  }, [resizing, handleMouseMove, handleMouseUp]);
+
+  // Column drag and drop handlers
+  const handleDragStart = (e: React.DragEvent, columnKey: string) => {
+    setDraggedColumn(columnKey);
+    e.dataTransfer.effectAllowed = 'move';
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+  };
+
+  const handleDrop = (e: React.DragEvent, targetColumnKey: string) => {
+    e.preventDefault();
+    if (!draggedColumn || draggedColumn === targetColumnKey) return;
+
+    const draggedIndex = columns.findIndex(col => col.key === draggedColumn);
+    const targetIndex = columns.findIndex(col => col.key === targetColumnKey);
+
+    const newColumns = [...columns];
+    const [draggedCol] = newColumns.splice(draggedIndex, 1);
+    newColumns.splice(targetIndex, 0, draggedCol);
+
+    setColumns(newColumns);
+    setDraggedColumn(null);
+  };
+
+  const getLevelBadgeColor = (level: string) => {
+    switch (level) {
+      case 'Experto': return 'bg-green-100 text-green-800 border-green-300';
+      case 'Alto': return 'bg-blue-100 text-blue-800 border-blue-300';
+      case 'Medio': return 'bg-yellow-100 text-yellow-800 border-yellow-300';
+      case 'Básico': return 'bg-gray-100 text-gray-800 border-gray-300';
+      case 'Sí': return 'bg-green-100 text-green-800 border-green-300';
+      case 'No': return 'bg-red-100 text-red-800 border-red-300';
+      default: return 'bg-gray-100 text-gray-800 border-gray-300';
+    }
+  };
+
   // Componente para la ficha de empleado
   const EmployeeCard = ({ employee }: { employee: EmployeeCapacities }) => (
     <Card className="mb-6 break-inside-avoid">
@@ -400,12 +519,7 @@ export default function CapacitiesManagement() {
               {Object.entries(employee.sap_modules).map(([skill, level]) => (
                 <div key={skill} className="flex justify-between items-center p-2 bg-blue-50 rounded">
                   <span className="text-sm font-medium">{skill}</span>
-                  <Badge variant="outline" className={cn(
-                    level === 'Experto' ? "text-green-700 border-green-700" :
-                    level === 'Alto' ? "text-blue-700 border-blue-700" :
-                    level === 'Medio' ? "text-yellow-700 border-yellow-700" :
-                    "text-gray-700 border-gray-700"
-                  )}>
+                  <Badge variant="outline" className={cn("text-xs", getLevelBadgeColor(level))}>
                     {level}
                   </Badge>
                 </div>
@@ -425,12 +539,7 @@ export default function CapacitiesManagement() {
               {Object.entries(employee.sap_implementation).map(([skill, level]) => (
                 <div key={skill} className="flex justify-between items-center p-2 bg-purple-50 rounded">
                   <span className="text-sm font-medium">{skill}</span>
-                  <Badge variant="outline" className={cn(
-                    level === 'Experto' ? "text-green-700 border-green-700" :
-                    level === 'Alto' ? "text-blue-700 border-blue-700" :
-                    level === 'Medio' ? "text-yellow-700 border-yellow-700" :
-                    "text-gray-700 border-gray-700"
-                  )}>
+                  <Badge variant="outline" className={cn("text-xs", getLevelBadgeColor(level))}>
                     {level}
                   </Badge>
                 </div>
@@ -450,12 +559,7 @@ export default function CapacitiesManagement() {
               {Object.entries(employee.languages).map(([skill, level]) => (
                 <div key={skill} className="flex justify-between items-center p-2 bg-green-50 rounded">
                   <span className="text-sm font-medium">{skill}</span>
-                  <Badge variant="outline" className={cn(
-                    level === 'Experto' ? "text-green-700 border-green-700" :
-                    level === 'Alto' ? "text-blue-700 border-blue-700" :
-                    level === 'Medio' ? "text-yellow-700 border-yellow-700" :
-                    "text-gray-700 border-gray-700"
-                  )}>
+                  <Badge variant="outline" className={cn("text-xs", getLevelBadgeColor(level))}>
                     {level}
                   </Badge>
                 </div>
@@ -475,12 +579,7 @@ export default function CapacitiesManagement() {
               {Object.entries(employee.industries).map(([skill, level]) => (
                 <div key={skill} className="flex justify-between items-center p-2 bg-orange-50 rounded">
                   <span className="text-sm font-medium">{skill}</span>
-                  <Badge variant="outline" className={cn(
-                    level === 'Experto' ? "text-green-700 border-green-700" :
-                    level === 'Alto' ? "text-blue-700 border-blue-700" :
-                    level === 'Medio' ? "text-yellow-700 border-yellow-700" :
-                    "text-gray-700 border-gray-700"
-                  )}>
+                  <Badge variant="outline" className={cn("text-xs", getLevelBadgeColor(level))}>
                     {level}
                   </Badge>
                 </div>
@@ -509,8 +608,6 @@ export default function CapacitiesManagement() {
     );
   }
 
-  const isCardViewEnabled = personFilter.length === 1;
-
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
@@ -518,7 +615,7 @@ export default function CapacitiesManagement() {
         <div className="container mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <Button variant="ghost" size="sm" onClick={() => navigate('/admin')}>
+              <Button variant="ghost" size="sm" onClick={() => navigate('/')}>
                 <ArrowLeft className="h-4 w-4" />
               </Button>
               <div className="flex items-center gap-3">
@@ -526,10 +623,8 @@ export default function CapacitiesManagement() {
                   <Zap className="h-6 w-6 text-cyan-600" />
                 </div>
                 <div>
-                  <h1 className="text-2xl font-bold text-foreground">
-                    Gestión de Capacidades ({employeeCapacities.length})
-                  </h1>
-                  <p className="text-muted-foreground">Administra las capacidades y habilidades del personal</p>
+                  <h1 className="text-2xl font-bold text-foreground">Gestión de Capacidades ({filteredEmployees.length})</h1>
+                  <p className="text-muted-foreground">Administra las capacidades y habilidades del equipo</p>
                 </div>
               </div>
             </div>
@@ -537,7 +632,7 @@ export default function CapacitiesManagement() {
               <Button 
                 variant="outline" 
                 size="sm"
-                onClick={() => navigate('/admin')}
+                onClick={() => navigate('/')}
                 className="flex items-center gap-2 hover:bg-blue-50 hover:text-blue-700 hover:border-blue-200"
               >
                 <Home className="h-4 w-4" />
@@ -546,7 +641,9 @@ export default function CapacitiesManagement() {
               <Button 
                 variant="outline" 
                 size="sm"
-                onClick={() => navigate('/')}
+                onClick={() => {
+                  window.location.reload();
+                }}
                 className="flex items-center gap-2 hover:bg-red-50 hover:text-red-700 hover:border-red-200"
               >
                 <LogOut className="h-4 w-4" />
@@ -584,10 +681,10 @@ export default function CapacitiesManagement() {
                   </div>
 
                   <div>
-                    <Label htmlFor="skill">Capacidad *</Label>
+                    <Label htmlFor="skill">Habilidad *</Label>
                     <Input
                       id="skill"
-                      placeholder="Nombre de la capacidad"
+                      placeholder="Ej: Módulo SAP - FI, Idiomas - Inglés"
                       value={formData.skill}
                       onChange={(e) => setFormData({ ...formData, skill: e.target.value })}
                     />
@@ -618,6 +715,16 @@ export default function CapacitiesManagement() {
                   </div>
 
                   <div>
+                    <Label htmlFor="comments">Comentarios</Label>
+                    <Input
+                      id="comments"
+                      placeholder="Comentarios adicionales"
+                      value={formData.comments}
+                      onChange={(e) => setFormData({ ...formData, comments: e.target.value })}
+                    />
+                  </div>
+
+                  <div>
                     <Label htmlFor="evaluation_date">Fecha de Evaluación</Label>
                     <Popover>
                       <PopoverTrigger asChild>
@@ -644,16 +751,6 @@ export default function CapacitiesManagement() {
                     </Popover>
                   </div>
 
-                  <div>
-                    <Label htmlFor="comments">Comentarios</Label>
-                    <Input
-                      id="comments"
-                      placeholder="Comentarios adicionales"
-                      value={formData.comments}
-                      onChange={(e) => setFormData({ ...formData, comments: e.target.value })}
-                    />
-                  </div>
-
                   <div className="flex gap-2 pt-4">
                     <Button variant="outline" onClick={() => setIsAddDialogOpen(false)} className="flex-1">
                       Cancelar
@@ -666,22 +763,43 @@ export default function CapacitiesManagement() {
               </DialogContent>
             </Dialog>
 
-            <Button variant="outline" className="text-cyan-600 border-cyan-600 hover:bg-cyan-50" onClick={handleExportExcel}>
-              <Download className="h-4 w-4 mr-2" />
-              Exportar Excel
-            </Button>
-
             <Button
               onClick={() => setShowUpload(!showUpload)}
               variant="outline"
-              className="text-purple-600 border-purple-600 hover:bg-purple-50"
+              className="text-cyan-600 border-cyan-600 hover:bg-cyan-50"
             >
-              <Upload className="h-4 w-4 mr-2" />
-              {showUpload ? 'Ocultar Carga' : 'Cargar Archivo'}
+              <Download className="h-4 w-4 mr-2" />
+              Cargar Excel
+            </Button>
+
+            <Button 
+              variant="outline" 
+              onClick={handleExportExcel}
+              disabled={filteredEmployees.length === 0}
+              className="text-cyan-600 border-cyan-600 hover:bg-cyan-50"
+            >
+              <Download className="h-4 w-4 mr-2" />
+              Exportar Excel
             </Button>
           </div>
 
           <div className="flex items-center gap-2">
+            <Button 
+              variant={viewMode === 'table' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setViewMode('table')}
+            >
+              <TableIcon className="h-4 w-4 mr-2" />
+              Tabla
+            </Button>
+            <Button 
+              variant={viewMode === 'card' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setViewMode('card')}
+            >
+              <IdCard className="h-4 w-4 mr-2" />
+              Fichas
+            </Button>
             <Button 
               variant="outline" 
               onClick={() => setShowFilters(!showFilters)}
@@ -690,22 +808,24 @@ export default function CapacitiesManagement() {
               <Filter className="h-4 w-4 mr-2" />
               Filtros
             </Button>
-            
-            {isCardViewEnabled && (
+            {viewMode === 'table' && (
               <Button 
                 variant="outline" 
-                onClick={() => setViewMode(viewMode === 'table' ? 'card' : 'table')}
-                className={cn(
-                  "text-green-600 border-green-600", 
-                  viewMode === 'card' && "bg-green-50"
-                )}
+                onClick={() => setShowColumns(!showColumns)}
+                className="text-purple-600 border-purple-600 hover:bg-purple-50"
               >
-                {viewMode === 'table' ? <IdCard className="h-4 w-4 mr-2" /> : <TableIcon className="h-4 w-4 mr-2" />}
-                {viewMode === 'table' ? 'Vista Compactada' : 'Vista Tabla'}
+                <Settings2 className="h-4 w-4 mr-2" />
+                Columnas
               </Button>
             )}
           </div>
         </div>
+
+        {showUpload && (
+          <div className="mb-8">
+            <CapacitiesUpload />
+          </div>
+        )}
 
         {/* Search */}
         <div className="mb-6">
@@ -720,27 +840,12 @@ export default function CapacitiesManagement() {
           </div>
         </div>
 
-        {/* Upload Section */}
-        {showUpload && (
-          <Card className="mb-6">
-            <CardHeader>
-              <CardTitle>Cargar Archivo de Capacidades</CardTitle>
-              <CardDescription>
-                Sube un archivo Excel con las capacidades de los empleados organizadas por bloques de conocimiento
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <CapacitiesUpload onUploadComplete={fetchCapacities} />
-            </CardContent>
-          </Card>
-        )}
-
         {/* Filters */}
         {showFilters && (
           <Card className="mb-6">
             <CardHeader>
               <div className="flex items-center justify-between">
-                <CardTitle className="text-lg">Filtros Avanzados</CardTitle>
+                <CardTitle className="text-lg">Filtros por Columna</CardTitle>
                 <Button variant="outline" size="sm" onClick={clearFilters}>
                   <RotateCcw className="h-4 w-4 mr-2" />
                   Limpiar Filtros
@@ -748,9 +853,8 @@ export default function CapacitiesManagement() {
               </div>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-                
-                {/* Filtro por Empleado */}
+              <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
+                {/* Empleado Filter */}
                 <div>
                   <Label className="text-sm font-medium mb-2 block">Empleado</Label>
                   <div className="space-y-2 max-h-40 overflow-y-auto border rounded-md p-2">
@@ -782,9 +886,9 @@ export default function CapacitiesManagement() {
                   )}
                 </div>
 
-                {/* Filtro por Módulos SAP */}
+                {/* Skills Filter */}
                 <div>
-                  <Label className="text-sm font-medium mb-2 block text-yellow-700">Módulos SAP</Label>
+                  <Label className="text-sm font-medium mb-2 block">Habilidades SAP</Label>
                   <div className="space-y-2 max-h-40 overflow-y-auto border rounded-md p-2">
                     {getUniqueSkills().map(skill => (
                       <div key={skill} className="flex items-center space-x-2">
@@ -800,11 +904,11 @@ export default function CapacitiesManagement() {
                   {skillFilter.length > 0 && (
                     <div className="mt-2 flex flex-wrap gap-1">
                       {skillFilter.map(skill => (
-                        <Badge key={skill} variant="secondary" className="text-xs bg-yellow-100 text-yellow-800">
+                        <Badge key={skill} variant="secondary" className="text-xs bg-blue-100 text-blue-800">
                           {skill}
                           <button 
                             onClick={() => toggleFilter(skillFilter, skill, setSkillFilter)}
-                            className="ml-1 hover:bg-yellow-200 rounded-full p-0.5"
+                            className="ml-1 hover:bg-blue-200 rounded-full p-0.5"
                           >
                             <X className="h-3 w-3" />
                           </button>
@@ -814,9 +918,9 @@ export default function CapacitiesManagement() {
                   )}
                 </div>
 
-                {/* Filtro por Idiomas */}
+                {/* Languages Filter */}
                 <div>
-                  <Label className="text-sm font-medium mb-2 block text-blue-700">Idiomas</Label>
+                  <Label className="text-sm font-medium mb-2 block">Idiomas</Label>
                   <div className="space-y-2 max-h-40 overflow-y-auto border rounded-md p-2">
                     {getUniqueLanguages().map(language => (
                       <div key={language} className="flex items-center space-x-2">
@@ -832,11 +936,11 @@ export default function CapacitiesManagement() {
                   {languageFilter.length > 0 && (
                     <div className="mt-2 flex flex-wrap gap-1">
                       {languageFilter.map(language => (
-                        <Badge key={language} variant="secondary" className="text-xs bg-blue-100 text-blue-800">
+                        <Badge key={language} variant="secondary" className="text-xs bg-green-100 text-green-800">
                           {language}
                           <button 
                             onClick={() => toggleFilter(languageFilter, language, setLanguageFilter)}
-                            className="ml-1 hover:bg-blue-200 rounded-full p-0.5"
+                            className="ml-1 hover:bg-green-200 rounded-full p-0.5"
                           >
                             <X className="h-3 w-3" />
                           </button>
@@ -846,9 +950,9 @@ export default function CapacitiesManagement() {
                   )}
                 </div>
 
-                {/* Filtro por Industrias */}
+                {/* Industries Filter */}
                 <div>
-                  <Label className="text-sm font-medium mb-2 block text-green-700">Industrias</Label>
+                  <Label className="text-sm font-medium mb-2 block">Industrias</Label>
                   <div className="space-y-2 max-h-40 overflow-y-auto border rounded-md p-2">
                     {getUniqueIndustries().map(industry => (
                       <div key={industry} className="flex items-center space-x-2">
@@ -864,11 +968,11 @@ export default function CapacitiesManagement() {
                   {industryFilter.length > 0 && (
                     <div className="mt-2 flex flex-wrap gap-1">
                       {industryFilter.map(industry => (
-                        <Badge key={industry} variant="secondary" className="text-xs bg-green-100 text-green-800">
+                        <Badge key={industry} variant="secondary" className="text-xs bg-orange-100 text-orange-800">
                           {industry}
                           <button 
                             onClick={() => toggleFilter(industryFilter, industry, setIndustryFilter)}
-                            className="ml-1 hover:bg-green-200 rounded-full p-0.5"
+                            className="ml-1 hover:bg-orange-200 rounded-full p-0.5"
                           >
                             <X className="h-3 w-3" />
                           </button>
@@ -878,10 +982,10 @@ export default function CapacitiesManagement() {
                   )}
                 </div>
 
-                {/* Filtro por Niveles */}
+                {/* Levels Filter */}
                 <div>
-                  <Label className="text-sm font-medium mb-2 block text-purple-700">Niveles</Label>
-                  <div className="space-y-2 max-h-40 overflow-y-auto border rounded-md p-2">
+                  <Label className="text-sm font-medium mb-2 block">Niveles</Label>
+                  <div className="space-y-2 border rounded-md p-2">
                     {getUniqueLevels().map(level => (
                       <div key={level} className="flex items-center space-x-2">
                         <Checkbox 
@@ -909,161 +1013,337 @@ export default function CapacitiesManagement() {
                     </div>
                   )}
                 </div>
-
               </div>
-
-              {/* Resumen de filtros activos */}
-              {(personFilter.length > 0 || skillFilter.length > 0 || languageFilter.length > 0 || industryFilter.length > 0 || levelFilter.length > 0) && (
-                <div className="mt-6 pt-4 border-t">
-                  <div className="text-sm text-muted-foreground mb-2">
-                    Filtros activos: {filteredEmployees.length} de {employeeCapacities.length} empleados
-                  </div>
-                  <div className="text-xs text-muted-foreground">
-                    Buscar ejemplo: "inglés + Pharma + FI-GL nivel básico o superior"
-                  </div>
-                </div>
-              )}
             </CardContent>
           </Card>
         )}
 
-        {/* Content - Vista de tarjetas o visual */}
-        {isCardViewEnabled && viewMode === 'card' ? (
-          <div className="columns-1 md:columns-2 lg:columns-3 gap-6 space-y-6">
+        {/* Column Management */}
+        {showColumns && viewMode === 'table' && (
+          <Card className="mb-6">
+            <CardHeader>
+              <CardTitle className="text-lg">Gestión de Columnas</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
+                {columns.map((column) => (
+                  <div key={column.key} className="flex items-center space-x-2">
+                    <Checkbox 
+                      id={`column-${column.key}`}
+                      checked={column.visible}
+                      onCheckedChange={(checked) => 
+                        setColumns(prev => prev.map(col => 
+                          col.key === column.key 
+                            ? { ...col, visible: !!checked }
+                            : col
+                        ))
+                      }
+                    />
+                    <label htmlFor={`column-${column.key}`} className="text-sm">
+                      {column.label}
+                    </label>
+                  </div>
+                ))}
+              </div>
+              <div className="mt-4 flex items-center space-x-2">
+                <Checkbox id="save-default" />
+                <label htmlFor="save-default" className="text-sm text-muted-foreground">
+                  Guardar como vista por defecto
+                </label>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="ml-4"
+                  onClick={() => {
+                    setColumns(prev => prev.map(col => ({ ...col, visible: true })));
+                  }}
+                >
+                  Resetear
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Pagination Controls */}
+        {viewMode === 'table' && (
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-muted-foreground">
+                Mostrando {startIndex + 1} - {Math.min(endIndex, filteredEmployees.length)} de {filteredEmployees.length} empleados
+              </span>
+              <Select 
+                value={itemsPerPage.toString()} 
+                onValueChange={(value) => setItemsPerPage(Number(value))}
+              >
+                <SelectTrigger className="w-20">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="25">25</SelectItem>
+                  <SelectItem value="50">50</SelectItem>
+                  <SelectItem value="100">100</SelectItem>
+                  <SelectItem value="200">200</SelectItem>
+                </SelectContent>
+              </Select>
+              <span className="text-sm text-muted-foreground">por página</span>
+            </div>
+            
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage(1)}
+                disabled={currentPage === 1}
+              >
+                <ChevronsLeft className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage(currentPage - 1)}
+                disabled={currentPage === 1}
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <span className="text-sm text-muted-foreground px-2">
+                Página {currentPage} de {totalPages}
+              </span>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage(currentPage + 1)}
+                disabled={currentPage === totalPages}
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage(totalPages)}
+                disabled={currentPage === totalPages}
+              >
+                <ChevronsRight className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {/* Content based on view mode */}
+        {viewMode === 'table' ? (
+          /* Enhanced Table */
+          <Card>
+            <CardContent className="p-0">
+              <div className="overflow-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-16 py-3 px-4 font-semibold text-xs text-muted-foreground bg-muted/30">
+                        ÍNDICE
+                      </TableHead>
+                      {columns.filter(col => col.visible).map((column) => (
+                        <TableHead 
+                          key={column.key}
+                          className="py-3 px-4 font-semibold text-xs text-muted-foreground bg-muted/30 cursor-pointer hover:bg-muted/50 select-none relative group"
+                          style={{ width: column.width }}
+                          draggable
+                          onDragStart={(e) => handleDragStart(e, column.key)}
+                          onDragOver={handleDragOver}
+                          onDrop={(e) => handleDrop(e, column.key)}
+                        >
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <GripVertical className="w-3 h-3 opacity-50 cursor-move" />
+                              <span>{column.label.toUpperCase()}</span>
+                            </div>
+                          </div>
+                          {column.resizable && (
+                            <div
+                              className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-primary/20 group-hover:bg-primary/20"
+                              onMouseDown={(e) => handleMouseDown(e, column.key)}
+                            />
+                          )}
+                        </TableHead>
+                      ))}
+                      <TableHead className="w-24 py-3 px-4 font-semibold text-xs text-muted-foreground bg-muted/30">
+                        ACCIONES
+                      </TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {currentEmployees.map((employee, index) => (
+                      <TableRow key={employee.id} className="hover:bg-muted/30 transition-colors">
+                        <TableCell className="font-medium py-4 px-4 text-sm text-center">
+                          {startIndex + index + 1}
+                        </TableCell>
+                        
+                        {/* Empleado */}
+                        {columns.find(col => col.key === 'person_name')?.visible && (
+                          <TableCell 
+                            className="py-4 px-4"
+                            style={{ width: columns.find(col => col.key === 'person_name')?.width }}
+                          >
+                            <div className="font-semibold text-foreground text-sm">
+                              {employee.person_name}
+                            </div>
+                          </TableCell>
+                        )}
+                        
+                        {/* Módulos SAP */}
+                        {columns.find(col => col.key === 'sap_modules')?.visible && (
+                          <TableCell 
+                            className="py-4 px-4"
+                            style={{ width: columns.find(col => col.key === 'sap_modules')?.width }}
+                          >
+                            <div className="flex flex-wrap gap-1">
+                              {Object.entries(employee.sap_modules).map(([skill, level]) => (
+                                <div key={skill} className="text-xs bg-blue-50 rounded px-2 py-1">
+                                  <span className="font-medium">{skill}:</span>{' '}
+                                  <Badge variant="outline" className={cn("text-xs ml-1", getLevelBadgeColor(level))}>
+                                    {level}
+                                  </Badge>
+                                </div>
+                              ))}
+                            </div>
+                          </TableCell>
+                        )}
+                        
+                        {/* Implantación SAP */}
+                        {columns.find(col => col.key === 'sap_implementation')?.visible && (
+                          <TableCell 
+                            className="py-4 px-4"
+                            style={{ width: columns.find(col => col.key === 'sap_implementation')?.width }}
+                          >
+                            <div className="flex flex-wrap gap-1">
+                              {Object.entries(employee.sap_implementation).map(([skill, level]) => (
+                                <div key={skill} className="text-xs bg-purple-50 rounded px-2 py-1">
+                                  <span className="font-medium">{skill}:</span>{' '}
+                                  <Badge variant="outline" className={cn("text-xs ml-1", getLevelBadgeColor(level))}>
+                                    {level}
+                                  </Badge>
+                                </div>
+                              ))}
+                            </div>
+                          </TableCell>
+                        )}
+                        
+                        {/* Idiomas */}
+                        {columns.find(col => col.key === 'languages')?.visible && (
+                          <TableCell 
+                            className="py-4 px-4"
+                            style={{ width: columns.find(col => col.key === 'languages')?.width }}
+                          >
+                            <div className="flex flex-wrap gap-1">
+                              {Object.entries(employee.languages).map(([skill, level]) => (
+                                <div key={skill} className="text-xs bg-green-50 rounded px-2 py-1">
+                                  <span className="font-medium">{skill}:</span>{' '}
+                                  <Badge variant="outline" className={cn("text-xs ml-1", getLevelBadgeColor(level))}>
+                                    {level}
+                                  </Badge>
+                                </div>
+                              ))}
+                            </div>
+                          </TableCell>
+                        )}
+                        
+                        {/* Industrias */}
+                        {columns.find(col => col.key === 'industries')?.visible && (
+                          <TableCell 
+                            className="py-4 px-4"
+                            style={{ width: columns.find(col => col.key === 'industries')?.width }}
+                          >
+                            <div className="flex flex-wrap gap-1">
+                              {Object.entries(employee.industries).map(([skill, level]) => (
+                                <div key={skill} className="text-xs bg-orange-50 rounded px-2 py-1">
+                                  <span className="font-medium">{skill}:</span>{' '}
+                                  <Badge variant="outline" className={cn("text-xs ml-1", getLevelBadgeColor(level))}>
+                                    {level}
+                                  </Badge>
+                                </div>
+                              ))}
+                            </div>
+                          </TableCell>
+                        )}
+                        
+                        {/* Fecha Evaluación */}
+                        {columns.find(col => col.key === 'evaluation_date')?.visible && (
+                          <TableCell 
+                            className="py-4 px-4 text-sm"
+                            style={{ width: columns.find(col => col.key === 'evaluation_date')?.width }}
+                          >
+                            {formatDate(employee.evaluation_date)}
+                          </TableCell>
+                        )}
+                        
+                        {/* Acciones */}
+                        <TableCell className="py-4 px-4">
+                          <div className="flex items-center gap-1">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleDeleteEmployee(employee.person_name)}
+                              className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
+                            >
+                              <Trash2 className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </CardContent>
+          </Card>
+        ) : (
+          /* Card View */
+          <div className="columns-1 md:columns-2 lg:columns-3 xl:columns-4 gap-6">
             {filteredEmployees.map((employee) => (
               <EmployeeCard key={employee.id} employee={employee} />
             ))}
           </div>
-        ) : (
-          /* Vista visual de capacidades */
-          <div className="space-y-6">
-            {filteredEmployees.map((employee, index) => (
-              <Card key={employee.id} className="border-l-4 border-l-cyan-500">
-                <CardHeader className="pb-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 bg-cyan-100 rounded-full flex items-center justify-center text-cyan-700 font-bold text-sm">
-                        {index + 1}
-                      </div>
-                      <CardTitle className="text-lg">{employee.person_name}</CardTitle>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Badge variant="outline" className="bg-cyan-50">
-                        {employee.capacities.length} capacidades
-                      </Badge>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleDeleteEmployee(employee.person_name)}
-                        className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid gap-6">
-                    {/* Módulos SAP e Implantaciones */}
-                    {(Object.keys(employee.sap_modules).length > 0 || Object.keys(employee.sap_implementation).length > 0) && (
-                      <div>
-                        <div className="bg-yellow-100 text-yellow-800 px-3 py-1 rounded text-sm font-medium mb-3 inline-block">
-                          Módulos SAP e IMPLANTACIONES
-                        </div>
-                        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-2">
-                          {/* Módulos SAP */}
-                          {Object.entries(employee.sap_modules).map(([skill, level]) => (
-                            <div key={skill} className={`px-3 py-2 rounded text-xs font-medium text-center ${
-                              level === 'Básico' ? 'bg-yellow-200 text-yellow-800' :
-                              level === 'Medio' ? 'bg-orange-200 text-orange-800' :
-                              level === 'Alto' ? 'bg-blue-200 text-blue-800' :
-                              level === 'Experto' ? 'bg-green-200 text-green-800' :
-                              'bg-gray-200 text-gray-800'
-                            }`}>
-                              <div className="font-semibold">{skill}</div>
-                              <div className="text-xs">{level}</div>
-                            </div>
-                          ))}
-                          {/* Implantaciones SAP */}
-                          {Object.entries(employee.sap_implementation).map(([skill, level]) => (
-                            <div key={skill} className={`px-3 py-2 rounded text-xs font-medium text-center ${
-                              level === 'Nulo' ? 'bg-red-200 text-red-800' :
-                              level === 'Básico' ? 'bg-yellow-200 text-yellow-800' :
-                              level === 'Medio' ? 'bg-orange-200 text-orange-800' :
-                              level === 'Alto' ? 'bg-blue-200 text-blue-800' :
-                              level === 'Experto' ? 'bg-green-200 text-green-800' :
-                              'bg-gray-200 text-gray-800'
-                            }`}>
-                              <div className="font-semibold">{skill}</div>
-                              <div className="text-xs">{level}</div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
+        )}
 
-                    {/* Idiomas */}
-                    {Object.keys(employee.languages).length > 0 && (
-                      <div>
-                        <div className="bg-blue-100 text-blue-800 px-3 py-1 rounded text-sm font-medium mb-3 inline-block">
-                          IDIOMAS
-                        </div>
-                        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-2">
-                          {Object.entries(employee.languages).map(([skill, level]) => (
-                            <div key={skill} className={`px-3 py-2 rounded text-xs font-medium text-center ${
-                              level === 'Nulo' ? 'bg-gray-200 text-gray-800' :
-                              level === 'Básico' ? 'bg-yellow-200 text-yellow-800' :
-                              level === 'Medio' ? 'bg-orange-200 text-orange-800' :
-                              level === 'Alto' ? 'bg-blue-200 text-blue-800' :
-                              level === 'Bilingüe' || level === 'Experto' ? 'bg-green-200 text-green-800' :
-                              'bg-blue-100 text-blue-800'
-                            }`}>
-                              <div className="font-semibold">{skill}</div>
-                              <div className="text-xs">{level}</div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Industrias */}
-                    {Object.keys(employee.industries).length > 0 && (
-                      <div>
-                        <div className="bg-green-100 text-green-800 px-3 py-1 rounded text-sm font-medium mb-3 inline-block">
-                          INDUSTRIAS
-                        </div>
-                        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-2">
-                          {Object.entries(employee.industries).map(([skill, level]) => (
-                            <div key={skill} className={`px-3 py-2 rounded text-xs font-medium text-center ${
-                              level === 'No' ? 'bg-red-200 text-red-800' :
-                              level === 'Sí' ? 'bg-green-200 text-green-800' :
-                              'bg-green-100 text-green-800'
-                            }`}>
-                              <div className="font-semibold">{skill}</div>
-                              <div className="text-xs">{level}</div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Fecha de evaluación */}
-                    {employee.evaluation_date && (
-                      <div className="text-xs text-muted-foreground">
-                        Última evaluación: {formatDate(employee.evaluation_date)}
-                      </div>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-            {filteredEmployees.length === 0 && (
-              <Card>
-                <CardContent className="py-8 text-center text-muted-foreground">
-                  No hay empleados registrados. Sube un archivo para comenzar.
-                </CardContent>
-              </Card>
-            )}
+        {/* Bottom Pagination for Table Mode */}
+        {viewMode === 'table' && (
+          <div className="flex items-center justify-center mt-6">
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage(1)}
+                disabled={currentPage === 1}
+              >
+                <ChevronsLeft className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage(currentPage - 1)}
+                disabled={currentPage === 1}
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <span className="text-sm text-muted-foreground px-4">
+                Página {currentPage} de {totalPages}
+              </span>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage(currentPage + 1)}
+                disabled={currentPage === totalPages}
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage(totalPages)}
+                disabled={currentPage === totalPages}
+              >
+                <ChevronsRight className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
         )}
       </div>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -34,13 +34,20 @@ import {
   LogOut,
   ChevronUp,
   ChevronDown,
-  ChevronsUpDown
+  ChevronsUpDown,
+  ChevronLeft,
+  ChevronRight,
+  ChevronsLeft,
+  ChevronsRight,
+  GripVertical
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
+import HolidaysUpload from '@/components/FileUpload/HolidaysUpload';
+import * as XLSX from 'xlsx';
 
 interface Holiday {
   id: string;
@@ -50,6 +57,15 @@ interface Holiday {
   comunidad_autonoma: string;
   origen: string;
   created_at: string;
+}
+
+interface ColumnConfig {
+  key: keyof Holiday;
+  label: string;
+  visible: boolean;
+  width: number;
+  minWidth: number;
+  resizable: boolean;
 }
 
 const SPANISH_AUTONOMOUS_COMMUNITIES = [
@@ -95,21 +111,29 @@ const HolidaysManagement = () => {
   const [originFilter, setOriginFilter] = useState<string[]>([]);
   const [showFilters, setShowFilters] = useState(false);
   const [showColumns, setShowColumns] = useState(false);
+  const [showUpload, setShowUpload] = useState(false);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [editingRow, setEditingRow] = useState<string | null>(null);
   const [sortField, setSortField] = useState<keyof Holiday | null>(null);
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
+  
+  // Pagination
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(50);
+  
+  // Column management
+  const [columns, setColumns] = useState<ColumnConfig[]>([
+    { key: 'date', label: 'Fecha', visible: true, width: 150, minWidth: 120, resizable: true },
+    { key: 'festivo', label: 'Festivo', visible: true, width: 250, minWidth: 200, resizable: true },
+    { key: 'pais', label: 'País / Comunidad', visible: true, width: 200, minWidth: 160, resizable: true },
+    { key: 'origen', label: 'Origen', visible: true, width: 120, minWidth: 100, resizable: true }
+  ]);
+  
+  const [resizing, setResizing] = useState<{ columnKey: keyof Holiday; startX: number; startWidth: number } | null>(null);
+  const [draggedColumn, setDraggedColumn] = useState<keyof Holiday | null>(null);
+  
   const { toast } = useToast();
   const navigate = useNavigate();
-
-  // Column visibility state
-  const [visibleColumns, setVisibleColumns] = useState({
-    fecha: true,
-    festivo: true,
-    pais: true,
-    comunidad_autonoma: true,
-    origen: true
-  });
 
   // Form state
   const [formData, setFormData] = useState({
@@ -150,7 +174,9 @@ const HolidaysManagement = () => {
     // Search filter
     if (searchTerm) {
       filtered = filtered.filter(holiday =>
-        holiday.festivo.toLowerCase().includes(searchTerm.toLowerCase())
+        holiday.festivo.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        holiday.pais.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        holiday.comunidad_autonoma.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
 
@@ -194,6 +220,7 @@ const HolidaysManagement = () => {
     }
 
     setFilteredHolidays(filtered);
+    setCurrentPage(1); // Reset to first page when filters change
   }, [holidays, searchTerm, countryFilter, communityFilter, originFilter, sortField, sortDirection]);
 
   const handleAddHoliday = async () => {
@@ -293,6 +320,27 @@ const HolidaysManagement = () => {
     }
   };
 
+  const handleExportExcel = () => {
+    const exportData = filteredHolidays.map((holiday, index) => ({
+      'ÍNDICE': index + 1,
+      'FECHA': format(new Date(holiday.date), 'dd/MM/yyyy'),
+      'FESTIVO': holiday.festivo,
+      'PAÍS': holiday.pais,
+      'COMUNIDAD AUTÓNOMA': holiday.comunidad_autonoma,
+      'ORIGEN': holiday.origen
+    }));
+
+    const ws = XLSX.utils.json_to_sheet(exportData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Festivos');
+    XLSX.writeFile(wb, `festivos_${new Date().toISOString().split('T')[0]}.xlsx`);
+
+    toast({
+      title: "Éxito",
+      description: "Archivo Excel exportado correctamente",
+    });
+  };
+
   const clearFilters = () => {
     setSearchTerm('');
     setCountryFilter([]);
@@ -314,10 +362,8 @@ const HolidaysManagement = () => {
 
   const handleSort = (field: keyof Holiday) => {
     if (sortField === field) {
-      // Si ya estamos ordenando por este campo, cambiar dirección
       setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
     } else {
-      // Nuevo campo, empezar con ascendente
       setSortField(field);
       setSortDirection('asc');
     }
@@ -330,6 +376,80 @@ const HolidaysManagement = () => {
     return sortDirection === 'asc' ? 
       <ChevronUp className="w-4 h-4" /> : 
       <ChevronDown className="w-4 h-4" />;
+  };
+
+  // Pagination calculations
+  const totalPages = Math.ceil(filteredHolidays.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const currentHolidays = filteredHolidays.slice(startIndex, endIndex);
+
+  // Column resize handlers
+  const handleMouseDown = useCallback((e: React.MouseEvent, columnKey: keyof Holiday) => {
+    e.preventDefault();
+    const column = columns.find(col => col.key === columnKey);
+    if (!column) return;
+
+    setResizing({
+      columnKey,
+      startX: e.clientX,
+      startWidth: column.width
+    });
+  }, [columns]);
+
+  const handleMouseMove = useCallback((e: MouseEvent) => {
+    if (!resizing) return;
+
+    const deltaX = e.clientX - resizing.startX;
+    const newWidth = Math.max(resizing.startWidth + deltaX, 
+      columns.find(col => col.key === resizing.columnKey)?.minWidth || 100);
+
+    setColumns(prev => prev.map(col => 
+      col.key === resizing.columnKey 
+        ? { ...col, width: newWidth }
+        : col
+    ));
+  }, [resizing, columns]);
+
+  const handleMouseUp = useCallback(() => {
+    setResizing(null);
+  }, []);
+
+  useEffect(() => {
+    if (resizing) {
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+      return () => {
+        document.removeEventListener('mousemove', handleMouseMove);
+        document.removeEventListener('mouseup', handleMouseUp);
+      };
+    }
+  }, [resizing, handleMouseMove, handleMouseUp]);
+
+  // Column drag and drop handlers
+  const handleDragStart = (e: React.DragEvent, columnKey: keyof Holiday) => {
+    setDraggedColumn(columnKey);
+    e.dataTransfer.effectAllowed = 'move';
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+  };
+
+  const handleDrop = (e: React.DragEvent, targetColumnKey: keyof Holiday) => {
+    e.preventDefault();
+    if (!draggedColumn || draggedColumn === targetColumnKey) return;
+
+    const draggedIndex = columns.findIndex(col => col.key === draggedColumn);
+    const targetIndex = columns.findIndex(col => col.key === targetColumnKey);
+
+    const newColumns = [...columns];
+    const [draggedCol] = newColumns.splice(draggedIndex, 1);
+    newColumns.splice(targetIndex, 0, draggedCol);
+
+    setColumns(newColumns);
+    setDraggedColumn(null);
   };
 
   if (loading) {
@@ -358,7 +478,7 @@ const HolidaysManagement = () => {
                   <CalendarIcon className="h-6 w-6 text-orange-600" />
                 </div>
                 <div>
-                  <h1 className="text-2xl font-bold text-foreground">Gestión de Festivos ({holidays.length})</h1>
+                  <h1 className="text-2xl font-bold text-foreground">Gestión de Festivos ({filteredHolidays.length})</h1>
                   <p className="text-muted-foreground">Administra los días festivos del calendario</p>
                 </div>
               </div>
@@ -377,8 +497,7 @@ const HolidaysManagement = () => {
                 variant="outline" 
                 size="sm"
                 onClick={() => {
-                  // Reset authentication and navigate to login
-                  window.location.href = '/';
+                  window.location.reload();
                 }}
                 className="flex items-center gap-2 hover:bg-red-50 hover:text-red-700 hover:border-red-200"
               >
@@ -470,26 +589,8 @@ const HolidaysManagement = () => {
                           ))}
                         </SelectContent>
                       </Select>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        Primero selecciona uno o más países
-                      </p>
                     </div>
                   )}
-
-                  <div>
-                    <Label htmlFor="origen">Origen</Label>
-                    <Select value={formData.origen} onValueChange={(value) => setFormData({ ...formData, origen: value })}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Administrador">Administrador</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      Los registros manuales siempre tienen origen "Administrador"
-                    </p>
-                  </div>
 
                   <div className="flex gap-2 pt-4">
                     <Button variant="outline" onClick={() => setIsAddDialogOpen(false)} className="flex-1">
@@ -503,7 +604,21 @@ const HolidaysManagement = () => {
               </DialogContent>
             </Dialog>
 
-            <Button variant="outline" className="text-amber-600 border-amber-600 hover:bg-amber-50">
+            <Button
+              onClick={() => setShowUpload(!showUpload)}
+              variant="outline"
+              className="text-amber-600 border-amber-600 hover:bg-amber-50"
+            >
+              <Download className="h-4 w-4 mr-2" />
+              Cargar Excel
+            </Button>
+
+            <Button 
+              variant="outline" 
+              onClick={handleExportExcel}
+              disabled={filteredHolidays.length === 0}
+              className="text-amber-600 border-amber-600 hover:bg-amber-50"
+            >
               <Download className="h-4 w-4 mr-2" />
               Exportar Excel
             </Button>
@@ -528,6 +643,12 @@ const HolidaysManagement = () => {
             </Button>
           </div>
         </div>
+
+        {showUpload && (
+          <div className="mb-8">
+            <HolidaysUpload />
+          </div>
+        )}
 
         {/* Search */}
         <div className="mb-6">
@@ -648,18 +769,22 @@ const HolidaysManagement = () => {
               <CardTitle className="text-lg">Gestión de Columnas</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-                {Object.entries(visibleColumns).map(([column, visible]) => (
-                  <div key={column} className="flex items-center space-x-2">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                {columns.map((column) => (
+                  <div key={column.key} className="flex items-center space-x-2">
                     <Checkbox 
-                      id={`column-${column}`}
-                      checked={visible}
+                      id={`column-${column.key}`}
+                      checked={column.visible}
                       onCheckedChange={(checked) => 
-                        setVisibleColumns(prev => ({ ...prev, [column]: !!checked }))
+                        setColumns(prev => prev.map(col => 
+                          col.key === column.key 
+                            ? { ...col, visible: !!checked }
+                            : col
+                        ))
                       }
                     />
-                    <label htmlFor={`column-${column}`} className="text-sm capitalize">
-                      {column.replace('_', ' ')}
+                    <label htmlFor={`column-${column.key}`} className="text-sm">
+                      {column.label}
                     </label>
                   </div>
                 ))}
@@ -669,7 +794,14 @@ const HolidaysManagement = () => {
                 <label htmlFor="save-default" className="text-sm text-muted-foreground">
                   Guardar como vista por defecto
                 </label>
-                <Button variant="outline" size="sm" className="ml-4">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="ml-4"
+                  onClick={() => {
+                    setColumns(prev => prev.map(col => ({ ...col, visible: true })));
+                  }}
+                >
                   Resetear
                 </Button>
               </div>
@@ -677,146 +809,252 @@ const HolidaysManagement = () => {
           </Card>
         )}
 
-        {/* Table */}
+        {/* Pagination Controls */}
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-muted-foreground">
+              Mostrando {startIndex + 1} - {Math.min(endIndex, filteredHolidays.length)} de {filteredHolidays.length} festivos
+            </span>
+            <Select 
+              value={itemsPerPage.toString()} 
+              onValueChange={(value) => setItemsPerPage(Number(value))}
+            >
+              <SelectTrigger className="w-20">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="25">25</SelectItem>
+                <SelectItem value="50">50</SelectItem>
+                <SelectItem value="100">100</SelectItem>
+                <SelectItem value="200">200</SelectItem>
+              </SelectContent>
+            </Select>
+            <span className="text-sm text-muted-foreground">por página</span>
+          </div>
+          
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentPage(1)}
+              disabled={currentPage === 1}
+            >
+              <ChevronsLeft className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentPage(currentPage - 1)}
+              disabled={currentPage === 1}
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            <span className="text-sm text-muted-foreground px-2">
+              Página {currentPage} de {totalPages}
+            </span>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentPage(currentPage + 1)}
+              disabled={currentPage === totalPages}
+            >
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentPage(totalPages)}
+              disabled={currentPage === totalPages}
+            >
+              <ChevronsRight className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+
+        {/* Enhanced Table */}
         <Card>
           <CardContent className="p-0">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-16 py-2">ÍNDICE</TableHead>
-                  {visibleColumns.fecha && (
-                    <TableHead 
-                      className="py-2 cursor-pointer hover:bg-muted/50 select-none"
-                      onClick={() => handleSort('date')}
-                    >
-                      <div className="flex items-center justify-between">
-                        <span>FECHA (DD/MM/YYYY)</span>
-                        {getSortIcon('date')}
-                      </div>
+            <div className="overflow-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-16 py-3 px-4 font-semibold text-xs text-muted-foreground bg-muted/30">
+                      ÍNDICE
                     </TableHead>
-                  )}
-                  {visibleColumns.festivo && (
-                    <TableHead 
-                      className="py-2 cursor-pointer hover:bg-muted/50 select-none"
-                      onClick={() => handleSort('festivo')}
-                    >
-                      <div className="flex items-center justify-between">
-                        <span>FESTIVO</span>
-                        {getSortIcon('festivo')}
-                      </div>
-                    </TableHead>
-                  )}
-                  {visibleColumns.pais && (
-                    <TableHead 
-                      className="py-2 cursor-pointer hover:bg-muted/50 select-none"
-                      onClick={() => handleSort('pais')}
-                    >
-                      <div className="flex items-center justify-between">
-                        <span>PAÍS</span>
-                        {getSortIcon('pais')}
-                      </div>
-                    </TableHead>
-                  )}
-                  {visibleColumns.comunidad_autonoma && (
-                    <TableHead 
-                      className="py-2 cursor-pointer hover:bg-muted/50 select-none"
-                      onClick={() => handleSort('comunidad_autonoma')}
-                    >
-                      <div className="flex items-center justify-between">
-                        <span>COMUNIDAD AUTÓNOMA</span>
-                        {getSortIcon('comunidad_autonoma')}
-                      </div>
-                    </TableHead>
-                  )}
-                  {visibleColumns.origen && (
-                    <TableHead 
-                      className="py-2 cursor-pointer hover:bg-muted/50 select-none"
-                      onClick={() => handleSort('origen')}
-                    >
-                      <div className="flex items-center justify-between">
-                        <span>ORIGEN</span>
-                        {getSortIcon('origen')}
-                      </div>
-                    </TableHead>
-                  )}
-                  <TableHead className="w-24 py-2">ACCIONES</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredHolidays.map((holiday, index) => (
-                  <TableRow 
-                    key={holiday.id}
-                    className={cn(
-                      holiday.origen === 'Administrador' && "bg-red-50 hover:bg-red-100"
-                    )}
-                  >
-                    <TableCell className="font-medium py-2">{index + 1}</TableCell>
-                    {visibleColumns.fecha && (
-                      <TableCell className="py-2">
-                        {editingRow === holiday.id ? (
-                          <Input
-                            type="date"
-                            defaultValue={holiday.date}
-                            onBlur={(e) => handleUpdateHoliday(holiday.id, 'date', e.target.value)}
-                            className="w-auto"
+                    {columns.filter(col => col.visible).map((column) => (
+                      <TableHead 
+                        key={column.key}
+                        className="py-3 px-4 font-semibold text-xs text-muted-foreground bg-muted/30 cursor-pointer hover:bg-muted/50 select-none relative group"
+                        style={{ width: column.width }}
+                        onClick={() => handleSort(column.key)}
+                        draggable
+                        onDragStart={(e) => handleDragStart(e, column.key)}
+                        onDragOver={handleDragOver}
+                        onDrop={(e) => handleDrop(e, column.key)}
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <GripVertical className="w-3 h-3 opacity-50 cursor-move" />
+                            <span>{column.label.toUpperCase()}</span>
+                          </div>
+                          {getSortIcon(column.key)}
+                        </div>
+                        {column.resizable && (
+                          <div
+                            className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-primary/20 group-hover:bg-primary/20"
+                            onMouseDown={(e) => handleMouseDown(e, column.key)}
                           />
-                        ) : (
-                          format(new Date(holiday.date), 'dd/MM/yyyy')
                         )}
-                      </TableCell>
-                    )}
-                    {visibleColumns.festivo && (
-                      <TableCell className="py-2">
-                        {editingRow === holiday.id ? (
-                          <Input
-                            defaultValue={holiday.festivo}
-                            onBlur={(e) => handleUpdateHoliday(holiday.id, 'festivo', e.target.value)}
-                          />
-                        ) : (
-                          holiday.festivo
-                        )}
-                      </TableCell>
-                    )}
-                    {visibleColumns.pais && <TableCell className="py-2">{holiday.pais}</TableCell>}
-                    {visibleColumns.comunidad_autonoma && <TableCell className="py-2">{holiday.comunidad_autonoma}</TableCell>}
-                    {visibleColumns.origen && (
-                      <TableCell className="py-2">
-                        <Badge 
-                          variant="outline" 
-                          className={cn(
-                            holiday.origen === 'Administrador' ? "text-red-700 border-red-700" : "text-blue-700 border-blue-700"
-                          )}
-                        >
-                          {holiday.origen}
-                        </Badge>
-                      </TableCell>
-                    )}
-                    <TableCell className="py-2">
-                      <div className="flex items-center gap-1">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => setEditingRow(editingRow === holiday.id ? null : holiday.id)}
-                          className="h-8 w-8 p-0 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleDeleteHoliday(holiday.id)}
-                          className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
+                      </TableHead>
+                    ))}
+                    <TableHead className="w-24 py-3 px-4 font-semibold text-xs text-muted-foreground bg-muted/30">
+                      ACCIONES
+                    </TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {currentHolidays.map((holiday, index) => (
+                    <TableRow 
+                      key={holiday.id}
+                      className={cn(
+                        "hover:bg-muted/30 transition-colors",
+                        holiday.origen === 'Administrador' && "bg-red-50 hover:bg-red-100"
+                      )}
+                    >
+                      <TableCell className="font-medium py-4 px-4 text-sm text-center">
+                        {startIndex + index + 1}
+                      </TableCell>
+                      
+                      {/* Fecha */}
+                      {columns.find(col => col.key === 'date')?.visible && (
+                        <TableCell 
+                          className="py-4 px-4"
+                          style={{ width: columns.find(col => col.key === 'date')?.width }}
+                        >
+                          <div className="text-sm font-medium text-foreground">
+                            {format(new Date(holiday.date), 'dd/MM/yyyy')}
+                          </div>
+                        </TableCell>
+                      )}
+                      
+                      {/* Festivo */}
+                      {columns.find(col => col.key === 'festivo')?.visible && (
+                        <TableCell 
+                          className="py-4 px-4"
+                          style={{ width: columns.find(col => col.key === 'festivo')?.width }}
+                        >
+                          <div className="font-semibold text-foreground text-sm leading-tight">
+                            {holiday.festivo}
+                          </div>
+                        </TableCell>
+                      )}
+                      
+                      {/* País / Comunidad */}
+                      {columns.find(col => col.key === 'pais')?.visible && (
+                        <TableCell 
+                          className="py-4 px-4"
+                          style={{ width: columns.find(col => col.key === 'pais')?.width }}
+                        >
+                          <div className="space-y-1">
+                            <div className="font-medium text-foreground text-sm leading-tight">
+                              {holiday.pais}
+                            </div>
+                            {holiday.comunidad_autonoma && holiday.comunidad_autonoma !== 'NACIONAL' && (
+                              <div className="text-xs text-muted-foreground leading-tight">
+                                {holiday.comunidad_autonoma}
+                              </div>
+                            )}
+                          </div>
+                        </TableCell>
+                      )}
+                      
+                      {/* Origen */}
+                      {columns.find(col => col.key === 'origen')?.visible && (
+                        <TableCell 
+                          className="py-4 px-4"
+                          style={{ width: columns.find(col => col.key === 'origen')?.width }}
+                        >
+                          <Badge 
+                            variant="outline" 
+                            className={cn(
+                              "text-xs",
+                              holiday.origen === 'Administrador' ? "text-red-700 border-red-700" : "text-blue-700 border-blue-700"
+                            )}
+                          >
+                            {holiday.origen}
+                          </Badge>
+                        </TableCell>
+                      )}
+                      
+                      {/* Acciones */}
+                      <TableCell className="py-4 px-4">
+                        <div className="flex items-center gap-1">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setEditingRow(editingRow === holiday.id ? null : holiday.id)}
+                            className="h-8 w-8 p-0"
+                          >
+                            <Edit className="h-3 w-3" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleDeleteHoliday(holiday.id)}
+                            className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
           </CardContent>
         </Card>
+
+        {/* Bottom Pagination */}
+        <div className="flex items-center justify-center mt-6">
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentPage(1)}
+              disabled={currentPage === 1}
+            >
+              <ChevronsLeft className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentPage(currentPage - 1)}
+              disabled={currentPage === 1}
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            <span className="text-sm text-muted-foreground px-4">
+              Página {currentPage} de {totalPages}
+            </span>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentPage(currentPage + 1)}
+              disabled={currentPage === totalPages}
+            >
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentPage(totalPages)}
+              disabled={currentPage === totalPages}
+            >
+              <ChevronsRight className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
       </div>
     </div>
   );
