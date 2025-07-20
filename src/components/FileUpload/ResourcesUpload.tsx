@@ -101,10 +101,7 @@ const ResourcesUpload = () => {
       cex: row[5] || '', // CEX
       grupo: row[6] || '', // Grupo
       categoria: row[7] || '', // Categoria
-      oficina: row[8] || '', // Oficina
-      skill1: row[9] || '', // Skill 1 (si existe)
-      skill2: row[10] || '', // Skill 2 (si existe)
-      nivel_ingles: row[11] || '' // Nivel inglés (si existe)
+      oficina: row[8] || '' // Oficina
     };
   };
 
@@ -309,13 +306,23 @@ const ResourcesUpload = () => {
                         <div className="w-2 h-2 bg-blue-600 rounded-full"></div>
                         Oficina
                       </div>
-                    </div>
-                    <div className="mt-3 p-2 bg-blue-100 rounded border border-blue-300">
-                      <p className="text-xs"><strong>Nota:</strong> Archivo Excel con información de recursos humanos</p>
-                    </div>
-                  </div>
-                </AlertDescription>
-              </Alert>
+                     </div>
+                     <div className="mt-3 p-2 bg-blue-100 rounded border border-blue-300">
+                       <p className="text-xs"><strong>Nota:</strong> Archivo Excel con información de recursos humanos</p>
+                     </div>
+                     
+                     {/* Imagen de ejemplo del Excel */}
+                     <div className="mt-4 p-3 bg-white rounded border border-blue-200">
+                       <p className="text-sm font-semibold text-blue-800 mb-2">Ejemplo de fichero Excel para cargar:</p>
+                       <img 
+                         src="/lovable-uploads/acabfdf3-b391-4e0d-b764-82e6c102790e.png" 
+                         alt="Ejemplo de fichero Excel para cargar recursos"
+                         className="w-full rounded border border-gray-300 shadow-sm"
+                       />
+                     </div>
+                   </div>
+                 </AlertDescription>
+               </Alert>
             )}
           </div>
 
