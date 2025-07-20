@@ -1213,10 +1213,14 @@ const ProjectsManagement = () => {
                       </th>
                       
                        {/* Headers de columnas */}
-                       {columns.filter(col => col.visible).map((column) => (
-                        <th
-                          key={column.key}
-                          className="relative bg-blue-50 border-r border-gray-200 text-center font-semibold text-xs"
+                        {columns.filter(col => col.visible).map((column, colIndex, visibleColumns) => (
+                         <th
+                           key={column.key}
+                           className={cn(
+                             "relative bg-blue-50 text-center font-semibold text-xs",
+                             // Add border-r to all columns except the last visible one
+                             colIndex < visibleColumns.length - 1 ? "border-r border-gray-200" : ""
+                           )}
                           style={{ 
                             width: column.width,
                             minWidth: column.minWidth,
@@ -1282,19 +1286,21 @@ const ProjectsManagement = () => {
                             </span>
                           </td>
                           
-                          {/* Celdas de datos */}
-                          {columns.filter(col => col.visible).map((column) => (
-                            <td 
-                              key={column.key} 
-                              className={cn(
-                                "border-r border-gray-200 p-3",
-                                project.origen === 'Administrador' ? "bg-red-50" : "bg-white"
-                              )}
-                              style={{ 
-                                width: column.width,
-                                minWidth: column.minWidth,
-                                maxWidth: column.width
-                              }}
+                           {/* Celdas de datos */}
+                           {columns.filter(col => col.visible).map((column, colIndex, visibleColumns) => (
+                             <td 
+                               key={column.key} 
+                               className={cn(
+                                 "p-3",
+                                 // Add border-r to all columns except the last visible one
+                                 colIndex < visibleColumns.length - 1 ? "border-r border-gray-200" : "",
+                                 project.origen === 'Administrador' ? "bg-red-50" : "bg-white"
+                               )}
+                               style={{ 
+                                 width: column.width,
+                                 minWidth: column.minWidth,
+                                 maxWidth: column.width
+                               }}
                             >
                               <div
                                 className="p-1 rounded min-h-[32px] flex items-center"
