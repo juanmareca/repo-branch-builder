@@ -79,26 +79,11 @@ const App = () => {
           <Routes>
             <Route path="/" element={userRole === 'admin' ? <AdminDashboard /> : <Index />} />
             <Route path="/admin" element={<AdminDashboard />} />
-            <Route 
-              path="/holidays" 
-              element={userRole === 'admin' ? <Navigate to="/" replace /> : <HolidaysManagement />} 
-            />
-            <Route 
-              path="/backups" 
-              element={userRole === 'admin' ? <Navigate to="/" replace /> : <BackupsManagement />} 
-            />
-            <Route 
-              path="/audit-logs" 
-              element={userRole === 'admin' ? <Navigate to="/" replace /> : <AuditLogs />} 
-            />
-            <Route 
-              path="/capacities" 
-              element={userRole === 'admin' ? <Navigate to="/" replace /> : <CapacitiesManagement />} 
-            />
-            <Route 
-              path="/projects" 
-              element={userRole === 'admin' ? <Navigate to="/" replace /> : <ProjectsManagement />} 
-            />
+            <Route path="/holidays" element={<HolidaysManagement />} />
+            <Route path="/backups" element={<BackupsManagement />} />
+            <Route path="/audit-logs" element={<AuditLogs />} />
+            <Route path="/capacities" element={<CapacitiesManagement />} />
+            <Route path="/projects" element={<ProjectsManagement />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
