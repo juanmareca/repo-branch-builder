@@ -143,6 +143,7 @@ const ResourcesManagement = () => {
 
   useEffect(() => {
     fetchResources();
+    fetchAllUniqueOptions();
   }, []);
 
   useEffect(() => {
@@ -405,6 +406,8 @@ const ResourcesManagement = () => {
   };
 
   const getAvailableOptions = () => {
+    // For now, use the current resources in memory
+    // This could be enhanced to fetch all unique values from the database
     const uniqueValues = (field: keyof Person) => {
       return Array.from(new Set(resources.map(r => r[field]).filter(v => v && v.trim() !== ''))).sort();
     };
@@ -416,6 +419,41 @@ const ResourcesManagement = () => {
       oficina: uniqueValues('oficina'),
       squadLeads: uniqueValues('squad_lead'),
     };
+  };
+
+  const [allUniqueOptions, setAllUniqueOptions] = useState({
+    cex: [] as string[],
+    grupo: [] as string[],
+    categoria: [] as string[],
+    oficina: [] as string[],
+    squadLeads: [] as string[]
+  });
+
+  // Fetch all unique values from database
+  const fetchAllUniqueOptions = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('persons')
+        .select('cex, grupo, categoria, oficina, squad_lead');
+      
+      if (error) throw error;
+      
+      if (data) {
+        const getUniqueValues = (field: keyof Person) => {
+          return Array.from(new Set(data.map(r => r[field]).filter(v => v && v.trim() !== ''))).sort();
+        };
+
+        setAllUniqueOptions({
+          cex: getUniqueValues('cex'),
+          grupo: getUniqueValues('grupo'),
+          categoria: getUniqueValues('categoria'),
+          oficina: getUniqueValues('oficina'),
+          squadLeads: getUniqueValues('squad_lead'),
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching unique options:', error);
+    }
   };
 
   const getUniqueValues = (field: keyof Person) => {
@@ -1285,7 +1323,7 @@ const ResourcesManagement = () => {
           open={editDialogOpen}
           onOpenChange={setEditDialogOpen}
           onSave={handleSavePerson}
-          availableOptions={getAvailableOptions()}
+          availableOptions={allUniqueOptions}
         />
 
         {/* Person Table Alternative (for reference) */}
