@@ -6,10 +6,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Calendar } from '@/components/ui/calendar';
-import { Clock, ArrowLeft, Users, FolderOpen, CalendarDays, Plus } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Clock, ArrowLeft, Users, FolderOpen, CalendarDays, Plus, Info } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { format, addMonths, startOfMonth, endOfMonth } from 'date-fns';
+import { format, addMonths, startOfMonth, endOfMonth, eachDayOfInterval, parseISO, isWithinInterval } from 'date-fns';
 import { es } from 'date-fns/locale';
 
 interface TeamMember {
@@ -23,6 +24,7 @@ interface Project {
   id: string;
   codigo_inicial: string;
   denominacion: string;
+  color?: string;
 }
 
 interface Assignment {
@@ -35,6 +37,27 @@ interface Assignment {
   notes: string;
 }
 
+interface Holiday {
+  date: string;
+  festivo: string;
+  comunidad_autonoma: string;
+  pais: string;
+}
+
+// Colores para proyectos
+const PROJECT_COLORS = [
+  '#3B82F6', // Azul
+  '#10B981', // Verde
+  '#F59E0B', // Amarillo
+  '#EF4444', // Rojo
+  '#8B5CF6', // Morado
+  '#06B6D4', // Cian
+  '#F97316', // Naranja
+  '#84CC16', // Lima
+  '#EC4899', // Rosa
+  '#6B7280', // Gris
+];
+
 const Asignaciones = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -44,6 +67,7 @@ const Asignaciones = () => {
   
   // Estado del formulario
   const [selectedMember, setSelectedMember] = useState<string>('');
+  const [selectedOffice, setSelectedOffice] = useState<string>('');
   const [startDate, setStartDate] = useState<string>('');
   const [endDate, setEndDate] = useState<string>('');
   const [percentage, setPercentage] = useState<string>('100');
@@ -53,7 +77,8 @@ const Asignaciones = () => {
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
   const [assignments, setAssignments] = useState<Assignment[]>([]);
-  const [holidays, setHolidays] = useState<Date[]>([]);
+  const [holidays, setHolidays] = useState<Holiday[]>([]);
+  const [offices, setOffices] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   
   // Estadísticas
@@ -91,10 +116,10 @@ const Asignaciones = () => {
 
       if (projectsError) throw projectsError;
 
-      // Obtener festivos
+      // Obtener festivos con toda la información
       const { data: holidaysData, error: holidaysError } = await supabase
         .from('holidays')
-        .select('date');
+        .select('date, festivo, comunidad_autonoma, pais');
 
       if (holidaysError) throw holidaysError;
 
@@ -107,12 +132,21 @@ const Asignaciones = () => {
         setAssignments(assignmentsData);
       }
 
+      // Obtener oficinas únicas
+      const uniqueOffices = [...new Set(persons?.map(p => p.oficina).filter(Boolean))] as string[];
+      setOffices(uniqueOffices);
+
       setTeamMembers(persons || []);
-      setProjects(projectsData || []);
       
-      // Convertir fechas de festivos
-      const holidayDates = holidaysData?.map(h => new Date(h.date)) || [];
-      setHolidays(holidayDates);
+      // Asignar colores a proyectos
+      const projectsWithColors = projectsData?.map((project, index) => ({
+        ...project,
+        color: PROJECT_COLORS[index % PROJECT_COLORS.length]
+      })) || [];
+      setProjects(projectsWithColors);
+      
+      // Guardar festivos como objetos Holiday
+      setHolidays(holidaysData || []);
 
       // Calcular estadísticas
       setStats({
@@ -133,11 +167,67 @@ const Asignaciones = () => {
     }
   };
 
+  const validatePercentageOverlap = async (personId: string, startDate: string, endDate: string, percentage: number) => {
+    // Obtener asignaciones existentes que se superponen con las fechas dadas
+    const overlappingAssignments = assignments.filter(assignment => {
+      if (assignment.person_id !== personId) return false;
+      
+      const assignmentStart = new Date(assignment.start_date);
+      const assignmentEnd = new Date(assignment.end_date);
+      const newStart = new Date(startDate);
+      const newEnd = new Date(endDate);
+      
+      // Verificar si hay superposición de fechas
+      return (newStart <= assignmentEnd && newEnd >= assignmentStart);
+    });
+    
+    // Calcular el porcentaje total para cada día
+    const daysToCheck = eachDayOfInterval({ start: new Date(startDate), end: new Date(endDate) });
+    
+    for (const day of daysToCheck) {
+      let totalPercentage = 0;
+      
+      for (const assignment of overlappingAssignments) {
+        const assignmentStart = new Date(assignment.start_date);
+        const assignmentEnd = new Date(assignment.end_date);
+        
+        if (isWithinInterval(day, { start: assignmentStart, end: assignmentEnd })) {
+          totalPercentage += assignment.hours_allocated;
+        }
+      }
+      
+      // Añadir el nuevo porcentaje
+      totalPercentage += percentage;
+      
+      if (totalPercentage > 100) {
+        return {
+          isValid: false,
+          message: `El ${format(day, 'dd/MM/yyyy')} supera el 100% (${totalPercentage}%)`
+        };
+      }
+    }
+    
+    return { isValid: true, message: '' };
+  };
+
   const handleAssign = async () => {
-    if (!selectedMember || !selectedProject || !startDate || !endDate) {
+    if (!selectedMember || !selectedProject || !startDate || !endDate || !selectedOffice) {
       toast({
         title: "Error",
-        description: "Por favor completa todos los campos obligatorios",
+        description: "Por favor completa todos los campos obligatorios incluyendo la oficina",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Validar que el porcentaje no supere el 100%
+    const percentageNumber = parseInt(percentage);
+    const validation = await validatePercentageOverlap(selectedMember, startDate, endDate, percentageNumber);
+    
+    if (!validation.isValid) {
+      toast({
+        title: "Error de asignación",
+        description: validation.message,
         variant: "destructive",
       });
       return;
@@ -151,10 +241,10 @@ const Asignaciones = () => {
           project_id: selectedProject,
           start_date: startDate,
           end_date: endDate,
-          hours_allocated: parseInt(percentage),
+          hours_allocated: percentageNumber,
           type: 'project_assignment',
           status: 'assigned',
-          notes: `Asignado por ${squadLeadName}`
+          notes: `Asignado por ${squadLeadName} - Oficina: ${selectedOffice}`
         });
 
       if (error) throw error;
@@ -166,6 +256,7 @@ const Asignaciones = () => {
 
       // Limpiar formulario
       setSelectedMember('');
+      setSelectedOffice('');
       setSelectedProject('');
       setStartDate('');
       setEndDate('');
@@ -189,11 +280,51 @@ const Asignaciones = () => {
   };
 
   const isHoliday = (date: Date) => {
-    return holidays.some(holiday => 
-      holiday.getDate() === date.getDate() &&
-      holiday.getMonth() === date.getMonth() &&
-      holiday.getFullYear() === date.getFullYear()
-    );
+    if (!selectedOffice) return false;
+    
+    return holidays.some(holiday => {
+      const holidayDate = new Date(holiday.date);
+      return (
+        holidayDate.getDate() === date.getDate() &&
+        holidayDate.getMonth() === date.getMonth() &&
+        holidayDate.getFullYear() === date.getFullYear() &&
+        (holiday.comunidad_autonoma === selectedOffice || holiday.pais === 'España')
+      );
+    });
+  };
+
+  const getFilteredHolidays = () => {
+    if (!selectedOffice) return [];
+    
+    return holidays.filter(holiday => {
+      const holidayDate = new Date(holiday.date);
+      // Solo festivos que no sean fin de semana
+      const isWeekendDay = holidayDate.getDay() === 0 || holidayDate.getDay() === 6;
+      
+      return !isWeekendDay && 
+             (holiday.comunidad_autonoma === selectedOffice || holiday.pais === 'España') &&
+             // Filtrar solo festivos dentro de los próximos 6 meses
+             holidayDate >= startOfMonth(currentDate) && 
+             holidayDate <= endOfMonth(addMonths(currentDate, 5));
+    });
+  };
+
+  const getAssignmentColor = (date: Date) => {
+    if (!selectedMember) return null;
+    
+    const assignment = assignments.find(assignment => {
+      if (assignment.person_id !== selectedMember) return false;
+      
+      const assignmentStart = new Date(assignment.start_date);
+      const assignmentEnd = new Date(assignment.end_date);
+      
+      return isWithinInterval(date, { start: assignmentStart, end: assignmentEnd });
+    });
+    
+    if (!assignment) return null;
+    
+    const project = projects.find(p => p.id === assignment.project_id);
+    return project?.color || '#6B7280';
   };
 
   const getSelectedMemberName = () => {
@@ -262,11 +393,18 @@ const Asignaciones = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-6 gap-4 items-end">
+            <div className="grid grid-cols-1 md:grid-cols-7 gap-4 items-end">
               {/* Seleccionar Miembro */}
               <div>
                 <Label htmlFor="member">Seleccionar Miembro del Equipo</Label>
-                <Select value={selectedMember} onValueChange={setSelectedMember}>
+                <Select value={selectedMember} onValueChange={(value) => {
+                  setSelectedMember(value);
+                  // Auto-select office if member has one
+                  const member = teamMembers.find(m => m.id === value);
+                  if (member && member.oficina) {
+                    setSelectedOffice(member.oficina);
+                  }
+                }}>
                   <SelectTrigger className="bg-white">
                     <SelectValue placeholder="Seleccionar miembro..." />
                   </SelectTrigger>
@@ -274,6 +412,23 @@ const Asignaciones = () => {
                     {teamMembers.map((member) => (
                       <SelectItem key={member.id} value={member.id}>
                         {member.nombre} ({member.categoria}) - {member.oficina}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Seleccionar Oficina/Comunidad */}
+              <div>
+                <Label htmlFor="office">Oficina/Comunidad</Label>
+                <Select value={selectedOffice} onValueChange={setSelectedOffice}>
+                  <SelectTrigger className="bg-white">
+                    <SelectValue placeholder="Seleccionar oficina..." />
+                  </SelectTrigger>
+                  <SelectContent className="bg-white border shadow-lg z-50">
+                    {offices.map((office) => (
+                      <SelectItem key={office} value={office}>
+                        {office}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -362,44 +517,96 @@ const Asignaciones = () => {
                     <h3 className="text-center font-semibold text-gray-900 capitalize">
                       {format(month, 'MMMM \'de\' yyyy', { locale: es })}
                     </h3>
-                    <div className="border rounded-lg p-2 bg-white">
-                      <Calendar
-                        mode="single"
-                        month={month}
-                        locale={es}
-                        weekStartsOn={1} // Lunes = 1
-                        className="pointer-events-auto"
-                        modifiers={{
-                          weekend: isWeekend,
-                          holiday: isHoliday,
-                        }}
-                        modifiersStyles={{
-                          weekend: { 
-                            backgroundColor: '#fef3c7', // Amarillo claro para fines de semana
-                            color: '#92400e'
-                          },
-                          holiday: { 
-                            backgroundColor: '#fce7f3', // Rosa claro para festivos
-                            color: '#be185d'
-                          },
-                        }}
-                        showOutsideDays={false}
-                        fixedWeeks={true}
-                      />
-                    </div>
+                     <div className="border rounded-lg p-2 bg-white">
+                       <Calendar
+                         mode="single"
+                         month={month}
+                         locale={es}
+                         weekStartsOn={1} // Lunes = 1
+                         className="pointer-events-auto"
+                         modifiers={{
+                           weekend: isWeekend,
+                           holiday: isHoliday,
+                         }}
+                         modifiersStyles={{
+                           weekend: { 
+                             backgroundColor: '#fef3c7', // Amarillo claro para fines de semana
+                             color: '#92400e'
+                           },
+                           holiday: { 
+                             backgroundColor: '#fce7f3', // Rosa claro para festivos
+                             color: '#be185d'
+                           },
+                         }}
+                         showOutsideDays={false}
+                         fixedWeeks={true}
+                       />
+                     </div>
                   </div>
                 ))}
-              </div>
+               </div>
 
-              {/* Leyenda */}
-              <div className="mt-6 flex items-center gap-6 text-sm">
-                <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 bg-yellow-200 border rounded"></div>
-                  <span>Fin de semana</span>
+              {/* Leyenda Completa */}
+              <div className="mt-8 space-y-4">
+                <h4 className="text-lg font-semibold text-gray-900">Leyenda del Calendario</h4>
+                
+                {/* Leyenda básica */}
+                <div className="flex flex-wrap items-center gap-6 text-sm">
+                  <div className="flex items-center gap-2">
+                    <div className="w-4 h-4 bg-yellow-200 border rounded"></div>
+                    <span>Fin de semana</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-4 h-4 bg-pink-200 border rounded"></div>
+                    <span>Festivo</span>
+                  </div>
+                  {/* Colores de proyectos */}
+                  {projects.slice(0, 5).map((project) => (
+                    <div key={project.id} className="flex items-center gap-2">
+                      <div 
+                        className="w-4 h-4 border rounded" 
+                        style={{ backgroundColor: project.color }}
+                      ></div>
+                      <span className="text-xs">{project.codigo_inicial}</span>
+                    </div>
+                  ))}
                 </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 bg-pink-200 border rounded"></div>
-                  <span>Festivo</span>
+
+                {/* Lista de festivos específicos */}
+                {selectedOffice && getFilteredHolidays().length > 0 && (
+                  <div className="mt-6">
+                    <h5 className="font-medium text-gray-800 mb-3">
+                      Festivos para {selectedOffice} (próximos 6 meses):
+                    </h5>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
+                      {getFilteredHolidays().map((holiday, index) => (
+                        <Badge 
+                          key={index} 
+                          variant="outline" 
+                          className="text-xs p-2 bg-pink-50 border-pink-200 text-pink-800"
+                        >
+                          <CalendarDays className="h-3 w-3 mr-1" />
+                          {format(new Date(holiday.date), 'dd/MM/yyyy')} - {holiday.festivo}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Información adicional */}
+                <div className="mt-6 p-4 bg-gray-50 border border-gray-200 rounded-lg">
+                  <div className="flex items-start gap-2">
+                    <Info className="h-4 w-4 text-blue-600 mt-0.5" />
+                    <div className="text-sm text-gray-700 space-y-1">
+                      <p><strong>Validación de asignaciones:</strong></p>
+                      <ul className="list-disc list-inside space-y-1 ml-4">
+                        <li>El porcentaje máximo por día es 100%</li>
+                        <li>Se pueden asignar múltiples proyectos el mismo día</li>
+                        <li>Los festivos se basan en la oficina/comunidad seleccionada</li>
+                        <li>Cada proyecto tiene un color único en el calendario</li>
+                      </ul>
+                    </div>
+                  </div>
                 </div>
               </div>
             </CardContent>
