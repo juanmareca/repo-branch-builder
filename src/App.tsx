@@ -68,17 +68,7 @@ const App = () => {
     );
   }
 
-  // Cuando está autenticado, determinar qué mostrar
-  const getHomeComponent = () => {
-    console.log('App - getHomeComponent called. UserRole:', userRole);
-    if (userRole === 'admin') {
-      console.log('App - Returning AdminDashboard');
-      return <AdminDashboard />;
-    } else {
-      console.log('App - Returning Index');
-      return <Index />;
-    }
-  };
+  // Cuando está autenticado, mostrar la aplicación con routing normal
 
   return (
     <QueryClientProvider client={queryClient}>
@@ -87,7 +77,7 @@ const App = () => {
         <Sonner />
         <BrowserRouter>
           <Routes>
-            <Route path="/" element={getHomeComponent()} />
+            <Route path="/" element={userRole === 'admin' ? <AdminDashboard /> : <Index />} />
             <Route path="/admin" element={<AdminDashboard />} />
             <Route path="/holidays" element={<HolidaysManagement />} />
             <Route path="/backups" element={<BackupsManagement />} />

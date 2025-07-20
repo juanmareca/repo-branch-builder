@@ -379,6 +379,7 @@ const ProjectsManagement = () => {
                 variant="outline" 
                 size="sm"
                 onClick={() => {
+                  // Reset authentication and navigate to login
                   window.location.href = '/';
                 }}
                 className="flex items-center gap-2 hover:bg-red-50 hover:text-red-700 hover:border-red-200"
