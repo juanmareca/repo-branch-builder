@@ -534,6 +534,41 @@ const ProjectsManagement = () => {
     }
   }, [resizingColumn, handleMouseMove, handleMouseUp]);
 
+  // Auto-resize column to fit content
+  const autoResizeColumn = (columnKey: string) => {
+    const column = columns.find(col => col.key === columnKey);
+    if (!column) return;
+
+    // Calculate width based on content
+    let maxWidth = 80; // minimum width
+    
+    // Check header width
+    const headerText = column.label;
+    maxWidth = Math.max(maxWidth, headerText.length * 8 + 60);
+    
+    // Check content width
+    filteredProjects.forEach(project => {
+      let cellContent = '';
+      if (columnKey === 'denominacion') {
+        cellContent = `${project.denominacion}\n${project.descripcion || ''}`;
+      } else if (columnKey === 'cliente') {
+        cellContent = `${project.cliente}\n${project.grupo_cliente || ''}`;
+      } else {
+        cellContent = String(project[columnKey] || '');
+      }
+      
+      const contentWidth = Math.max(...cellContent.split('\n').map(line => line.length * 7)) + 30;
+      maxWidth = Math.max(maxWidth, contentWidth);
+    });
+    
+    // Cap at reasonable maximum
+    maxWidth = Math.min(maxWidth, 400);
+    
+    setColumns(prev => prev.map(col => 
+      col.key === columnKey ? { ...col, width: maxWidth } : col
+    ));
+  };
+
   // Column reordering function
   const handleDragEnd = (result: any) => {
     if (!result.destination) return;
@@ -962,10 +997,10 @@ const ProjectsManagement = () => {
 
         {/* Table */}
         <div className="bg-card rounded-lg shadow-sm border overflow-hidden">
-          <div className="overflow-x-auto">
+          <div className="max-h-[600px] overflow-auto relative">
             <DragDropContext onDragEnd={handleDragEnd}>
               <Table style={{ fontSize: `${fontSize}px` }}>
-                <TableHeader>
+                <TableHeader className="sticky top-0 z-30 bg-muted/50">
                   <Droppable droppableId="table-headers" direction="horizontal">
                     {(provided) => (
                       <TableRow 
@@ -981,7 +1016,7 @@ const ProjectsManagement = () => {
                                 {...provided.draggableProps}
                                 {...provided.dragHandleProps}
                                 className={cn(
-                                  "font-semibold text-xs uppercase tracking-wide border-r last:border-r-0 relative select-none",
+                                  "font-semibold text-xs uppercase tracking-wide border-r last:border-r-0 relative select-none bg-muted/50",
                                   snapshot.isDragging && "bg-primary/10"
                                 )}
                                 style={{ 
@@ -1008,8 +1043,14 @@ const ProjectsManagement = () => {
                                 </div>
                                 {column.resizable && (
                                   <div
-                                    className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize bg-border hover:bg-primary opacity-0 hover:opacity-100 transition-opacity"
+                                    className="absolute right-0 top-0 bottom-0 w-2 cursor-col-resize bg-primary/50 opacity-0 hover:opacity-100 transition-opacity z-20"
                                     onMouseDown={(e) => handleMouseDown(e, column.key)}
+                                    onDoubleClick={(e) => {
+                                      e.preventDefault();
+                                      e.stopPropagation();
+                                      autoResizeColumn(column.key);
+                                    }}
+                                    title="Arrastrar para redimensionar | Doble click para ajustar automáticamente"
                                   />
                                 )}
                               </TableHead>
@@ -1017,7 +1058,7 @@ const ProjectsManagement = () => {
                           </Draggable>
                         ))}
                         {provided.placeholder}
-                        <TableHead className="w-16"></TableHead>
+                        <TableHead className="w-16 bg-muted/50"></TableHead>
                       </TableRow>
                     )}
                   </Droppable>
