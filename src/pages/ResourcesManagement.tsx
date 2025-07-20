@@ -1140,11 +1140,14 @@ const ResourcesManagement = () => {
                     <tbody>
                       {currentResources.map((resource, index) => (
                         <tr key={resource.id} className={`hover:bg-gray-50 border-b border-gray-100 ${
-                          resource.origen === 'Administrador' ? 'bg-red-50 dark:bg-red-950/20' : ''
+                          resource.origen === 'Administrador' ? 'bg-red-50 hover:bg-red-100 dark:bg-red-950/20 dark:hover:bg-red-900/30' : ''
                         }`}>
                           {/* Columna índice fija */}
                            <td 
-                             className="sticky left-0 z-10 bg-white font-medium text-center border-r border-gray-200 p-3"
+                             className={cn(
+                               "sticky left-0 z-10 font-medium text-center border-r border-gray-200 p-3",
+                               resource.origen === 'Administrador' ? "bg-red-50" : "bg-white"
+                             )}
                              style={{ width: 64 }}
                            >
                              <span className="font-arial" style={{ fontSize: `${fontSize}px` }}>
@@ -1219,10 +1222,13 @@ const ResourcesManagement = () => {
                            ))}
                           
                           {/* Columna acciones fija */}
-                          <td 
-                            className="sticky right-0 z-10 bg-white border-l border-gray-200 p-3"
-                            style={{ width: 96 }}
-                          >
+                           <td 
+                             className={cn(
+                               "sticky right-0 z-10 border-l border-gray-200 p-3",
+                               resource.origen === 'Administrador' ? "bg-red-50" : "bg-white"
+                             )}
+                             style={{ width: 96 }}
+                           >
                              <div className="flex items-center gap-2 justify-center">
                                <Tooltip>
                                  <TooltipTrigger asChild>
