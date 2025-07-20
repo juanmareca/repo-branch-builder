@@ -89,6 +89,7 @@ const ResourcesManagement = () => {
   const [grupoFilter, setGrupoFilter] = useState<string[]>([]);
   const [categoriaFilter, setCategoriaFilter] = useState<string[]>([]);
   const [oficinaFilter, setOficinaFilter] = useState<string[]>([]);
+  const [origenFilter, setOrigenFilter] = useState<string[]>([]);
   const [cexFilter, setCexFilter] = useState<string[]>([]);
   
   // Sorting
@@ -126,17 +127,35 @@ const ResourcesManagement = () => {
     oficina: ''
   });
   
-  // Column management
-  const [columns, setColumns] = useState<ColumnConfig[]>([
-    { key: 'num_pers', label: 'CÓDIGO', visible: true, width: 100, minWidth: 80, resizable: true },
-    { key: 'nombre', label: 'NOMBRE / SQUAD LEAD', visible: true, width: 220, minWidth: 180, resizable: true },
-    { key: 'fecha_incorporacion', label: 'FECHA INCORPORACIÓN', visible: true, width: 150, minWidth: 120, resizable: true },
-    { key: 'mail_empresa', label: 'EMAIL', visible: true, width: 200, minWidth: 150, resizable: true },
-    { key: 'cex', label: 'CEX', visible: true, width: 80, minWidth: 60, resizable: true },
-    { key: 'grupo', label: 'GRUPO / CATEGORÍA', visible: true, width: 180, minWidth: 140, resizable: true },
-    { key: 'oficina', label: 'OFICINA', visible: true, width: 100, minWidth: 80, resizable: true },
-    { key: 'origen', label: 'ORIGEN', visible: false, width: 120, minWidth: 100, resizable: true }
-  ]);
+  // Column management with persistence
+  const getInitialColumns = (): ColumnConfig[] => {
+    const savedColumns = localStorage.getItem('resources-columns-config');
+    if (savedColumns) {
+      try {
+        return JSON.parse(savedColumns);
+      } catch (error) {
+        console.error('Error parsing saved columns config:', error);
+      }
+    }
+    // Default configuration
+    return [
+      { key: 'num_pers', label: 'CÓDIGO', visible: true, width: 100, minWidth: 80, resizable: true },
+      { key: 'nombre', label: 'NOMBRE / SQUAD LEAD', visible: true, width: 220, minWidth: 180, resizable: true },
+      { key: 'fecha_incorporacion', label: 'FECHA INCORPORACIÓN', visible: true, width: 150, minWidth: 120, resizable: true },
+      { key: 'mail_empresa', label: 'EMAIL', visible: true, width: 200, minWidth: 150, resizable: true },
+      { key: 'cex', label: 'CEX', visible: true, width: 80, minWidth: 60, resizable: true },
+      { key: 'grupo', label: 'GRUPO / CATEGORÍA', visible: true, width: 180, minWidth: 140, resizable: true },
+      { key: 'oficina', label: 'OFICINA', visible: true, width: 100, minWidth: 80, resizable: true },
+      { key: 'origen', label: 'ORIGEN', visible: false, width: 120, minWidth: 100, resizable: true }
+    ];
+  };
+
+  const [columns, setColumns] = useState<ColumnConfig[]>(getInitialColumns());
+
+  // Save columns configuration to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem('resources-columns-config', JSON.stringify(columns));
+  }, [columns]);
 
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -148,7 +167,7 @@ const ResourcesManagement = () => {
 
   useEffect(() => {
     applyFilters();
-  }, [resources, searchTerm, squadFilter, grupoFilter, categoriaFilter, oficinaFilter, cexFilter, sortField, sortDirection]);
+  }, [resources, searchTerm, squadFilter, grupoFilter, categoriaFilter, oficinaFilter, cexFilter, origenFilter, sortField, sortDirection]);
 
   const fetchResources = async () => {
     try {
@@ -211,6 +230,11 @@ const ResourcesManagement = () => {
     // CEX filter
     if (cexFilter.length > 0) {
       filtered = filtered.filter(resource => cexFilter.includes(resource.cex));
+    }
+
+    // Origen filter
+    if (origenFilter.length > 0) {
+      filtered = filtered.filter(resource => origenFilter.includes(resource.origen));
     }
 
     // Apply sorting
@@ -359,6 +383,7 @@ const ResourcesManagement = () => {
     setCategoriaFilter([]);
     setOficinaFilter([]);
     setCexFilter([]);
+    setOrigenFilter([]);
   };
 
   const handleEditPerson = (person: Person) => {
@@ -998,8 +1023,40 @@ const ResourcesManagement = () => {
                          </Badge>
                        ))}
                      </div>
-                   )}
-                 </div>
+                    )}
+                  </div>
+
+                  {/* Origen Filter */}
+                  <div>
+                    <Label className="text-sm font-medium mb-2 block">Origen</Label>
+                    <div className="space-y-2 max-h-40 overflow-y-auto border rounded-md p-2">
+                      {getUniqueValues('origen').map(origen => (
+                        <div key={origen} className="flex items-center space-x-2">
+                          <Checkbox 
+                            id={`origen-${origen}`}
+                            checked={origenFilter.includes(origen)}
+                            onCheckedChange={() => toggleFilter(origenFilter, origen, setOrigenFilter)}
+                          />
+                          <label htmlFor={`origen-${origen}`} className="text-sm">{origen}</label>
+                        </div>
+                      ))}
+                    </div>
+                    {origenFilter.length > 0 && (
+                      <div className="mt-2 flex flex-wrap gap-1">
+                        {origenFilter.map(origen => (
+                          <Badge key={origen} variant="secondary" className="text-xs bg-orange-100 text-orange-800">
+                            {origen}
+                            <button 
+                              onClick={() => toggleFilter(origenFilter, origen, setOrigenFilter)}
+                              className="ml-1 hover:bg-orange-200 rounded-full p-0.5"
+                            >
+                              <X className="h-3 w-3" />
+                            </button>
+                          </Badge>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                </div>
             </CardContent>
           </Card>
@@ -1025,6 +1082,19 @@ const ResourcesManagement = () => {
                     </label>
                   </div>
                 ))}
+              </div>
+              <div className="mt-4 pt-4 border-t">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => {
+                    setColumns(getInitialColumns());
+                    localStorage.removeItem('resources-columns-config');
+                  }}
+                  className="text-xs"
+                >
+                  Restablecer por defecto
+                </Button>
               </div>
             </CardContent>
           </Card>
