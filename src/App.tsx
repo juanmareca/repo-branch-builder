@@ -13,6 +13,7 @@ import HolidaysManagement from "./pages/HolidaysManagement";
 import BackupsManagement from "./pages/BackupsManagement";
 import AuditLogs from "./pages/AuditLogs";
 import CapacitiesManagement from "./pages/CapacitiesManagement";
+import ProjectsManagement from "./pages/ProjectsManagement";
 
 const queryClient = new QueryClient();
 
@@ -76,6 +77,7 @@ const App = () => {
             <Route path="/backups" element={<BackupsManagement />} />
             <Route path="/audit-logs" element={<AuditLogs />} />
             <Route path="/capacities" element={<CapacitiesManagement />} />
+            <Route path="/projects" element={<ProjectsManagement />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
