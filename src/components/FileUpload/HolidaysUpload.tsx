@@ -361,7 +361,7 @@ const HolidaysUpload = () => {
                          <img 
                            src="/lovable-uploads/bfdc98f8-7762-4f74-9d56-74de94379b37.png" 
                            alt="Ejemplo de archivo Excel con días festivos" 
-                           className="w-full max-w-md mx-auto rounded shadow-sm cursor-pointer transition-transform duration-300 hover:scale-250 hover:z-10"
+                           className="w-full max-w-md mx-auto rounded shadow-sm cursor-pointer transition-transform duration-300 hover:scale-[2.5] hover:z-10"
                            title="Pasa el ratón para ampliar la imagen"
                          />
                       </div>

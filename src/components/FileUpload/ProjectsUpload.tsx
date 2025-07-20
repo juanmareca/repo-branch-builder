@@ -351,7 +351,7 @@ const ProjectsUpload = () => {
                        <img 
                          src="/lovable-uploads/dce93539-da1c-4a81-9463-7dd483fd6e0b.png" 
                          alt="Ejemplo de fichero Excel para cargar proyectos"
-                         className="w-full rounded border border-gray-300 shadow-sm cursor-pointer transition-transform duration-300 hover:scale-250 hover:z-10"
+                         className="w-full rounded border border-gray-300 shadow-sm cursor-pointer transition-transform duration-300 hover:scale-[2.5] hover:z-10"
                          title="Pasa el ratón para ampliar la imagen"
                        />
                     </div>
