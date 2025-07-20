@@ -432,7 +432,42 @@ const ResourcesManagement = () => {
     }
   }, [resizingColumn, handleMouseMove, handleMouseUp]);
 
-  // Column reordering function
+  // Auto-resize column to fit content
+  const autoResizeColumn = (columnKey: string) => {
+    const column = columns.find(col => col.key === columnKey);
+    if (!column) return;
+
+    // Calculate width based on content
+    let maxWidth = 80; // minimum width
+    
+    // Check header width
+    const headerText = column.label;
+    maxWidth = Math.max(maxWidth, headerText.length * 8 + 60);
+    
+    // Check content width
+    filteredResources.forEach(resource => {
+      let cellContent = '';
+      if (columnKey === 'nombre') {
+        cellContent = `${resource.nombre}\n${resource.squad_lead}`;
+      } else if (columnKey === 'grupo') {
+        cellContent = `${resource.grupo}\n${resource.categoria}`;
+      } else {
+        cellContent = String(resource[columnKey] || '');
+      }
+      
+      const contentWidth = Math.max(...cellContent.split('\n').map(line => line.length * 7)) + 30;
+      maxWidth = Math.max(maxWidth, contentWidth);
+    });
+    
+    // Cap at reasonable maximum
+    maxWidth = Math.min(maxWidth, 300);
+    
+    setColumns(prev => prev.map(col => 
+      col.key === columnKey ? { ...col, width: maxWidth } : col
+    ));
+  };
+
+  // Column reordering function - MEJORADA
   const handleDragEnd = (result: any) => {
     if (!result.destination) return;
 
@@ -441,11 +476,15 @@ const ResourcesManagement = () => {
 
     if (sourceIndex === destinationIndex) return;
 
-    const newColumns = Array.from(columns);
-    const [reorderedColumn] = newColumns.splice(sourceIndex, 1);
-    newColumns.splice(destinationIndex, 0, reorderedColumn);
-
-    setColumns(newColumns);
+    // Solo reordenar las columnas visibles
+    const visibleColumns = columns.filter(col => col.visible);
+    const hiddenColumns = columns.filter(col => !col.visible);
+    
+    const [reorderedColumn] = visibleColumns.splice(sourceIndex, 1);
+    visibleColumns.splice(destinationIndex, 0, reorderedColumn);
+    
+    // Reconstruir el array de columnas manteniendo las ocultas al final
+    setColumns([...visibleColumns, ...hiddenColumns]);
   };
 
   // Pagination calculations
@@ -930,10 +969,9 @@ const ResourcesManagement = () => {
                               <TableHead 
                                 ref={provided.innerRef}
                                 {...provided.draggableProps}
-                                className={`relative cursor-pointer hover:bg-blue-100 bg-blue-50 text-center font-semibold border-r border-gray-200 ${
-                                  snapshot.isDragging ? 'opacity-50 shadow-lg z-50' : ''
+                                className={`relative bg-blue-50 text-center font-semibold border-r border-gray-200 select-none ${
+                                  snapshot.isDragging ? 'opacity-75 shadow-2xl z-50 bg-blue-100' : 'hover:bg-blue-100'
                                 }`}
-                                onClick={() => handleSort(column.key)}
                                 style={{ 
                                   width: column.width,
                                   minWidth: column.minWidth,
@@ -941,32 +979,50 @@ const ResourcesManagement = () => {
                                   ...provided.draggableProps.style
                                 }}
                               >
-                                <div className="flex items-center justify-center gap-2 pr-2">
-                                  {/* Drag handle */}
+                                <div className="flex items-center justify-center gap-1 px-2 py-2">
+                                  {/* Drag handle - SEPARADO del sort */}
                                   <div 
                                     {...provided.dragHandleProps}
-                                    className="cursor-move p-1 hover:bg-blue-200 rounded"
-                                    title="Arrastrar para reordenar"
+                                    className="cursor-move p-1 hover:bg-blue-200 rounded flex-shrink-0"
+                                    title="Arrastrar para reordenar columna"
+                                    onClick={(e) => e.stopPropagation()}
                                   >
-                                    ⋮⋮
+                                    <div className="flex flex-col gap-px">
+                                      <div className="w-1 h-1 bg-gray-600 rounded-full"></div>
+                                      <div className="w-1 h-1 bg-gray-600 rounded-full"></div>
+                                      <div className="w-1 h-1 bg-gray-600 rounded-full"></div>
+                                    </div>
                                   </div>
-                                  <span>{column.label}</span>
-                                  {getSortIcon(column.key)}
+                                  
+                                  {/* Clickable sort area */}
+                                  <div 
+                                    className="flex items-center gap-1 cursor-pointer flex-1"
+                                    onClick={() => handleSort(column.key)}
+                                    title="Click para ordenar"
+                                  >
+                                    <span className="text-xs font-semibold">{column.label}</span>
+                                    <div className="flex-shrink-0">{getSortIcon(column.key)}</div>
+                                  </div>
                                 </div>
-                                {/* Resize handle - MEJORADO */}
+                                
+                                {/* Resize handle - MEJORADO Y SEPARADO */}
                                 <div
-                                  className="absolute right-0 top-0 w-2 h-full cursor-col-resize bg-transparent hover:bg-blue-400 transition-colors z-30"
-                                  onMouseDown={(e) => handleMouseDown(e, column.key)}
-                                  onDoubleClick={(e) => {
+                                  className="absolute right-0 top-0 w-3 h-full cursor-col-resize bg-transparent hover:bg-blue-400 transition-colors z-30 flex items-center justify-center"
+                                  onMouseDown={(e) => {
+                                    e.preventDefault();
                                     e.stopPropagation();
-                                    // Autoajustar ancho al contenido
-                                    setColumns(prev => prev.map(col => 
-                                      col.key === column.key ? { ...col, width: 150 } : col
-                                    ));
+                                    handleMouseDown(e, column.key);
+                                  }}
+                                  onDoubleClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    autoResizeColumn(column.key);
                                   }}
                                   style={{ userSelect: 'none' }}
-                                  title="Arrastrar para redimensionar | Doble click para autoajustar"
-                                />
+                                  title="Arrastrar para redimensionar | Doble click para autoajustar al contenido"
+                                >
+                                  <div className="w-px h-4 bg-gray-400"></div>
+                                </div>
                               </TableHead>
                             )}
                           </Draggable>
