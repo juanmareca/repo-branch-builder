@@ -950,183 +950,209 @@ const ResourcesManagement = () => {
         {/* Resources Table */}
         <Card>
           <CardContent className="p-0">
-            {/* Tabla con headers fijos y funcionalidad completa */}
-            <div className="border border-gray-200 rounded-lg bg-white shadow-sm">
-              {/* Headers fijos */}
-              <div className="sticky top-0 z-30 bg-white border-b border-gray-200">
+            <div className="border border-gray-200 rounded-lg bg-white shadow-sm overflow-hidden">
+              {/* Contenedor scrolleable principal */}
+              <div className="max-h-[600px] overflow-auto relative">
                 <DragDropContext onDragEnd={handleDragEnd}>
-                  <div className="flex">
-                    {/* Columna índice fija */}
-                    <div className="w-16 bg-blue-50 border-r border-gray-200 p-3 text-center font-semibold text-xs">
-                      ÍNDICE
-                    </div>
-                    
-                    {/* Headers draggables */}
-                    <Droppable droppableId="table-headers" direction="horizontal">
-                      {(provided) => (
-                        <div 
-                          className="flex flex-1" 
-                          ref={provided.innerRef} 
-                          {...provided.droppableProps}
+                  <table className="w-full border-collapse">
+                    {/* Header sticky */}
+                    <thead className="sticky top-0 z-30 bg-white border-b border-gray-200">
+                      <tr>
+                        {/* Columna índice fija */}
+                        <th 
+                          className="sticky left-0 z-40 bg-blue-50 border-r border-gray-200 p-3 text-center font-semibold text-xs"
+                          style={{ width: 64 }}
                         >
-                          {columns.filter(col => col.visible).map((column, index) => (
-                            <Draggable 
-                              key={column.key} 
-                              draggableId={column.key} 
-                              index={index}
+                          ÍNDICE
+                        </th>
+                        
+                        {/* Headers draggables */}
+                        <Droppable droppableId="table-headers" direction="horizontal">
+                          {(provided) => (
+                            <th 
+                              ref={provided.innerRef} 
+                              {...provided.droppableProps}
+                              className="p-0 border-0"
                             >
-                              {(provided, snapshot) => (
-                                <div
-                                  ref={provided.innerRef}
-                                  {...provided.draggableProps}
-                                  className={`relative bg-blue-50 border-r border-gray-200 text-center font-semibold text-xs flex items-center ${
-                                    snapshot.isDragging ? 'opacity-75 shadow-xl z-50' : ''
-                                  }`}
-                                  style={{ 
-                                    width: column.width,
-                                    minWidth: column.minWidth,
-                                    ...provided.draggableProps.style
-                                  }}
-                                >
-                                  {/* Drag handle */}
-                                  <div 
-                                    {...provided.dragHandleProps}
-                                    className="absolute left-1 top-1/2 transform -translate-y-1/2 cursor-move p-1 hover:bg-blue-200 rounded z-10"
-                                    title="Arrastrar para mover columna"
+                              <div className="flex">
+                                {columns.filter(col => col.visible).map((column, index) => (
+                                  <Draggable 
+                                    key={column.key} 
+                                    draggableId={column.key} 
+                                    index={index}
                                   >
-                                    <div className="flex flex-col gap-0.5">
-                                      <div className="w-1 h-1 bg-gray-500 rounded-full"></div>
-                                      <div className="w-1 h-1 bg-gray-500 rounded-full"></div>
-                                      <div className="w-1 h-1 bg-gray-500 rounded-full"></div>
-                                    </div>
-                                  </div>
-                                  
-                                  {/* Área de ordenación */}
-                                  <div 
-                                    className="flex-1 p-3 cursor-pointer hover:bg-blue-100 flex items-center justify-center gap-1"
-                                    onClick={() => handleSort(column.key)}
-                                    title="Click para ordenar"
-                                  >
-                                    <span>{column.label}</span>
-                                    {getSortIcon(column.key)}
-                                  </div>
-                                  
-                                  {/* Handle de redimensionamiento */}
-                                  <div
-                                    className="absolute right-0 top-0 w-1 h-full cursor-col-resize bg-blue-300 opacity-0 hover:opacity-100 transition-opacity z-20"
-                                    onMouseDown={(e) => {
-                                      e.preventDefault();
-                                      e.stopPropagation();
-                                      handleMouseDown(e, column.key);
-                                    }}
-                                    onDoubleClick={(e) => {
-                                      e.preventDefault();
-                                      e.stopPropagation();
-                                      autoResizeColumn(column.key);
-                                    }}
-                                    title="Redimensionar columna"
-                                  />
-                                </div>
-                              )}
-                            </Draggable>
-                          ))}
-                          {provided.placeholder}
-                        </div>
-                      )}
-                    </Droppable>
+                                    {(provided, snapshot) => (
+                                      <div
+                                        ref={provided.innerRef}
+                                        {...provided.draggableProps}
+                                        className={`relative bg-blue-50 border-r border-gray-200 text-center font-semibold text-xs flex items-center ${
+                                          snapshot.isDragging ? 'opacity-75 shadow-xl z-50' : ''
+                                        }`}
+                                        style={{ 
+                                          width: column.width,
+                                          minWidth: column.minWidth,
+                                          maxWidth: column.width,
+                                          ...provided.draggableProps.style
+                                        }}
+                                      >
+                                        {/* Drag handle */}
+                                        <div 
+                                          {...provided.dragHandleProps}
+                                          className="absolute left-1 top-1/2 transform -translate-y-1/2 cursor-move p-1 hover:bg-blue-200 rounded z-10"
+                                          title="Arrastrar para mover columna"
+                                        >
+                                          <div className="flex flex-col gap-0.5">
+                                            <div className="w-1 h-1 bg-gray-500 rounded-full"></div>
+                                            <div className="w-1 h-1 bg-gray-500 rounded-full"></div>
+                                            <div className="w-1 h-1 bg-gray-500 rounded-full"></div>
+                                          </div>
+                                        </div>
+                                        
+                                        {/* Área de ordenación */}
+                                        <div 
+                                          className="flex-1 p-3 cursor-pointer hover:bg-blue-100 flex items-center justify-center gap-1"
+                                          onClick={() => handleSort(column.key)}
+                                          title="Click para ordenar"
+                                        >
+                                          <span>{column.label}</span>
+                                          {getSortIcon(column.key)}
+                                        </div>
+                                        
+                                        {/* Handle de redimensionamiento */}
+                                        <div
+                                          className="absolute right-0 top-0 w-2 h-full cursor-col-resize bg-blue-400 opacity-0 hover:opacity-100 transition-opacity z-20"
+                                          onMouseDown={(e) => {
+                                            e.preventDefault();
+                                            e.stopPropagation();
+                                            handleMouseDown(e, column.key);
+                                          }}
+                                          onDoubleClick={(e) => {
+                                            e.preventDefault();
+                                            e.stopPropagation();
+                                            autoResizeColumn(column.key);
+                                          }}
+                                          title="Arrastrar para redimensionar | Doble click para ajustar automáticamente"
+                                        />
+                                      </div>
+                                    )}
+                                  </Draggable>
+                                ))}
+                                {provided.placeholder}
+                              </div>
+                            </th>
+                          )}
+                        </Droppable>
+                        
+                        {/* Columna acciones fija */}
+                        <th 
+                          className="sticky right-0 z-40 bg-blue-50 border-l border-gray-200 p-3 text-center font-semibold text-xs"
+                          style={{ width: 96 }}
+                        >
+                          ACCIONES
+                        </th>
+                      </tr>
+                    </thead>
                     
-                    {/* Columna acciones fija */}
-                    <div className="w-24 bg-blue-50 border-l border-gray-200 p-3 text-center font-semibold text-xs">
-                      ACCIONES
-                    </div>
-                  </div>
+                    {/* Body */}
+                    <tbody>
+                      {currentResources.map((resource, index) => (
+                        <tr key={resource.id} className="hover:bg-gray-50 border-b border-gray-100">
+                          {/* Columna índice fija */}
+                          <td 
+                            className="sticky left-0 z-10 bg-white font-medium text-center border-r border-gray-200 p-3"
+                            style={{ width: 64 }}
+                          >
+                            {startIndex + index + 1}
+                          </td>
+                          
+                          {/* Celdas de datos */}
+                          {columns.filter(col => col.visible).map(column => (
+                            <td 
+                              key={column.key}
+                              className="border-r border-gray-200 p-3"
+                              style={{ 
+                                width: column.width,
+                                minWidth: column.minWidth,
+                                maxWidth: column.width
+                              }}
+                            >
+                              <div className="overflow-hidden text-ellipsis">
+                                {column.key === 'nombre' ? (
+                                  <div className="flex flex-col">
+                                    <span className="font-medium">{resource.nombre}</span>
+                                    <span className="text-sm text-muted-foreground">{resource.squad_lead}</span>
+                                  </div>
+                                ) : column.key === 'fecha_incorporacion' ? (
+                                  (() => {
+                                    if (!resource.fecha_incorporacion) return '-';
+                                    
+                                    const fechaStr = String(resource.fecha_incorporacion);
+                                    
+                                    // Si ya está en formato DD/MM/YYYY, devolverla tal como está
+                                    if (fechaStr.match(/^\d{2}\/\d{2}\/\d{4}$/)) {
+                                      return fechaStr;
+                                    }
+                                    
+                                    // Si es un número (timestamp de Excel)
+                                    if (!isNaN(Number(fechaStr))) {
+                                      const excelDate = Number(fechaStr);
+                                      const jsDate = new Date((excelDate - 25569) * 86400 * 1000);
+                                      return format(jsDate, 'dd/MM/yyyy');
+                                    }
+                                    
+                                    // Para otros formatos, intentar parsear
+                                    try {
+                                      return format(new Date(fechaStr), 'dd/MM/yyyy');
+                                    } catch {
+                                      return fechaStr; // Si falla, devolver el original
+                                    }
+                                  })()
+                                ) : column.key === 'grupo' ? (
+                                  <div className="flex flex-col">
+                                    <span className="font-medium">{resource.grupo}</span>
+                                    <span className="text-sm text-muted-foreground">{resource.categoria}</span>
+                                  </div>
+                                ) : (
+                                  resource[column.key] || '-'
+                                )}
+                              </div>
+                            </td>
+                          ))}
+                          
+                          {/* Columna acciones fija */}
+                          <td 
+                            className="sticky right-0 z-10 bg-white border-l border-gray-200 p-3"
+                            style={{ width: 96 }}
+                          >
+                            <div className="flex items-center gap-2 justify-center">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => {
+                                  // Handle edit
+                                  console.log('Edit resource:', resource.id);
+                                }}
+                                className="h-8 w-8 p-0"
+                              >
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleDeleteResource(resource.id)}
+                                className="text-red-600 hover:text-red-700 h-8 w-8 p-0"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </DragDropContext>
               </div>
-              
-              {/* Contenido scrolleable */}
-              <div className="max-h-[500px] overflow-auto">
-                <Table className="border-0">
-                <TableBody>
-                  {currentResources.map((resource, index) => (
-                    <TableRow key={resource.id} className="hover:bg-gray-50">
-                      <TableCell className="w-16 font-medium text-center border-r border-gray-200">
-                        {startIndex + index + 1}
-                      </TableCell>
-                      {columns.filter(col => col.visible).map(column => (
-                         <TableCell 
-                           key={column.key}
-                           className="border-r border-gray-200"
-                           style={{ width: column.width }}
-                         >
-                           {column.key === 'nombre' ? (
-                             <div className="flex flex-col">
-                               <span className="font-medium">{resource.nombre}</span>
-                               <span className="text-sm text-muted-foreground">{resource.squad_lead}</span>
-                             </div>
-                           ) : column.key === 'fecha_incorporacion' ? (
-                             (() => {
-                               if (!resource.fecha_incorporacion) return '-';
-                               
-                               const fechaStr = String(resource.fecha_incorporacion);
-                               
-                               // Si ya está en formato DD/MM/YYYY, devolverla tal como está
-                               if (fechaStr.match(/^\d{2}\/\d{2}\/\d{4}$/)) {
-                                 return fechaStr;
-                               }
-                               
-                               // Si es un número (timestamp de Excel)
-                               if (!isNaN(Number(fechaStr))) {
-                                 const excelDate = Number(fechaStr);
-                                 const jsDate = new Date((excelDate - 25569) * 86400 * 1000);
-                                 return format(jsDate, 'dd/MM/yyyy');
-                               }
-                               
-                               // Para otros formatos, intentar parsear
-                               try {
-                                 return format(new Date(fechaStr), 'dd/MM/yyyy');
-                               } catch {
-                                 return fechaStr; // Si falla, devolver el original
-                               }
-                             })()
-                           ) : column.key === 'grupo' ? (
-                             <div className="flex flex-col">
-                               <span className="font-medium">{resource.grupo}</span>
-                               <span className="text-sm text-muted-foreground">{resource.categoria}</span>
-                             </div>
-                           ) : (
-                             resource[column.key] || '-'
-                           )}
-                         </TableCell>
-                       ))}
-                       <TableCell className="w-24 border-l border-gray-200">
-                         <div className="flex items-center gap-2 justify-center">
-                           <Button
-                             variant="ghost"
-                             size="sm"
-                             onClick={() => {
-                               // Handle edit
-                               console.log('Edit resource:', resource.id);
-                             }}
-                             className="h-8 w-8 p-0"
-                           >
-                             <Edit className="h-4 w-4" />
-                           </Button>
-                           <Button
-                             variant="ghost"
-                             size="sm"
-                             onClick={() => handleDeleteResource(resource.id)}
-                             className="text-red-600 hover:text-red-700 h-8 w-8 p-0"
-                           >
-                             <Trash2 className="h-4 w-4" />
-                           </Button>
-                         </div>
-                       </TableCell>
-                     </TableRow>
-                   ))}
-                 </TableBody>
-               </Table>
-             </div>
-           </div>
+            </div>
 
             {filteredResources.length === 0 && (
               <div className="text-center py-8">
