@@ -139,16 +139,7 @@ const ProjectsManagement = () => {
   
   // Column management with persistence
   const getInitialColumns = (): ColumnConfig[] => {
-    const savedColumns = localStorage.getItem('projects-columns-config');
-    if (savedColumns) {
-      try {
-        return JSON.parse(savedColumns);
-      } catch (error) {
-        console.error('Error parsing saved columns config:', error);
-      }
-    }
-    // Default configuration
-    return [
+    const defaultColumns: ColumnConfig[] = [
       { key: 'codigo_inicial', label: 'CÓDIGO INICIAL', visible: true, width: 150, minWidth: 120, resizable: true },
       { key: 'denominacion', label: 'DENOMINACIÓN / DESCRIPCIÓN', visible: true, width: 300, minWidth: 200, resizable: true },
       { key: 'cliente', label: 'CLIENTE / GRUPO', visible: true, width: 250, minWidth: 180, resizable: true },
@@ -156,8 +147,31 @@ const ProjectsManagement = () => {
       { key: 'socio_responsable', label: 'SOCIO RESPONSABLE', visible: true, width: 180, minWidth: 150, resizable: true },
       { key: 'tipologia', label: 'TIPOLOGÍA', visible: true, width: 150, minWidth: 120, resizable: true },
       { key: 'tipologia_2', label: 'TIPOLOGÍA 2', visible: false, width: 150, minWidth: 120, resizable: true },
-      { key: 'origen', label: 'ORIGEN', visible: false, width: 120, minWidth: 100, resizable: true }
+      { key: 'origen', label: 'ORIGEN', visible: true, width: 120, minWidth: 100, resizable: true }
     ];
+
+    const savedColumns = localStorage.getItem('projects-columns-config');
+    if (savedColumns) {
+      try {
+        const parsed = JSON.parse(savedColumns);
+        // Merge saved config with default config to ensure new fields are included
+        const mergedColumns = defaultColumns.map(defaultCol => {
+          const savedCol = parsed.find((col: ColumnConfig) => col.key === defaultCol.key);
+          return savedCol ? { ...defaultCol, ...savedCol } : defaultCol;
+        });
+        
+        // Add any saved columns that don't exist in default (for backwards compatibility)
+        const extraColumns = parsed.filter((savedCol: ColumnConfig) => 
+          !defaultColumns.some(defaultCol => defaultCol.key === savedCol.key)
+        );
+        
+        return [...mergedColumns, ...extraColumns];
+      } catch (error) {
+        console.error('Error parsing saved columns config:', error);
+      }
+    }
+    
+    return defaultColumns;
   };
 
   const [columns, setColumns] = useState<ColumnConfig[]>(getInitialColumns());
