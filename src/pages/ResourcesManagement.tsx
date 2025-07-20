@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { format } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -116,13 +117,11 @@ const ResourcesManagement = () => {
   // Column management
   const [columns, setColumns] = useState<ColumnConfig[]>([
     { key: 'num_pers', label: 'CÓDIGO', visible: true, width: 100, minWidth: 80, resizable: true },
-    { key: 'nombre', label: 'NOMBRE', visible: true, width: 200, minWidth: 150, resizable: true },
-    { key: 'fecha_incorporacion', label: 'FECHA INC.', visible: true, width: 120, minWidth: 100, resizable: true },
+    { key: 'nombre', label: 'NOMBRE / SQUAD LEAD', visible: true, width: 220, minWidth: 180, resizable: true },
+    { key: 'fecha_incorporacion', label: 'FECHA INCORPORACIÓN', visible: true, width: 150, minWidth: 120, resizable: true },
     { key: 'mail_empresa', label: 'EMAIL', visible: true, width: 200, minWidth: 150, resizable: true },
-    { key: 'squad_lead', label: 'SQUAD LEAD', visible: true, width: 150, minWidth: 120, resizable: true },
     { key: 'cex', label: 'CEX', visible: true, width: 80, minWidth: 60, resizable: true },
-    { key: 'grupo', label: 'GRUPO', visible: true, width: 120, minWidth: 100, resizable: true },
-    { key: 'categoria', label: 'CATEGORÍA', visible: true, width: 120, minWidth: 100, resizable: true },
+    { key: 'grupo', label: 'GRUPO / CATEGORÍA', visible: true, width: 180, minWidth: 140, resizable: true },
     { key: 'oficina', label: 'OFICINA', visible: true, width: 100, minWidth: 80, resizable: true },
     { key: 'skill1', label: 'SKILL 1', visible: false, width: 100, minWidth: 80, resizable: true },
     { key: 'skill2', label: 'SKILL 2', visible: false, width: 100, minWidth: 80, resizable: true },
@@ -875,11 +874,27 @@ const ResourcesManagement = () => {
                       <TableCell className="font-medium">
                         {startIndex + index + 1}
                       </TableCell>
-                      {columns.filter(col => col.visible).map(column => (
-                        <TableCell key={column.key}>
-                          {resource[column.key] || '-'}
-                        </TableCell>
-                      ))}
+                       {columns.filter(col => col.visible).map(column => (
+                         <TableCell key={column.key}>
+                           {column.key === 'nombre' ? (
+                             <div className="flex flex-col">
+                               <span className="font-medium">{resource.nombre}</span>
+                               <span className="text-sm text-muted-foreground">{resource.squad_lead}</span>
+                             </div>
+                           ) : column.key === 'fecha_incorporacion' ? (
+                             resource.fecha_incorporacion ? 
+                               format(new Date(resource.fecha_incorporacion), 'dd/MM/yyyy') : 
+                               '-'
+                           ) : column.key === 'grupo' ? (
+                             <div className="flex flex-col">
+                               <span className="font-medium">{resource.grupo}</span>
+                               <span className="text-sm text-muted-foreground">{resource.categoria}</span>
+                             </div>
+                           ) : (
+                             resource[column.key] || '-'
+                           )}
+                         </TableCell>
+                       ))}
                       <TableCell>
                         <div className="flex items-center gap-2">
                           <Button
