@@ -93,7 +93,7 @@ const TeamCapabilities: React.FC<TeamCapabilitiesProps> = ({ teamMembers }) => {
       'TR-CM': 'Treasury - Cash Management: Gestión de tesorería y flujo de caja.',
       'TR-TRM': 'Treasury and Risk Management: Gestión de riesgos financieros y tesorería.',
       'CO-CCA': 'Controlling - Cost Center Accounting: Contabilidad de centros de coste.',
-      'CO-PC': 'Controlling - Product Costing: Cálculo de costes de productos.',
+      'CO-PC': 'CO-PC: Product Costing (Cálculo de Costes del Producto). Forma parte del módulo SAP CO (Controlling) y calcula los costes de fabricación, adquisición y venta de productos o servicios. Se divide en dos subcomponentes: CO-PC-PC (Product Cost Planning) para estimación de costes antes de producir usando BOMs y hojas de ruta, y CO-PC-OBJ (Cost Object Controlling) para control de costes durante la producción real. Permite calcular costes estándar, controlar costes reales vs. planificados, analizar variaciones, valorar inventarios y tomar decisiones de precios y rentabilidad. Se integra con MM, PP, FI y SD.',
       'RE-FX': 'Real Estate - Flexible Real Estate Management: Gestión inmobiliaria flexible.',
       'SAP BRIM': 'SAP Billing and Revenue Innovation Management: Facturación y gestión de ingresos.',
       'SAP GRC': 'SAP Governance, Risk and Compliance: Gobierno, riesgo y cumplimiento normativo.',
