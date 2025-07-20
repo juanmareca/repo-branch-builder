@@ -105,12 +105,22 @@ const PersonTable: React.FC<PersonTableProps> = ({ persons, onEditPerson }) => {
   return (
     <div className="bg-background rounded-xl shadow-sm border border-border overflow-hidden w-full max-h-[70vh]">
       <div className="overflow-auto">
-        <table className="w-full divide-y divide-border">
+        <table className="w-full divide-y divide-border table-fixed">
+          <colgroup>
+            <col style={{ width: `${columnWidths.index}px` }} />
+            <col style={{ width: `${columnWidths.nombre}px` }} />
+            <col style={{ width: `${columnWidths.cex}px` }} />
+            <col style={{ width: `${columnWidths.num_pers}px` }} />
+            <col style={{ width: `${columnWidths.fecha_incorporacion}px` }} />
+            <col style={{ width: `${columnWidths.mail_empresa}px` }} />
+            <col style={{ width: `${columnWidths.grupo}px` }} />
+            <col style={{ width: `${columnWidths.categoria}px` }} />
+            <col style={{ width: `${columnWidths.oficina}px` }} />
+          </colgroup>
           <thead className="bg-muted sticky top-0 z-10">
             <tr className="bg-muted border-b border-border">
               <th 
                 className="px-3 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider bg-muted sticky left-0 z-20 border-r border-border relative group"
-                style={{ width: `${columnWidths.index}px` }}
               >
                 Índice
                 <div 
@@ -121,7 +131,6 @@ const PersonTable: React.FC<PersonTableProps> = ({ persons, onEditPerson }) => {
               <th 
                 className="px-6 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider bg-muted cursor-pointer hover:bg-muted/80 select-none relative group"
                 onClick={() => handleSort('nombre')}
-                style={{ width: `${columnWidths.nombre}px` }}
               >
                 <div className="flex items-center justify-between">
                   <span>Nombre</span>
@@ -135,7 +144,6 @@ const PersonTable: React.FC<PersonTableProps> = ({ persons, onEditPerson }) => {
               <th 
                 className="px-6 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider bg-muted cursor-pointer hover:bg-muted/80 select-none relative group"
                 onClick={() => handleSort('cex')}
-                style={{ width: `${columnWidths.cex}px` }}
               >
                 <div className="flex items-center justify-between">
                   <span>CEX</span>
@@ -149,7 +157,6 @@ const PersonTable: React.FC<PersonTableProps> = ({ persons, onEditPerson }) => {
               <th 
                 className="px-6 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider bg-muted cursor-pointer hover:bg-muted/80 select-none relative group"
                 onClick={() => handleSort('num_pers')}
-                style={{ width: `${columnWidths.num_pers}px` }}
               >
                 <div className="flex items-center justify-between">
                   <span>Nº Personal</span>
@@ -163,7 +170,6 @@ const PersonTable: React.FC<PersonTableProps> = ({ persons, onEditPerson }) => {
               <th 
                 className="px-6 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider bg-muted cursor-pointer hover:bg-muted/80 select-none relative group"
                 onClick={() => handleSort('fecha_incorporacion')}
-                style={{ width: `${columnWidths.fecha_incorporacion}px` }}
               >
                 <div className="flex items-center justify-between">
                   <span>Fecha de Incorporación</span>
@@ -177,7 +183,6 @@ const PersonTable: React.FC<PersonTableProps> = ({ persons, onEditPerson }) => {
               <th 
                 className="px-6 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider bg-muted cursor-pointer hover:bg-muted/80 select-none relative group"
                 onClick={() => handleSort('mail_empresa')}
-                style={{ width: `${columnWidths.mail_empresa}px` }}
               >
                 <div className="flex items-center justify-between">
                   <span>Email</span>
@@ -191,7 +196,6 @@ const PersonTable: React.FC<PersonTableProps> = ({ persons, onEditPerson }) => {
               <th 
                 className="px-6 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider bg-muted cursor-pointer hover:bg-muted/80 select-none relative group"
                 onClick={() => handleSort('grupo')}
-                style={{ width: `${columnWidths.grupo}px` }}
               >
                 <div className="flex items-center justify-between">
                   <span>Grupo</span>
@@ -205,7 +209,6 @@ const PersonTable: React.FC<PersonTableProps> = ({ persons, onEditPerson }) => {
               <th 
                 className="px-6 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider bg-muted cursor-pointer hover:bg-muted/80 select-none relative group"
                 onClick={() => handleSort('categoria')}
-                style={{ width: `${columnWidths.categoria}px` }}
               >
                 <div className="flex items-center justify-between">
                   <span>Categoría</span>
@@ -219,7 +222,6 @@ const PersonTable: React.FC<PersonTableProps> = ({ persons, onEditPerson }) => {
               <th 
                 className="px-6 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider bg-muted cursor-pointer hover:bg-muted/80 select-none relative group"
                 onClick={() => handleSort('oficina')}
-                style={{ width: `${columnWidths.oficina}px` }}
               >
                 <div className="flex items-center justify-between">
                   <span>Oficina</span>
@@ -243,11 +245,10 @@ const PersonTable: React.FC<PersonTableProps> = ({ persons, onEditPerson }) => {
               >
                 <td 
                   className="px-3 py-2 whitespace-nowrap text-xs text-muted-foreground font-mono bg-background sticky left-0 z-10 border-r border-border"
-                  style={{ width: `${columnWidths.index}px` }}
                 >
                   {index + 1}
                 </td>
-                <td className="px-6 py-2 whitespace-nowrap" style={{ width: `${columnWidths.nombre}px` }}>
+                <td className="px-6 py-2 whitespace-nowrap">
                   <div className="flex items-center">
                     <div className="flex-shrink-0 h-8 w-8 bg-primary/10 rounded-full flex items-center justify-center">
                       <User className="w-4 h-4 text-primary" />
@@ -257,13 +258,13 @@ const PersonTable: React.FC<PersonTableProps> = ({ persons, onEditPerson }) => {
                     </div>
                   </div>
                 </td>
-                <td className="px-6 py-2 whitespace-nowrap text-sm text-foreground" style={{ width: `${columnWidths.cex}px` }}>
+                <td className="px-6 py-2 whitespace-nowrap text-sm text-foreground">
                   {person.cex}
                 </td>
-                <td className="px-6 py-2 whitespace-nowrap text-sm text-foreground" style={{ width: `${columnWidths.num_pers}px` }}>
+                <td className="px-6 py-2 whitespace-nowrap text-sm text-foreground">
                   {person.num_pers}
                 </td>
-                <td className="px-6 py-2 whitespace-nowrap text-sm text-foreground" style={{ width: `${columnWidths.fecha_incorporacion}px` }}>
+                <td className="px-6 py-2 whitespace-nowrap text-sm text-foreground">
                   <div className="flex items-center">
                     <Calendar className="w-4 h-4 text-muted-foreground mr-2" />
                     {person.fecha_incorporacion ? 
@@ -276,7 +277,7 @@ const PersonTable: React.FC<PersonTableProps> = ({ persons, onEditPerson }) => {
                     }
                   </div>
                 </td>
-                <td className="px-6 py-2 whitespace-nowrap text-sm text-foreground" style={{ width: `${columnWidths.mail_empresa}px` }}>
+                <td className="px-6 py-2 whitespace-nowrap text-sm text-foreground">
                   <div className="flex items-center">
                     <Mail className="w-4 h-4 text-muted-foreground mr-2" />
                     <a href={`mailto:${person.mail_empresa}`} className="text-primary hover:text-primary/80">
@@ -284,15 +285,15 @@ const PersonTable: React.FC<PersonTableProps> = ({ persons, onEditPerson }) => {
                     </a>
                   </div>
                 </td>
-                <td className="px-6 py-2 whitespace-nowrap text-sm text-foreground" style={{ width: `${columnWidths.grupo}px` }}>
+                <td className="px-6 py-2 whitespace-nowrap text-sm text-foreground">
                   {person.grupo}
                 </td>
-                <td className="px-6 py-2 whitespace-nowrap text-sm text-foreground" style={{ width: `${columnWidths.categoria}px` }}>
+                <td className="px-6 py-2 whitespace-nowrap text-sm text-foreground">
                   <span className="px-2 py-1 text-xs font-medium bg-secondary text-secondary-foreground rounded-full">
                     {person.categoria}
                   </span>
                 </td>
-                <td className="px-6 py-2 whitespace-nowrap text-sm text-foreground" style={{ width: `${columnWidths.oficina}px` }}>
+                <td className="px-6 py-2 whitespace-nowrap text-sm text-foreground">
                   <div className="flex items-center">
                     <MapPin className="w-4 h-4 text-muted-foreground mr-2" />
                     {person.oficina}
