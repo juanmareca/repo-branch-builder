@@ -54,9 +54,9 @@ const AuditLogs = () => {
   const [filteredLogs, setFilteredLogs] = useState<AuditLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [tableFilter, setTableFilter] = useState('');
-  const [operationFilter, setOperationFilter] = useState('');
-  const [userFilter, setUserFilter] = useState('');
+  const [tableFilter, setTableFilter] = useState('all');
+  const [operationFilter, setOperationFilter] = useState('all');
+  const [userFilter, setUserFilter] = useState('all');
   const [dateFrom, setDateFrom] = useState<Date | undefined>();
   const [dateTo, setDateTo] = useState<Date | undefined>();
   const [expandedLogs, setExpandedLogs] = useState<string[]>([]);
@@ -103,17 +103,17 @@ const AuditLogs = () => {
     }
 
     // Table filter
-    if (tableFilter && tableFilter !== '') {
+    if (tableFilter && tableFilter !== 'all') {
       filtered = filtered.filter(log => log.table_name === tableFilter);
     }
 
     // Operation filter
-    if (operationFilter && operationFilter !== '') {
+    if (operationFilter && operationFilter !== 'all') {
       filtered = filtered.filter(log => log.operation.toLowerCase() === operationFilter.toLowerCase());
     }
 
     // User filter
-    if (userFilter && userFilter !== '') {
+    if (userFilter && userFilter !== 'all') {
       filtered = filtered.filter(log => log.user_name === userFilter);
     }
 
@@ -212,9 +212,9 @@ const AuditLogs = () => {
 
   const clearFilters = () => {
     setSearchTerm('');
-    setTableFilter('');
-    setOperationFilter('');
-    setUserFilter('');
+    setTableFilter('all');
+    setOperationFilter('all');
+    setUserFilter('all');
     setDateFrom(undefined);
     setDateTo(undefined);
   };
@@ -330,7 +330,7 @@ const AuditLogs = () => {
                     <SelectValue placeholder="Todas las tablas" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Todas las tablas</SelectItem>
+                    <SelectItem value="all">Todas las tablas</SelectItem>
                     {getUniqueValues('table_name').map(table => (
                       <SelectItem key={table} value={table}>{table}</SelectItem>
                     ))}
@@ -344,7 +344,7 @@ const AuditLogs = () => {
                     <SelectValue placeholder="Todas las operaciones" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Todas las operaciones</SelectItem>
+                    <SelectItem value="all">Todas las operaciones</SelectItem>
                     <SelectItem value="insert">Creado</SelectItem>
                     <SelectItem value="update">Modificado</SelectItem>
                     <SelectItem value="delete">Eliminado</SelectItem>
@@ -358,7 +358,7 @@ const AuditLogs = () => {
                     <SelectValue placeholder="Todos los usuarios" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Todos los usuarios</SelectItem>
+                    <SelectItem value="all">Todos los usuarios</SelectItem>
                     {getUniqueValues('user_name').map(user => (
                       <SelectItem key={user} value={user}>{user}</SelectItem>
                     ))}
