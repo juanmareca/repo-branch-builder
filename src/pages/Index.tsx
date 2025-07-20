@@ -55,25 +55,28 @@ const Index = ({ userRole, userData }: { userRole?: string; userData?: any }) =>
     
     const teamMembers = persons.filter(person => person.squad_lead === selectedSquadLead);
     
-    // Si es la vista del squad lead, añadir al propio squad lead al equipo
+    // Si es la vista del squad lead, buscar al propio squad lead en la tabla persons
     if (isSquadLeadView && userData?.name) {
-      const squadLeadAsPerson: Person = {
-        id: `squad-lead-${userData.name}`,
-        nombre: userData.name,
-        cex: 'SQUAD_LEAD',
-        num_pers: 'SL001',
-        fecha_incorporacion: '',
-        mail_empresa: userData.email || '',
-        grupo: 'Squad Lead',
-        categoria: 'Squad Lead',
-        oficina: '',
-        squad_lead: userData.name,
-        origen: 'Squad Lead',
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      };
+      const squadLeadPerson = persons.find(person => person.nombre === userData.name);
       
-      return [squadLeadAsPerson, ...teamMembers];
+      if (squadLeadPerson) {
+        // Crear una copia del squad lead marcado como tal
+        const squadLeadWithFlag = {
+          ...squadLeadPerson,
+          origen: 'Squad Lead' // Para identificarlo visualmente
+        };
+        
+        // Si no está ya en teamMembers, añadirlo al principio
+        const isAlreadyInTeam = teamMembers.some(member => member.id === squadLeadPerson.id);
+        if (!isAlreadyInTeam) {
+          return [squadLeadWithFlag, ...teamMembers];
+        } else {
+          // Si ya está en el equipo, reemplazarlo con la versión marcada
+          return teamMembers.map(member => 
+            member.id === squadLeadPerson.id ? squadLeadWithFlag : member
+          );
+        }
+      }
     }
     
     return teamMembers;
