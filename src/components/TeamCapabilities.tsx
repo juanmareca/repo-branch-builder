@@ -239,15 +239,29 @@ const TeamCapabilities: React.FC<TeamCapabilitiesProps> = ({
     if (!fechaIncorporacion || fechaIncorporacion === '') return '';
     
     try {
-      // Asumiendo que la fecha está en formato DD/MM/YYYY o similar
-      const parts = fechaIncorporacion.split('/');
-      if (parts.length !== 3) return '';
+      let incorporationDate: Date;
       
-      const day = parseInt(parts[0]);
-      const month = parseInt(parts[1]) - 1; // Los meses en JS van de 0-11
-      const year = parseInt(parts[2]);
+      // Verificar si es formato de fecha DD/MM/YYYY
+      if (fechaIncorporacion.includes('/')) {
+        const parts = fechaIncorporacion.split('/');
+        if (parts.length !== 3) return '';
+        
+        const day = parseInt(parts[0]);
+        const month = parseInt(parts[1]) - 1; // Los meses en JS van de 0-11
+        const year = parseInt(parts[2]);
+        
+        incorporationDate = new Date(year, month, day);
+      } else {
+        // Es formato numérico (días desde 1/1/1900, formato Excel)
+        const excelDate = parseInt(fechaIncorporacion);
+        if (isNaN(excelDate)) return '';
+        
+        // Excel cuenta desde 1/1/1900 pero tiene un bug de año bisiesto
+        // Necesitamos restar 2 días para corregir esto
+        const baseDate = new Date(1900, 0, 1); // 1 de enero de 1900
+        incorporationDate = new Date(baseDate.getTime() + (excelDate - 2) * 24 * 60 * 60 * 1000);
+      }
       
-      const incorporationDate = new Date(year, month, day);
       const today = new Date();
       
       const diffTime = today.getTime() - incorporationDate.getTime();
@@ -258,6 +272,7 @@ const TeamCapabilities: React.FC<TeamCapabilitiesProps> = ({
       if (years === 1) return '1 año';
       return `${years} años`;
     } catch (error) {
+      console.error('Error calculating years in Stratesys:', error, fechaIncorporacion);
       return '';
     }
   };
