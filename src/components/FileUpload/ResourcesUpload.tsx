@@ -315,11 +315,12 @@ const ResourcesUpload = () => {
                      {/* Imagen de ejemplo del Excel */}
                      <div className="mt-4 p-3 bg-white rounded border border-blue-200">
                        <p className="text-sm font-semibold text-blue-800 mb-2">Ejemplo de fichero Excel para cargar:</p>
-                       <img 
-                         src="/lovable-uploads/acabfdf3-b391-4e0d-b764-82e6c102790e.png" 
-                         alt="Ejemplo de fichero Excel para cargar recursos"
-                         className="w-full rounded border border-gray-300 shadow-sm"
-                       />
+                        <img 
+                          src="/lovable-uploads/acabfdf3-b391-4e0d-b764-82e6c102790e.png" 
+                          alt="Ejemplo de fichero Excel para cargar recursos"
+                          className="w-full rounded border border-gray-300 shadow-sm cursor-pointer transition-transform duration-300 hover:scale-200 hover:z-50 hover:shadow-2xl"
+                          title="Haz clic para ver la imagen en detalle"
+                        />
                      </div>
                    </div>
                  </AlertDescription>
