@@ -228,7 +228,8 @@ const ProjectsManagement = () => {
       const { data, error } = await supabase
         .from('projects')
         .select('*')
-        .order('denominacion', { ascending: true });
+        .order('denominacion', { ascending: true })
+        .limit(10000); // Aumentar límite para obtener todos los proyectos
 
       if (error) throw error;
       

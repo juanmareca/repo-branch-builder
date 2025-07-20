@@ -34,10 +34,10 @@ export const useAdminStats = () => {
         { count: capacidadesCount, error: capacidadesError },
         { count: festivosCount, error: festivosError }
       ] = await Promise.all([
-        supabase.from('persons').select('*', { count: 'exact', head: true }),
-        supabase.from('projects').select('*', { count: 'exact', head: true }),
-        supabase.from('capacities').select('*', { count: 'exact', head: true }),
-        supabase.from('holidays').select('*', { count: 'exact', head: true })
+        supabase.from('persons').select('*', { count: 'exact', head: true }).limit(50000),
+        supabase.from('projects').select('*', { count: 'exact', head: true }).limit(50000),
+        supabase.from('capacities').select('*', { count: 'exact', head: true }).limit(50000),
+        supabase.from('holidays').select('*', { count: 'exact', head: true }).limit(50000)
       ]);
 
       // Debug individual counts
