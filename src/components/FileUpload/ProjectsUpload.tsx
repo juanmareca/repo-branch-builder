@@ -134,7 +134,8 @@ const ProjectsUpload = () => {
       status: 'planning',
       billing_type: 'billable',
       priority: 'medium',
-      progress: 0
+      progress: 0,
+      origen: 'Fichero' // Establecer origen como 'Fichero' para registros subidos desde Excel
     };
   };
 

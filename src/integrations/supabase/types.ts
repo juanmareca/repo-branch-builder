@@ -359,6 +359,7 @@ export type Database = {
           grupo_cliente: string
           id: string
           name: string
+          origen: string
           priority: string
           progress: number
           socio_responsable: string
@@ -384,6 +385,7 @@ export type Database = {
           grupo_cliente?: string
           id?: string
           name?: string
+          origen?: string
           priority?: string
           progress?: number
           socio_responsable?: string
@@ -409,6 +411,7 @@ export type Database = {
           grupo_cliente?: string
           id?: string
           name?: string
+          origen?: string
           priority?: string
           progress?: number
           socio_responsable?: string

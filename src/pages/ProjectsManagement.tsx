@@ -68,12 +68,24 @@ interface Project {
   descripcion: string;
   cliente: string;
   grupo_cliente: string;
+  codigo_proyecto: string;
   gestor_proyecto: string;
   socio_responsable: string;
   tipologia: string;
   tipologia_2: string;
+  name: string;
+  description: string;
   status: string;
+  start_date: string;
+  end_date: string;
+  budget: number;
+  squad_lead_id: string;
+  priority: string;
+  progress: number;
+  billing_type: string;
   created_at: string;
+  updated_at: string;
+  origen: string;
 }
 
 interface ColumnConfig {
@@ -860,17 +872,17 @@ const ProjectsManagement = () => {
                 <div>
                   <Label className="text-sm font-medium mb-2 block">Estado</Label>
                   <div className="space-y-2 max-h-32 overflow-y-auto">
-                    {getUniqueValues('status').map((status) => (
-                      <div key={status} className="flex items-center space-x-2">
-                        <Checkbox
-                          id={`status-${status}`}
-                          checked={statusFilter.includes(status)}
-                          onCheckedChange={() => toggleFilter(statusFilter, status, setStatusFilter)}
-                        />
-                        <Label htmlFor={`status-${status}`} className="text-sm">
-                          <Badge className={getStatusBadgeColor(status)}>
-                            {status}
-                          </Badge>
+                     {getUniqueValues('status').map((status) => (
+                       <div key={String(status)} className="flex items-center space-x-2">
+                         <Checkbox
+                           id={`status-${status}`}
+                           checked={statusFilter.includes(String(status))}
+                           onCheckedChange={() => toggleFilter(statusFilter, String(status), setStatusFilter)}
+                         />
+                         <Label htmlFor={`status-${status}`} className="text-sm">
+                           <Badge className={getStatusBadgeColor(String(status))}>
+                             {String(status)}
+                           </Badge>
                         </Label>
                       </div>
                     ))}
@@ -881,15 +893,15 @@ const ProjectsManagement = () => {
                 <div>
                   <Label className="text-sm font-medium mb-2 block">Tipología</Label>
                   <div className="space-y-2 max-h-32 overflow-y-auto">
-                    {getUniqueValues('tipologia').map((tipologia) => (
-                      <div key={tipologia} className="flex items-center space-x-2">
-                        <Checkbox
-                          id={`tipologia-${tipologia}`}
-                          checked={tipologiaFilter.includes(tipologia)}
-                          onCheckedChange={() => toggleFilter(tipologiaFilter, tipologia, setTipologiaFilter)}
-                        />
+                     {getUniqueValues('tipologia').map((tipologia) => (
+                       <div key={String(tipologia)} className="flex items-center space-x-2">
+                         <Checkbox
+                           id={`tipologia-${tipologia}`}
+                           checked={tipologiaFilter.includes(String(tipologia))}
+                           onCheckedChange={() => toggleFilter(tipologiaFilter, String(tipologia), setTipologiaFilter)}
+                         />
                         <Label htmlFor={`tipologia-${tipologia}`} className="text-sm">
-                          {tipologia}
+                           {String(tipologia)}
                         </Label>
                       </div>
                     ))}
@@ -900,15 +912,15 @@ const ProjectsManagement = () => {
                 <div>
                   <Label className="text-sm font-medium mb-2 block">Cliente</Label>
                   <div className="space-y-2 max-h-32 overflow-y-auto">
-                    {getUniqueValues('cliente').map((cliente) => (
-                      <div key={cliente} className="flex items-center space-x-2">
-                        <Checkbox
-                          id={`cliente-${cliente}`}
-                          checked={clienteFilter.includes(cliente)}
-                          onCheckedChange={() => toggleFilter(clienteFilter, cliente, setClienteFilter)}
-                        />
+                     {getUniqueValues('cliente').map((cliente) => (
+                       <div key={String(cliente)} className="flex items-center space-x-2">
+                         <Checkbox
+                           id={`cliente-${cliente}`}
+                           checked={clienteFilter.includes(String(cliente))}
+                           onCheckedChange={() => toggleFilter(clienteFilter, String(cliente), setClienteFilter)}
+                         />
                         <Label htmlFor={`cliente-${cliente}`} className="text-sm">
-                          {cliente}
+                           {String(cliente)}
                         </Label>
                       </div>
                     ))}
@@ -919,15 +931,15 @@ const ProjectsManagement = () => {
                 <div>
                   <Label className="text-sm font-medium mb-2 block">Gestor</Label>
                   <div className="space-y-2 max-h-32 overflow-y-auto">
-                    {getUniqueValues('gestor_proyecto').map((gestor) => (
-                      <div key={gestor} className="flex items-center space-x-2">
-                        <Checkbox
-                          id={`gestor-${gestor}`}
-                          checked={gestorFilter.includes(gestor)}
-                          onCheckedChange={() => toggleFilter(gestorFilter, gestor, setGestorFilter)}
-                        />
+                     {getUniqueValues('gestor_proyecto').map((gestor) => (
+                       <div key={String(gestor)} className="flex items-center space-x-2">
+                         <Checkbox
+                           id={`gestor-${gestor}`}
+                           checked={gestorFilter.includes(String(gestor))}
+                           onCheckedChange={() => toggleFilter(gestorFilter, String(gestor), setGestorFilter)}
+                         />
                         <Label htmlFor={`gestor-${gestor}`} className="text-sm">
-                          {gestor}
+                           {String(gestor)}
                         </Label>
                       </div>
                     ))}
