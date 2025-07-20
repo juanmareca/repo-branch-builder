@@ -318,7 +318,7 @@ const ResourcesUpload = () => {
                         <img 
                           src="/lovable-uploads/acabfdf3-b391-4e0d-b764-82e6c102790e.png" 
                           alt="Ejemplo de fichero Excel para cargar recursos"
-                          className="w-full rounded border border-gray-300 shadow-sm cursor-pointer transition-transform duration-300 hover:scale-150 hover:z-10"
+                          className="w-full rounded border border-gray-300 shadow-sm cursor-pointer transition-transform duration-300 hover:scale-250 hover:z-10"
                           title="Pasa el ratón para ampliar la imagen"
                         />
                      </div>

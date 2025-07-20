@@ -348,11 +348,12 @@ const ProjectsUpload = () => {
                     {/* Imagen de ejemplo del Excel */}
                     <div className="mt-4 p-3 bg-white rounded border border-purple-200">
                       <p className="text-sm font-semibold text-purple-800 mb-2">Ejemplo de fichero Excel para cargar:</p>
-                      <img 
-                        src="/lovable-uploads/dce93539-da1c-4a81-9463-7dd483fd6e0b.png" 
-                        alt="Ejemplo de fichero Excel para cargar proyectos"
-                        className="w-full rounded border border-gray-300 shadow-sm"
-                      />
+                       <img 
+                         src="/lovable-uploads/dce93539-da1c-4a81-9463-7dd483fd6e0b.png" 
+                         alt="Ejemplo de fichero Excel para cargar proyectos"
+                         className="w-full rounded border border-gray-300 shadow-sm cursor-pointer transition-transform duration-300 hover:scale-250 hover:z-10"
+                         title="Pasa el ratón para ampliar la imagen"
+                       />
                     </div>
                   </div>
                 </AlertDescription>
