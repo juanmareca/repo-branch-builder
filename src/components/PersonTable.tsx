@@ -90,7 +90,7 @@ const PersonTable: React.FC<PersonTableProps> = ({ persons, onEditPerson }) => {
               onClick={() => handleSort('num_pers')}
             >
               <div className="flex items-center justify-between">
-                <span>Nº Pers.</span>
+                <span>Nº Personal</span>
                 {getSortIcon('num_pers')}
               </div>
             </th>
