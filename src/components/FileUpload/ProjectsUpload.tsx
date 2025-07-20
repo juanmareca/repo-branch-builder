@@ -349,7 +349,7 @@ const ProjectsUpload = () => {
                     <div className="mt-4 p-3 bg-white rounded border border-purple-200">
                       <p className="text-sm font-semibold text-purple-800 mb-2">Ejemplo de fichero Excel para cargar:</p>
                       <img 
-                        src="/lovable-uploads/54b12f06-d668-4202-880e-32785d0f7135.png" 
+                        src="/lovable-uploads/dce93539-da1c-4a81-9463-7dd483fd6e0b.png" 
                         alt="Ejemplo de fichero Excel para cargar proyectos"
                         className="w-full rounded border border-gray-300 shadow-sm"
                       />

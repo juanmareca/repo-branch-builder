@@ -1007,196 +1007,7 @@ const ProjectsManagement = () => {
           </Card>
         )}
 
-        {/* Table */}
-        <div className="bg-card rounded-lg shadow-sm border overflow-hidden">
-          <div className="max-h-[600px] overflow-auto relative">
-            <DragDropContext onDragEnd={handleDragEnd}>
-              <Table style={{ fontSize: `${fontSize}px` }}>
-                <TableHeader className="sticky top-0 z-30 bg-muted/50">
-                  <Droppable droppableId="table-headers" direction="horizontal">
-                    {(provided) => (
-                      <TableRow 
-                        className="bg-muted/50"
-                        ref={provided.innerRef}
-                        {...provided.droppableProps}
-                      >
-                        {columns.filter(col => col.visible).map((column, index) => (
-                          <Draggable key={column.key} draggableId={column.key} index={index}>
-                            {(provided, snapshot) => (
-                              <TableHead
-                                ref={provided.innerRef}
-                                {...provided.draggableProps}
-                                {...provided.dragHandleProps}
-                                className={cn(
-                                  "font-semibold text-xs uppercase tracking-wide border-r last:border-r-0 relative select-none bg-muted/50",
-                                  snapshot.isDragging && "bg-primary/10"
-                                )}
-                                style={{ 
-                                  width: `${column.width}px`,
-                                  minWidth: `${column.minWidth}px`,
-                                  cursor: 'pointer',
-                                  ...provided.draggableProps.style
-                                }}
-                                onClick={() => handleSort(column.key)}
-                              >
-                                <div className="flex items-center justify-between pr-2">
-                                  <span className="truncate">{column.label}</span>
-                                  <div className="flex items-center gap-1">
-                                    {getSortIcon(column.key)}
-                                    <Tooltip>
-                                      <TooltipTrigger asChild>
-                                        <GripVertical className="h-3 w-3 opacity-50" />
-                                      </TooltipTrigger>
-                                      <TooltipContent>
-                                        <p>Arrastra para reordenar</p>
-                                      </TooltipContent>
-                                    </Tooltip>
-                                  </div>
-                                </div>
-                                {column.resizable && (
-                                  <div
-                                    className="absolute right-0 top-0 bottom-0 w-2 cursor-col-resize bg-primary/50 opacity-0 hover:opacity-100 transition-opacity z-20"
-                                    onMouseDown={(e) => handleMouseDown(e, column.key)}
-                                    onDoubleClick={(e) => {
-                                      e.preventDefault();
-                                      e.stopPropagation();
-                                      autoResizeColumn(column.key);
-                                    }}
-                                    title="Arrastrar para redimensionar | Doble click para ajustar automáticamente"
-                                  />
-                                )}
-                              </TableHead>
-                            )}
-                          </Draggable>
-                        ))}
-                        {provided.placeholder}
-                        <TableHead className="w-16 bg-muted/50"></TableHead>
-                      </TableRow>
-                    )}
-                  </Droppable>
-                </TableHeader>
-                <TableBody>
-                  {currentProjects.map((project) => (
-                    <TableRow key={project.id} className="hover:bg-muted/30 transition-colors">
-                      {columns.filter(col => col.visible).map((column) => (
-                        <TableCell 
-                          key={column.key} 
-                          className="border-r last:border-r-0 p-2"
-                          style={{ 
-                            width: `${column.width}px`,
-                            minWidth: `${column.minWidth}px`
-                          }}
-                        >
-                          {editingRow === project.id ? (
-                            <Input
-                              defaultValue={project[column.key] || ''}
-                              onBlur={(e) => {
-                                handleUpdateProject(project.id, column.key, e.target.value);
-                                setEditingRow(null);
-                              }}
-                              onKeyPress={(e) => {
-                                if (e.key === 'Enter') {
-                                  handleUpdateProject(project.id, column.key, (e.target as HTMLInputElement).value);
-                                  setEditingRow(null);
-                                }
-                              }}
-                              className="h-8"
-                              autoFocus
-                            />
-                          ) : (
-                            <div
-                              onClick={() => setEditingRow(project.id)}
-                              className="cursor-pointer hover:bg-muted/50 p-1 rounded min-h-[32px] flex items-center"
-                            >
-                              {column.key === 'status' ? (
-                                <Badge className={getStatusBadgeColor(project[column.key])}>
-                                  {project[column.key]}
-                                </Badge>
-                              ) : column.key === 'denominacion' ? (
-                                <div>
-                                  <div className="font-medium text-sm">{project.denominacion}</div>
-                                  {project.descripcion && (
-                                    <div className="text-xs text-muted-foreground truncate">{project.descripcion}</div>
-                                  )}
-                                </div>
-                              ) : column.key === 'cliente' ? (
-                                <div>
-                                  <div className="font-medium text-sm">{project.cliente}</div>
-                                  {project.grupo_cliente && (
-                                    <div className="text-xs text-muted-foreground">{project.grupo_cliente}</div>
-                                  )}
-                                </div>
-                              ) : (
-                                <span className="truncate">{project[column.key] || '-'}</span>
-                              )}
-                            </div>
-                          )}
-                        </TableCell>
-                      ))}
-                       <TableCell className="w-16">
-                        <div className="flex items-center gap-2 justify-center">
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => setEditingRow(project.id)}
-                                className="h-8 w-8 p-0"
-                              >
-                                <Edit className="h-4 w-4" />
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              <p>Modificar</p>
-                            </TooltipContent>
-                          </Tooltip>
-                          
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <AlertDialog>
-                                <AlertDialogTrigger asChild>
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
-                                  >
-                                    <Trash2 className="h-4 w-4" />
-                                  </Button>
-                                </AlertDialogTrigger>
-                                <AlertDialogContent>
-                                  <AlertDialogHeader>
-                                    <AlertDialogTitle>¿Eliminar proyecto?</AlertDialogTitle>
-                                    <AlertDialogDescription>
-                                      Esta acción no se puede deshacer. Se eliminará permanentemente el proyecto.
-                                    </AlertDialogDescription>
-                                  </AlertDialogHeader>
-                                  <AlertDialogFooter>
-                                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                    <AlertDialogAction
-                                      onClick={() => handleDeleteProject(project.id)}
-                                      className="bg-red-600 hover:bg-red-700"
-                                    >
-                                      Eliminar
-                                    </AlertDialogAction>
-                                  </AlertDialogFooter>
-                                </AlertDialogContent>
-                              </AlertDialog>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              <p>Eliminar</p>
-                            </TooltipContent>
-                          </Tooltip>
-                        </div>
-                       </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </DragDropContext>
-          </div>
-        </div>
-
-        {/* Pagination Info */}
+        {/* Pagination Info - MOVER ARRIBA DE LA TABLA */}
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-4">
             <span className="text-sm text-muted-foreground">
@@ -1233,7 +1044,7 @@ const ProjectsManagement = () => {
             >
               <ChevronLeft className="h-4 w-4" />
             </Button>
-            <span className="px-4 py-2 text-sm">
+            <span className="text-sm px-4">
               Página {currentPage} de {totalPages}
             </span>
             <Button
@@ -1254,6 +1065,239 @@ const ProjectsManagement = () => {
             </Button>
           </div>
         </div>
+
+        {/* Font Size Control */}
+        <div className="flex items-center gap-4 mb-4 p-3 bg-gray-50 rounded-lg border">
+          <div className="flex items-center gap-2">
+            <Type className="h-4 w-4 text-muted-foreground" />
+            <span className="text-sm font-medium">Tamaño de fuente:</span>
+          </div>
+          
+          <div className="flex items-center gap-3">
+            <span className="text-xs font-arial" style={{ fontSize: '8px' }}>A</span>
+            <Slider
+              value={[fontSize]}
+              onValueChange={(value) => setFontSize(value[0])}
+              max={16}
+              min={8}
+              step={1}
+              className="w-32"
+            />
+            <span className="text-lg font-arial" style={{ fontSize: '16px' }}>A</span>
+          </div>
+          
+          <span className="text-sm text-muted-foreground">
+            {fontSize}px
+          </span>
+        </div>
+
+        {/* Table */}
+        <Card>
+          <CardContent className="p-0">
+            <div className="border border-gray-200 rounded-lg bg-white shadow-sm overflow-hidden">
+              {/* Contenedor scrolleable principal */}
+              <div className="max-h-[600px] overflow-auto relative">
+                <table className="w-full border-collapse">
+                  {/* Header sticky */}
+                  <thead className="sticky top-0 z-30 bg-blue-50 border-b border-gray-200">
+                    <tr>
+                      {/* Columna índice fija */}
+                      <th 
+                        className="sticky left-0 z-40 bg-blue-50 border-r border-gray-200 p-3 text-center font-semibold text-xs"
+                        style={{ width: 64, minWidth: 64 }}
+                      >
+                        ÍNDICE
+                      </th>
+                      
+                       {/* Headers de columnas */}
+                       {columns.filter(col => col.visible).map((column) => (
+                        <th
+                          key={column.key}
+                          className="relative bg-blue-50 border-r border-gray-200 text-center font-semibold text-xs"
+                          style={{ 
+                            width: column.width,
+                            minWidth: column.minWidth,
+                            maxWidth: column.width
+                          }}
+                        >
+                          <div className="flex items-center p-3">
+                            {/* Área de ordenación */}
+                            <div 
+                              className="flex-1 cursor-pointer hover:bg-blue-100 flex items-center justify-center gap-1 py-1 px-2 rounded"
+                              onClick={() => handleSort(column.key)}
+                              title="Click para ordenar"
+                            >
+                              <span>{column.label}</span>
+                              {getSortIcon(column.key)}
+                            </div>
+                            
+                            {/* Handle de redimensionamiento */}
+                            <div
+                              className="absolute right-0 top-0 w-2 h-full cursor-col-resize bg-blue-400 opacity-0 hover:opacity-100 transition-opacity z-20"
+                              onMouseDown={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                handleMouseDown(e, column.key);
+                              }}
+                              onDoubleClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                autoResizeColumn(column.key);
+                              }}
+                              title="Arrastrar para redimensionar | Doble click para ajustar automáticamente"
+                            />
+                          </div>
+                        </th>
+                      ))}
+                     
+                     {/* Columna acciones fija */}
+                     <th 
+                       className="sticky right-0 z-40 bg-blue-50 border-l border-gray-200 p-3 text-center font-semibold text-xs"
+                       style={{ width: 96, minWidth: 96 }}
+                     >
+                       ACCIONES
+                     </th>
+                   </tr>
+                 </thead>
+                   
+                   {/* Body */}
+                   <tbody>
+                     {currentProjects.map((project, index) => (
+                       <tr key={project.id} className={`hover:bg-gray-50 border-b border-gray-100 ${
+                         project.origen === 'Administrador' ? 'bg-red-50 hover:bg-red-100 dark:bg-red-950/20 dark:hover:bg-red-900/30' : ''
+                       }`}>
+                         {/* Columna índice fija */}
+                          <td 
+                            className={cn(
+                              "sticky left-0 z-10 font-medium text-center border-r border-gray-200 p-3",
+                              project.origen === 'Administrador' ? "bg-red-50" : "bg-white"
+                            )}
+                            style={{ width: 64 }}
+                          >
+                            <span className="font-arial" style={{ fontSize: `${fontSize}px` }}>
+                              {startIndex + index + 1}
+                            </span>
+                          </td>
+                          
+                          {/* Celdas de datos */}
+                          {columns.filter(col => col.visible).map((column) => (
+                            <td 
+                              key={column.key} 
+                              className={cn(
+                                "border-r border-gray-200 p-3",
+                                project.origen === 'Administrador' ? "bg-red-50" : "bg-white"
+                              )}
+                              style={{ 
+                                width: column.width,
+                                minWidth: column.minWidth,
+                                maxWidth: column.width
+                              }}
+                            >
+                              {editingRow === project.id ? (
+                                <Input
+                                  defaultValue={project[column.key] || ''}
+                                  onBlur={(e) => {
+                                    handleUpdateProject(project.id, column.key, e.target.value);
+                                    setEditingRow(null);
+                                  }}
+                                  onKeyPress={(e) => {
+                                    if (e.key === 'Enter') {
+                                      handleUpdateProject(project.id, column.key, (e.target as HTMLInputElement).value);
+                                      setEditingRow(null);
+                                    }
+                                  }}
+                                  className="h-8"
+                                  autoFocus
+                                />
+                              ) : (
+                                <div
+                                  onClick={() => setEditingRow(project.id)}
+                                  className="cursor-pointer hover:bg-muted/50 p-1 rounded min-h-[32px] flex items-center"
+                                  style={{ fontSize: `${fontSize}px` }}
+                                >
+                                  {column.key === 'status' ? (
+                                    <Badge className={getStatusBadgeColor(project[column.key])}>
+                                      {project[column.key]}
+                                    </Badge>
+                                  ) : column.key === 'denominacion' ? (
+                                    <div>
+                                      <div className="font-medium text-sm">{project.denominacion}</div>
+                                      {project.descripcion && (
+                                        <div className="text-xs text-muted-foreground truncate">{project.descripcion}</div>
+                                      )}
+                                    </div>
+                                  ) : column.key === 'cliente' ? (
+                                    <div>
+                                      <div className="font-medium text-sm">{project.cliente}</div>
+                                      {project.grupo_cliente && (
+                                        <div className="text-xs text-muted-foreground">{project.grupo_cliente}</div>
+                                      )}
+                                    </div>
+                                  ) : (
+                                    <span className="truncate">{project[column.key] || '-'}</span>
+                                  )}
+                                </div>
+                              )}
+                            </td>
+                          ))}
+
+                          {/* Columna acciones fija */}
+                           <td 
+                             className={cn(
+                               "sticky right-0 z-10 border-l border-gray-200 p-3",
+                               project.origen === 'Administrador' ? "bg-red-50" : "bg-white"
+                             )}
+                             style={{ width: 96 }}
+                           >
+                             <div className="flex items-center gap-2 justify-center">
+                               <Tooltip>
+                                 <TooltipTrigger asChild>
+                                   <Button
+                                     variant="ghost"
+                                     size="sm"
+                                      onClick={() => setEditingRow(project.id)}
+                                     className="h-8 w-8 p-0"
+                                   >
+                                     <Edit className="h-4 w-4" />
+                                   </Button>
+                                 </TooltipTrigger>
+                                 <TooltipContent>
+                                   <p>Modificar</p>
+                                 </TooltipContent>
+                               </Tooltip>
+                               
+                               <Tooltip>
+                                 <TooltipTrigger asChild>
+                                   <Button
+                                     variant="ghost"
+                                     size="sm"
+                                     onClick={() => handleDeleteProject(project.id)}
+                                     className="text-red-600 hover:text-red-700 h-8 w-8 p-0"
+                                   >
+                                     <Trash2 className="h-4 w-4" />
+                                   </Button>
+                                 </TooltipTrigger>
+                                 <TooltipContent>
+                                   <p>Eliminar</p>
+                                 </TooltipContent>
+                               </Tooltip>
+                             </div>
+                          </td>
+                        </tr>
+                      ))}
+                     </tbody>
+                  </table>
+                </div>
+              </div>
+
+            {filteredProjects.length === 0 && (
+              <div className="text-center py-8">
+                <FolderOpen className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                <p className="text-muted-foreground">No se encontraron proyectos que coincidan con los filtros</p>
+              </div>
+            )}
+           </CardContent>
+        </Card>
       </div>
     </div>
     </TooltipProvider>
