@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useSquadData } from '../hooks/useSquadData';
 import PersonTable from '../components/PersonTable';
+import TeamCapabilities from '../components/TeamCapabilities';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
@@ -239,6 +240,26 @@ const Index = ({ userRole, userData }: { userRole?: string; userData?: any }) =>
             </div>
           </CardContent>
         </Card>
+
+        {/* Nueva sección de Capacidades del Equipo - Solo para Squad Leads */}
+        {isSquadLeadView && (
+          <Card className="mt-8">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Users className="w-5 h-5" />
+                Capacidades del Equipo
+              </CardTitle>
+              <CardDescription>
+                Conocimientos y habilidades de los miembros del equipo
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <TeamCapabilities 
+                teamMembers={filteredPersons.map(person => person.nombre)} 
+              />
+            </CardContent>
+          </Card>
+        )}
       </div>
     </div>
   );

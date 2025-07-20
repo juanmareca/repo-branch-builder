@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { Person } from '../types';
-import { User, Mail, Calendar, MapPin, ChevronUp, ChevronDown, ChevronsUpDown } from 'lucide-react';
+import { User, Mail, Calendar, MapPin, ChevronUp, ChevronDown, ChevronsUpDown, Type, Plus, Minus } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 interface PersonTableProps {
   persons: Person[];
@@ -24,6 +25,7 @@ const PersonTable: React.FC<PersonTableProps> = ({ persons, onEditPerson }) => {
   });
   const [isResizing, setIsResizing] = useState(false);
   const resizingColumn = useRef<string | null>(null);
+  const [fontSize, setFontSize] = useState<'small' | 'medium' | 'large'>('medium');
 
   // Update sorted persons when persons prop changes
   React.useEffect(() => {
@@ -93,6 +95,24 @@ const PersonTable: React.FC<PersonTableProps> = ({ persons, onEditPerson }) => {
     document.addEventListener('mouseup', handleMouseUp);
   };
 
+  const getFontSizeClass = () => {
+    switch (fontSize) {
+      case 'small': return 'text-xs';
+      case 'large': return 'text-base';
+      default: return 'text-sm';
+    }
+  };
+
+  const adjustFontSize = (direction: 'increase' | 'decrease') => {
+    if (direction === 'increase') {
+      if (fontSize === 'small') setFontSize('medium');
+      else if (fontSize === 'medium') setFontSize('large');
+    } else {
+      if (fontSize === 'large') setFontSize('medium');
+      else if (fontSize === 'medium') setFontSize('small');
+    }
+  };
+
   if (persons.length === 0) {
     return (
       <div className="text-center py-12">
@@ -103,6 +123,32 @@ const PersonTable: React.FC<PersonTableProps> = ({ persons, onEditPerson }) => {
   }
 
   return (
+    <div className="space-y-4">
+      {/* Controles de tamaño de letra */}
+      <div className="flex items-center gap-2 justify-end">
+        <span className="text-sm text-muted-foreground">Tamaño de letra:</span>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => adjustFontSize('decrease')}
+          disabled={fontSize === 'small'}
+          className="h-8 w-8 p-0"
+        >
+          <Minus className="h-3 w-3" />
+        </Button>
+        <span className="text-sm min-w-[60px] text-center capitalize">{fontSize}</span>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => adjustFontSize('increase')}
+          disabled={fontSize === 'large'}
+          className="h-8 w-8 p-0"
+        >
+          <Plus className="h-3 w-3" />
+        </Button>
+      </div>
+
+      {/* Tabla */}
     <div className="bg-background rounded-xl shadow-sm border border-border overflow-hidden w-full max-h-[70vh]">
       <div className="overflow-auto">
         <table className="w-full divide-y divide-border table-fixed">
@@ -120,7 +166,7 @@ const PersonTable: React.FC<PersonTableProps> = ({ persons, onEditPerson }) => {
           <thead className="bg-muted sticky top-0 z-10">
             <tr className="bg-muted border-b border-border">
               <th 
-                className="px-3 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider bg-muted sticky left-0 z-20 border-r border-border relative group"
+                className={`px-3 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider bg-muted sticky left-0 z-20 border-r border-border relative group ${getFontSizeClass()}`}
               >
                 Índice
                 <div 
@@ -244,27 +290,27 @@ const PersonTable: React.FC<PersonTableProps> = ({ persons, onEditPerson }) => {
                 }`}
               >
                 <td 
-                  className="px-3 py-2 whitespace-nowrap text-xs text-muted-foreground font-mono bg-background sticky left-0 z-10 border-r border-border"
+                  className={`px-3 py-2 whitespace-nowrap text-muted-foreground font-mono bg-background sticky left-0 z-10 border-r border-border ${getFontSizeClass()}`}
                 >
                   {index + 1}
                 </td>
-                <td className="px-6 py-2 whitespace-nowrap">
+                <td className={`px-6 py-2 whitespace-nowrap ${getFontSizeClass()}`}>
                   <div className="flex items-center">
                     <div className="flex-shrink-0 h-8 w-8 bg-primary/10 rounded-full flex items-center justify-center">
                       <User className="w-4 h-4 text-primary" />
                     </div>
                     <div className="ml-3">
-                      <div className="text-sm font-medium text-foreground">{person.nombre}</div>
+                      <div className={`font-medium text-foreground ${getFontSizeClass()}`}>{person.nombre}</div>
                     </div>
                   </div>
                 </td>
-                <td className="px-6 py-2 whitespace-nowrap text-sm text-foreground">
+                <td className={`px-6 py-2 whitespace-nowrap text-foreground ${getFontSizeClass()}`}>
                   {person.cex}
                 </td>
-                <td className="px-6 py-2 whitespace-nowrap text-sm text-foreground">
+                <td className={`px-6 py-2 whitespace-nowrap text-foreground ${getFontSizeClass()}`}>
                   {person.num_pers}
                 </td>
-                <td className="px-6 py-2 whitespace-nowrap text-sm text-foreground">
+                <td className={`px-6 py-2 whitespace-nowrap text-foreground ${getFontSizeClass()}`}>
                   <div className="flex items-center">
                     <Calendar className="w-4 h-4 text-muted-foreground mr-2" />
                     {(() => {
@@ -292,7 +338,7 @@ const PersonTable: React.FC<PersonTableProps> = ({ persons, onEditPerson }) => {
                     })()}
                   </div>
                 </td>
-                <td className="px-6 py-2 whitespace-nowrap text-sm text-foreground">
+                <td className={`px-6 py-2 whitespace-nowrap text-foreground ${getFontSizeClass()}`}>
                   <div className="flex items-center">
                     <Mail className="w-4 h-4 text-muted-foreground mr-2" />
                     <a href={`mailto:${person.mail_empresa}`} className="text-primary hover:text-primary/80">
@@ -300,15 +346,15 @@ const PersonTable: React.FC<PersonTableProps> = ({ persons, onEditPerson }) => {
                     </a>
                   </div>
                 </td>
-                <td className="px-6 py-2 whitespace-nowrap text-sm text-foreground">
+                <td className={`px-6 py-2 whitespace-nowrap text-foreground ${getFontSizeClass()}`}>
                   {person.grupo}
                 </td>
-                <td className="px-6 py-2 whitespace-nowrap text-sm text-foreground">
+                <td className={`px-6 py-2 whitespace-nowrap text-foreground ${getFontSizeClass()}`}>
                   <span className="px-2 py-1 text-xs font-medium bg-secondary text-secondary-foreground rounded-full">
                     {person.categoria}
                   </span>
                 </td>
-                <td className="px-6 py-2 whitespace-nowrap text-sm text-foreground">
+                <td className={`px-6 py-2 whitespace-nowrap text-foreground ${getFontSizeClass()}`}>
                   <div className="flex items-center">
                     <MapPin className="w-4 h-4 text-muted-foreground mr-2" />
                     {person.oficina}
@@ -319,6 +365,7 @@ const PersonTable: React.FC<PersonTableProps> = ({ persons, onEditPerson }) => {
           </tbody>
         </table>
       </div>
+    </div>
     </div>
   );
 };
