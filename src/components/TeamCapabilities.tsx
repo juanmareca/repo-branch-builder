@@ -60,6 +60,7 @@ const ALL_SKILLS = [
 ];
 
 const LEVEL_OPTIONS = ['Nulo', 'Básico', 'Medio', 'Alto', 'Experto'];
+const INDUSTRY_OPTIONS = ['No', 'Sí'];
 
 const TeamCapabilities: React.FC<TeamCapabilitiesProps> = ({ 
   teamMembers, 
@@ -114,7 +115,21 @@ const TeamCapabilities: React.FC<TeamCapabilitiesProps> = ({
     fetchCapacities();
   }, [teamMembers, currentSquadLeadName]);
 
-  const getLevelColor = (level: string) => {
+  const getLevelColor = (level: string, isIndustry: boolean = false) => {
+    if (isIndustry) {
+      // Colores específicos para industrias (Sí/No)
+      switch (level?.toLowerCase()) {
+        case 'sí':
+        case 'si':
+          return 'bg-green-100 text-green-800 border-green-200 dark:bg-green-900/20 dark:text-green-400';
+        case 'no':
+          return 'bg-red-100 text-red-800 border-red-200 dark:bg-red-900/20 dark:text-red-400';
+        default:
+          return 'bg-gray-100 text-gray-800 border-gray-200 dark:bg-gray-900/20 dark:text-gray-400';
+      }
+    }
+    
+    // Colores para niveles de competencia (resto de capacidades)
     switch (level?.toLowerCase()) {
       case 'básico':
         return 'bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900/20 dark:text-blue-400';
@@ -217,12 +232,13 @@ const TeamCapabilities: React.FC<TeamCapabilitiesProps> = ({
           // Usar la capacidad existente
           completeData[personName][category].push(existingCapacity);
         } else {
-          // Crear una capacidad "Nulo" por defecto
+          // Crear una capacidad con valor por defecto según el tipo
+          const defaultLevel = category === 'Industrias' ? 'No' : 'Nulo';
           completeData[personName][category].push({
             id: `${personName}-${skill}`, // ID temporal
             person_name: personName,
             skill: skill,
-            level: 'Nulo',
+            level: defaultLevel,
             certification: '',
             comments: '',
             evaluation_date: ''
@@ -266,8 +282,11 @@ const TeamCapabilities: React.FC<TeamCapabilitiesProps> = ({
             });
           }
         } else {
-          // Insertar nueva capacidad
-          if (newLevel !== 'Nulo') {
+          // Insertar nueva capacidad - tanto para industrias como para otros niveles
+          const isIndustry = skill_full.toLowerCase().includes('industria');
+          const shouldInsert = isIndustry ? (newLevel === 'Sí') : (newLevel !== 'Nulo');
+          
+          if (shouldInsert) {
             inserts.push({
               person_name: personName,
               skill: skill_full,
@@ -435,7 +454,9 @@ const TeamCapabilities: React.FC<TeamCapabilitiesProps> = ({
                       ? 'text-blue-600 dark:text-blue-400' 
                       : 'text-green-600 dark:text-green-400'
                   }`}>
-                    {ALL_SKILLS.length} capacidades ({Object.values(personCapacities).flat().filter(c => c.level !== 'Nulo').length} registradas)
+                     {ALL_SKILLS.length} capacidades ({Object.values(personCapacities).flat().filter(c => 
+                       c.level !== 'Nulo' && c.level !== 'No'
+                     ).length} registradas)
                   </p>
                 </div>
               </div>
@@ -503,12 +524,13 @@ const TeamCapabilities: React.FC<TeamCapabilitiesProps> = ({
                                     value={currentLevel}
                                     onValueChange={(value) => handleEditCapacity(capacity.person_name, capacity.skill, value)}
                                   >
-                                    <SelectTrigger className="w-24 h-8">
+                                    <SelectTrigger className="w-24 h-8 bg-background">
                                       <SelectValue />
                                     </SelectTrigger>
-                                    <SelectContent>
-                                      {LEVEL_OPTIONS.map(level => (
-                                        <SelectItem key={level} value={level}>
+                                    <SelectContent className="bg-background border shadow-lg z-50">
+                                      {/* Usar opciones diferentes según si es industria o no */}
+                                      {(category === 'Industrias' ? INDUSTRY_OPTIONS : LEVEL_OPTIONS).map(level => (
+                                        <SelectItem key={level} value={level} className="bg-background hover:bg-muted">
                                           {level}
                                         </SelectItem>
                                       ))}
@@ -517,7 +539,7 @@ const TeamCapabilities: React.FC<TeamCapabilitiesProps> = ({
                                 ) : (
                                   <Badge 
                                     variant="outline" 
-                                    className={`text-xs px-2 py-1 ${getLevelColor(currentLevel)}`}
+                                    className={`text-xs px-2 py-1 ${getLevelColor(currentLevel, category === 'Industrias')}`}
                                   >
                                     {currentLevel}
                                   </Badge>
