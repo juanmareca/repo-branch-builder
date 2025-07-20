@@ -128,13 +128,6 @@ const ProjectsUpload = () => {
       socio_responsable: row[6] || '',
       cliente: row[7] || '',
       grupo_cliente: row[8] || '',
-      // Campos adicionales requeridos por la tabla
-      codigo_proyecto: row[0] || '', // Usar el código inicial como código de proyecto
-      name: row[2] || '', // Usar denominación como name
-      status: 'planning',
-      billing_type: 'billable',
-      priority: 'medium',
-      progress: 0,
       origen: 'Fichero' // Establecer origen como 'Fichero' para registros subidos desde Excel
     };
   };
