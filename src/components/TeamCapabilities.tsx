@@ -245,13 +245,29 @@ const TeamCapabilities: React.FC<TeamCapabilitiesProps> = ({
       curriculum += `. Tiene experiencia en las industrias de ${industries.map(i => i.skill.replace('Industrias - ', '')).join(' y ')}`;
     }
     
-    // Idiomas
-    if (nativeLanguage) {
-      curriculum += ` y su idioma nativo es el ${nativeLanguage.skill.replace('Idiomas - ', '').toLowerCase()}`;
-    }
+    // Idiomas - incluir todos los idiomas con algún nivel de conocimiento
+    const allLanguages = languages.filter(l => l.level !== 'Nulo');
+    const nativeLanguages = allLanguages.filter(l => ['Alto', 'Experto'].includes(l.level));
+    const otherLanguages = allLanguages.filter(l => !['Alto', 'Experto', 'Nulo'].includes(l.level));
     
-    if (basicLanguages.length > 0) {
-      curriculum += ` y tiene conocimientos ${basicLanguages.length === 1 ? 'básicos' : 'de nivel medio/básico'} de ${basicLanguages.map(l => l.skill.replace('Idiomas - ', '').toLowerCase()).join(', ')}`;
+    if (allLanguages.length > 0) {
+      let languageText = '';
+      
+      if (nativeLanguages.length > 0) {
+        const nativeNames = nativeLanguages.map(l => l.skill.replace('Idiomas - ', '').toLowerCase());
+        languageText += `domina ${nativeNames.length === 1 ? 'el' : 'los idiomas'} ${nativeNames.join(' y ')}`;
+      }
+      
+      if (otherLanguages.length > 0) {
+        const otherNames = otherLanguages.map(l => l.skill.replace('Idiomas - ', '').toLowerCase());
+        if (languageText) {
+          languageText += ` y tiene conocimientos de nivel ${otherLanguages[0].level.toLowerCase()} de ${otherNames.join(', ')}`;
+        } else {
+          languageText += `tiene conocimientos de ${otherNames.join(', ')}`;
+        }
+      }
+      
+      curriculum += ` y ${languageText}`;
     }
     
     curriculum += '.';
