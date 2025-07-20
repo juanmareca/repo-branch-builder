@@ -393,11 +393,13 @@ const ResourcesManagement = () => {
   // Column resizing functions
   const handleMouseDown = (e: React.MouseEvent, columnKey: string) => {
     e.preventDefault();
+    e.stopPropagation(); // Evitar que se active el drag&drop
     const column = columns.find(col => col.key === columnKey);
     if (column) {
       setResizingColumn(columnKey);
       setStartX(e.clientX);
       setStartWidth(column.width);
+      document.body.style.cursor = 'col-resize';
     }
   };
 
@@ -416,6 +418,7 @@ const ResourcesManagement = () => {
 
   const handleMouseUp = useCallback(() => {
     setResizingColumn(null);
+    document.body.style.cursor = 'default';
   }, []);
 
   useEffect(() => {
@@ -908,14 +911,15 @@ const ResourcesManagement = () => {
         {/* Resources Table */}
         <Card>
           <CardContent className="p-0">
-            <div className="overflow-x-auto">
+            {/* Tabla con headers fijos */}
+            <div className="relative max-h-[600px] overflow-auto border border-gray-200 rounded-lg">
               <DragDropContext onDragEnd={handleDragEnd}>
-                <Table>
-                <TableHeader>
+                <Table className="relative">
+                <TableHeader className="sticky top-0 z-10 bg-white shadow-sm">
                   <Droppable droppableId="table-headers" direction="horizontal">
                     {(provided) => (
                       <TableRow ref={provided.innerRef} {...provided.droppableProps}>
-                        <TableHead className="w-16 bg-blue-50 text-center font-semibold">ÍNDICE</TableHead>
+                        <TableHead className="w-16 bg-blue-50 text-center font-semibold sticky left-0 z-20 border-r border-gray-200">ÍNDICE</TableHead>
                         {columns.filter(col => col.visible).map((column, index) => (
                           <Draggable 
                             key={column.key} 
@@ -949,26 +953,34 @@ const ResourcesManagement = () => {
                                   <span>{column.label}</span>
                                   {getSortIcon(column.key)}
                                 </div>
-                                {/* Resize handle */}
+                                {/* Resize handle - MEJORADO */}
                                 <div
-                                  className="absolute right-0 top-0 w-1 h-full cursor-col-resize bg-transparent hover:bg-blue-300 transition-colors"
+                                  className="absolute right-0 top-0 w-2 h-full cursor-col-resize bg-transparent hover:bg-blue-400 transition-colors z-30"
                                   onMouseDown={(e) => handleMouseDown(e, column.key)}
+                                  onDoubleClick={(e) => {
+                                    e.stopPropagation();
+                                    // Autoajustar ancho al contenido
+                                    setColumns(prev => prev.map(col => 
+                                      col.key === column.key ? { ...col, width: 150 } : col
+                                    ));
+                                  }}
                                   style={{ userSelect: 'none' }}
+                                  title="Arrastrar para redimensionar | Doble click para autoajustar"
                                 />
                               </TableHead>
                             )}
                           </Draggable>
                         ))}
                         {provided.placeholder}
-                        <TableHead className="w-24 bg-blue-50 text-center font-semibold">ACCIONES</TableHead>
+                        <TableHead className="w-24 bg-blue-50 text-center font-semibold sticky right-0 z-20 border-l border-gray-200">ACCIONES</TableHead>
                       </TableRow>
                     )}
                   </Droppable>
                 </TableHeader>
                 <TableBody>
                   {currentResources.map((resource, index) => (
-                    <TableRow key={resource.id}>
-                      <TableCell className="font-medium">
+                    <TableRow key={resource.id} className="hover:bg-gray-50">
+                      <TableCell className="font-medium sticky left-0 bg-white border-r border-gray-200 z-10">
                         {startIndex + index + 1}
                       </TableCell>
                        {columns.filter(col => col.visible).map(column => (
@@ -1013,7 +1025,7 @@ const ResourcesManagement = () => {
                            )}
                          </TableCell>
                        ))}
-                      <TableCell>
+                      <TableCell className="sticky right-0 bg-white border-l border-gray-200 z-10">
                         <div className="flex items-center gap-2">
                           <Button
                             variant="ghost"
