@@ -851,21 +851,27 @@ const ResourcesManagement = () => {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="w-16">ÍNDICE</TableHead>
-                    {columns.filter(col => col.visible).map(column => (
-                      <TableHead 
-                        key={column.key}
-                        className="cursor-pointer hover:bg-muted/50"
-                        onClick={() => handleSort(column.key)}
-                        style={{ width: column.width }}
-                      >
-                        <div className="flex items-center gap-2">
-                          {column.label}
-                          {getSortIcon(column.key)}
-                        </div>
-                      </TableHead>
-                    ))}
-                    <TableHead className="w-24">ACCIONES</TableHead>
+                     <TableHead className="w-16 bg-blue-50 text-center font-semibold">ÍNDICE</TableHead>
+                     {columns.filter(col => col.visible).map(column => (
+                       <TableHead 
+                         key={column.key}
+                         className="cursor-pointer hover:bg-blue-100 bg-blue-50 text-center font-semibold resize-x"
+                         onClick={() => handleSort(column.key)}
+                         style={{ 
+                           width: column.width,
+                           minWidth: column.minWidth,
+                           maxWidth: '400px',
+                           resize: 'horizontal',
+                           overflow: 'hidden'
+                         }}
+                       >
+                         <div className="flex items-center justify-center gap-2">
+                           <span>{column.label}</span>
+                           {getSortIcon(column.key)}
+                         </div>
+                       </TableHead>
+                     ))}
+                     <TableHead className="w-24 bg-blue-50 text-center font-semibold">ACCIONES</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -881,10 +887,16 @@ const ResourcesManagement = () => {
                                <span className="font-medium">{resource.nombre}</span>
                                <span className="text-sm text-muted-foreground">{resource.squad_lead}</span>
                              </div>
-                           ) : column.key === 'fecha_incorporacion' ? (
-                             resource.fecha_incorporacion ? 
-                               format(new Date(resource.fecha_incorporacion), 'dd/MM/yyyy') : 
-                               '-'
+                            ) : column.key === 'fecha_incorporacion' ? (
+                              resource.fecha_incorporacion ? (
+                                // Si es un número (timestamp de Excel), convertirlo
+                                typeof resource.fecha_incorporacion === 'number' ? 
+                                  format(new Date((resource.fecha_incorporacion - 25569) * 86400 * 1000), 'dd/MM/yyyy') :
+                                  // Si es una cadena, intentar parsearla
+                                  (resource.fecha_incorporacion.includes('/') ? 
+                                    resource.fecha_incorporacion : 
+                                    format(new Date(resource.fecha_incorporacion), 'dd/MM/yyyy'))
+                              ) : '-'
                            ) : column.key === 'grupo' ? (
                              <div className="flex flex-col">
                                <span className="font-medium">{resource.grupo}</span>
