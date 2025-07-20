@@ -106,7 +106,7 @@ const AdminDashboard = () => {
           </Card>
 
           {/* Proyectos */}
-          <Card className="hover:shadow-lg transition-shadow cursor-pointer group">
+          <Card className="hover:shadow-lg transition-shadow cursor-pointer group" onClick={() => navigate('/projects')}>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">PROYECTOS</CardTitle>
               <FolderOpen className="h-5 w-5 text-purple-600 group-hover:scale-110 transition-transform" />

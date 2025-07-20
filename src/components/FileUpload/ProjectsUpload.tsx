@@ -22,9 +22,12 @@ const ProjectsUpload = () => {
   const [isFormatExpanded, setIsFormatExpanded] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [fileRecordsCount, setFileRecordsCount] = useState<number>(0);
+  const [duplicatesCount, setDuplicatesCount] = useState<number>(0);
+  const [newProjectsCount, setNewProjectsCount] = useState<number>(0);
   const [processingFile, setProcessingFile] = useState(false);
   const [showUploadDialog, setShowUploadDialog] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [uploadMode, setUploadMode] = useState<'add-new' | 'replace-all'>('add-new');
   const { toast } = useToast();
 
   // Función para procesar el archivo Excel y contar registros
@@ -60,8 +63,25 @@ const ProjectsUpload = () => {
       setProcessingFile(true);
       
       try {
-        const recordsCount = await processExcelFile(file);
+        // Procesar archivo y detectar duplicados
+        const rawData = await processExcelData(file);
+        const dataRows = rawData.slice(1).filter(row => row[0]); // Excluir header y filas vacías
+        const recordsCount = dataRows.length;
+        
+        // Obtener códigos iniciales existentes
+        const { data: existingProjects } = await supabase
+          .from('projects')
+          .select('codigo_inicial');
+        
+        const existingCodes = new Set(existingProjects?.map(p => p.codigo_inicial) || []);
+        
+        // Contar duplicados y proyectos nuevos
+        const duplicates = dataRows.filter(row => existingCodes.has(row[0])).length;
+        const newProjects = recordsCount - duplicates;
+        
         setFileRecordsCount(recordsCount);
+        setDuplicatesCount(duplicates);
+        setNewProjectsCount(newProjects);
         setShowUploadDialog(true);
       } catch (error) {
         toast({
@@ -143,23 +163,66 @@ const ProjectsUpload = () => {
         throw new Error('No se encontraron datos válidos para procesar');
       }
 
-      // Insertar los proyectos en la base de datos
-      const { data, error } = await supabase
-        .from('projects')
-        .insert(projectsToInsert)
-        .select();
+      if (uploadMode === 'replace-all') {
+        // Eliminar todos los proyectos existentes y insertar los nuevos
+        const { error: deleteError } = await supabase
+          .from('projects')
+          .delete()
+          .neq('id', '00000000-0000-0000-0000-000000000000'); // Delete all
+        
+        if (deleteError) {
+          console.error('Error deleting existing projects:', deleteError);
+          throw new Error('Error al eliminar proyectos existentes: ' + deleteError.message);
+        }
 
-      if (error) {
-        console.error('Error inserting projects:', error);
-        throw error;
+        const { data, error: insertError } = await supabase
+          .from('projects')
+          .insert(projectsToInsert)
+          .select();
+
+        if (insertError) {
+          console.error('Error inserting new projects:', insertError);
+          throw new Error('Error al insertar proyectos: ' + insertError.message);
+        }
+
+        toast({
+          title: "✅ Proyectos reemplazados exitosamente",
+          description: `Se han reemplazado todos los proyectos. Total: ${data?.length || 0}`,
+        });
+      } else {
+        // Modo añadir solo nuevos: filtrar proyectos que no existen
+        const { data: existingProjects } = await supabase
+          .from('projects')
+          .select('codigo_inicial');
+        
+        const existingCodes = new Set(existingProjects?.map(p => p.codigo_inicial) || []);
+        const newProjectsToInsert = projectsToInsert.filter(project => !existingCodes.has(project.codigo_inicial));
+        
+        if (newProjectsToInsert.length === 0) {
+          toast({
+            title: "ℹ️ No hay proyectos nuevos",
+            description: "Todos los proyectos del archivo ya existen en la base de datos",
+          });
+        } else {
+          const { data, error } = await supabase
+            .from('projects')
+            .insert(newProjectsToInsert)
+            .select();
+
+          if (error) {
+            console.error('Error inserting new projects:', error);
+            throw new Error('Error al insertar proyectos: ' + error.message);
+          }
+
+          toast({
+            title: "✅ Proyectos nuevos añadidos",
+            description: `Se han añadido ${data?.length || 0} proyectos nuevos`,
+          });
+        }
       }
 
       setSelectedFile(null);
-      
-      toast({
-        title: "✅ Carga completada exitosamente",
-        description: `Se han cargado ${data?.length || 0} proyectos correctamente.`,
-      });
+      setUploadMode('add-new');
 
     } catch (error: any) {
       console.error('Upload error:', error);
@@ -322,17 +385,19 @@ const ProjectsUpload = () => {
           </DialogHeader>
           
           {selectedFile && (
-            <div className="py-4">
+            <div className="py-4 space-y-4">
               <div className="flex items-center gap-3 p-4 bg-purple-50 rounded-lg border border-purple-200">
                 <FileSpreadsheet className="h-8 w-8 text-purple-600" />
                 <div className="flex-1">
                   <p className="font-medium text-purple-800">{selectedFile.name}</p>
                   <p className="text-sm text-purple-600">
-                    Archivo: {formatFileSize(selectedFile.size)} • {fileRecordsCount} registros
+                    Archivo: {formatFileSize(selectedFile.size)} • {fileRecordsCount} registros totales
                   </p>
-                  <div className="flex items-center gap-1 mt-1">
-                    <CheckCircle className="h-4 w-4 text-green-600" />
-                    <span className="text-sm text-green-700">Listo para cargar</span>
+                  <div className="text-sm text-purple-600 mt-1">
+                    • Proyectos nuevos: <span className="font-medium text-green-700">{newProjectsCount}</span>
+                  </div>
+                  <div className="text-sm text-purple-600">
+                    • Proyectos duplicados: <span className="font-medium text-orange-700">{duplicatesCount}</span>
                   </div>
                 </div>
                 <Button
@@ -345,6 +410,49 @@ const ProjectsUpload = () => {
                 >
                   <X className="h-4 w-4" />
                 </Button>
+              </div>
+
+              {/* Opciones de carga */}
+              <div className="space-y-3 p-4 bg-gray-50 rounded-lg">
+                <p className="font-medium text-gray-700">Modo de carga:</p>
+                <div className="space-y-2">
+                  <label className="flex items-center space-x-3 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="uploadMode"
+                      value="add-new"
+                      checked={uploadMode === 'add-new'}
+                      onChange={(e) => setUploadMode(e.target.value as 'add-new' | 'replace-all')}
+                      className="text-purple-600"
+                    />
+                    <div>
+                      <span className="text-sm font-medium text-gray-900">
+                        Añadir solo proyectos nuevos
+                      </span>
+                      <p className="text-xs text-gray-600">
+                        Se añadirán {newProjectsCount} proyectos nuevos, ignorando duplicados
+                      </p>
+                    </div>
+                  </label>
+                  <label className="flex items-center space-x-3 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="uploadMode"
+                      value="replace-all"
+                      checked={uploadMode === 'replace-all'}
+                      onChange={(e) => setUploadMode(e.target.value as 'add-new' | 'replace-all')}
+                      className="text-purple-600"
+                    />
+                    <div>
+                      <span className="text-sm font-medium text-gray-900">
+                        Reemplazar toda la base de datos
+                      </span>
+                      <p className="text-xs text-gray-600">
+                        Se eliminarán todos los proyectos existentes y se cargarán {fileRecordsCount} nuevos
+                      </p>
+                    </div>
+                  </label>
+                </div>
               </div>
             </div>
           )}
