@@ -106,14 +106,14 @@ const AdminDashboard = () => {
           </Card>
 
           {/* Proyectos */}
-          <Card className="hover:shadow-lg transition-shadow">
+          <Card className="hover:shadow-lg transition-shadow cursor-pointer group" onClick={() => navigate('/projects')}>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">PROYECTOS</CardTitle>
-              <FolderOpen className="h-5 w-5 text-purple-600" />
+              <FolderOpen className="h-5 w-5 text-purple-600 group-hover:scale-110 transition-transform" />
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold text-foreground mb-1">{stats.proyectos}</div>
-              <p className="text-xs text-muted-foreground">Total proyectos</p>
+              <p className="text-xs text-muted-foreground">Clic para gestionar</p>
               <div className="w-full bg-purple-100 rounded-full h-1 mt-2">
                 <div className="bg-purple-600 h-1 rounded-full w-2/3"></div>
               </div>

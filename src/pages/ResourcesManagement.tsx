@@ -112,6 +112,7 @@ const ResourcesManagement = () => {
   const [showColumns, setShowColumns] = useState(false);
   const [showUpload, setShowUpload] = useState(false);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [isDefaultViewSaved, setIsDefaultViewSaved] = useState(false);
   
   // Font size control
   const [fontSize, setFontSize] = useState(12); // Tamaño inicial en px
@@ -1241,14 +1242,17 @@ const ResourcesManagement = () => {
               <div className="mt-4 flex items-center space-x-2">
                 <Checkbox 
                   id="save-default"
-                  checked={false}
+                  checked={isDefaultViewSaved}
                   onCheckedChange={(checked) => {
                     if (checked) {
                       localStorage.setItem('resources-columns-config', JSON.stringify(columns));
+                      setIsDefaultViewSaved(true);
                       toast({
                         title: "Configuración guardada",
                         description: "Esta configuración se aplicará por defecto cuando vuelvas a entrar",
                       });
+                    } else {
+                      setIsDefaultViewSaved(false);
                     }
                   }}
                 />
