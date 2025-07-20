@@ -683,20 +683,24 @@ const HolidaysManagement = () => {
           </div>
         )}
 
+        {/* Search - Outside filters */}
+        <div className="mb-6">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Buscar festivo, país o comunidad..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+        </div>
+
         {/* Filters Section */}
         {showFilters && (
           <Card className="mb-6">
             <CardContent>
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-                <div>
-                  <Label htmlFor="searchTerm">Buscar</Label>
-                  <Input
-                    id="searchTerm"
-                    placeholder="Buscar festivo, país o comunidad"
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                  />
-                </div>
                 <div>
                   <Label>País</Label>
                   <div className="max-h-40 overflow-auto border rounded p-2">
