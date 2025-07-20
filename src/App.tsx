@@ -9,6 +9,8 @@ import NotFound from "./pages/NotFound";
 import SplashScreen from "./pages/SplashScreen";
 import LoadingScreen from "./pages/LoadingScreen";
 import AdminDashboard from "./pages/AdminDashboard";
+import SquadLeadDashboard from "./pages/SquadLeadDashboard";
+import SquadAssignments from "./pages/SquadAssignments";
 import HolidaysManagement from "./pages/HolidaysManagement";
 import BackupsManagement from "./pages/BackupsManagement";
 import AuditLogs from "./pages/AuditLogs";
@@ -79,7 +81,13 @@ const App = () => {
         <Sonner />
         <BrowserRouter>
           <Routes>
-            <Route path="/" element={userRole === 'admin' ? <Navigate to="/admin" replace /> : <Index />} />
+            <Route path="/" element={
+              userRole === 'admin' ? <Navigate to="/admin" replace /> : 
+              userRole === 'squad_lead' ? <Navigate to="/squad-dashboard" replace /> :
+              <Index />
+            } />
+            
+            {/* Admin Routes */}
             <Route path="/admin" element={userRole === 'admin' ? <AdminDashboard /> : <Navigate to="/" replace />} />
             <Route path="/holidays" element={userRole === 'admin' ? <HolidaysManagement /> : <Navigate to="/" replace />} />
             <Route path="/backups" element={userRole === 'admin' ? <BackupsManagement /> : <Navigate to="/" replace />} />
@@ -87,6 +95,16 @@ const App = () => {
             <Route path="/capacities" element={userRole === 'admin' ? <CapacitiesManagement /> : <Navigate to="/" replace />} />
             <Route path="/resources" element={userRole === 'admin' ? <ResourcesManagement /> : <Navigate to="/" replace />} />
             <Route path="/projects" element={userRole === 'admin' ? <ProjectsManagement /> : <Navigate to="/" replace />} />
+            
+            {/* Squad Lead Routes */}
+            <Route path="/squad-dashboard" element={userRole === 'squad_lead' ? <SquadLeadDashboard /> : <Navigate to="/" replace />} />
+            <Route path="/squad-assignments" element={userRole === 'squad_lead' ? <SquadAssignments /> : <Navigate to="/" replace />} />
+            <Route path="/squad-team" element={userRole === 'squad_lead' ? <Index /> : <Navigate to="/" replace />} />
+            <Route path="/squad-projects" element={userRole === 'squad_lead' ? <ProjectsManagement /> : <Navigate to="/" replace />} />
+            <Route path="/squad-capacities" element={userRole === 'squad_lead' ? <CapacitiesManagement /> : <Navigate to="/" replace />} />
+            <Route path="/squad-availability" element={userRole === 'squad_lead' ? <Index /> : <Navigate to="/" replace />} />
+            <Route path="/squad-reports" element={userRole === 'squad_lead' ? <Index /> : <Navigate to="/" replace />} />
+            
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
