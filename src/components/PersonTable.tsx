@@ -103,6 +103,14 @@ const PersonTable: React.FC<PersonTableProps> = ({ persons, onEditPerson }) => {
     }
   };
 
+  const getFontSizeLabel = () => {
+    switch (fontSize) {
+      case 'small': return 'Pequeño';
+      case 'large': return 'Grande';
+      default: return 'Mediano';
+    }
+  };
+
   const adjustFontSize = (direction: 'increase' | 'decrease') => {
     if (direction === 'increase') {
       if (fontSize === 'small') setFontSize('medium');
@@ -136,7 +144,7 @@ const PersonTable: React.FC<PersonTableProps> = ({ persons, onEditPerson }) => {
         >
           <Minus className="h-3 w-3" />
         </Button>
-        <span className="text-sm min-w-[60px] text-center capitalize">{fontSize}</span>
+        <span className="text-sm min-w-[60px] text-center">{getFontSizeLabel()}</span>
         <Button
           variant="outline"
           size="sm"
