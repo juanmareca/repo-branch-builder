@@ -19,21 +19,10 @@ interface Project {
   descripcion: string;
   cliente: string;
   grupo_cliente: string;
-  codigo_proyecto: string;
   gestor_proyecto: string;
   socio_responsable: string;
   tipologia: string;
   tipologia_2: string;
-  name: string;
-  description: string;
-  status: string;
-  start_date: string;
-  end_date: string;
-  budget: number;
-  squad_lead_id: string;
-  priority: string;
-  progress: number;
-  billing_type: string;
   created_at: string;
   updated_at: string;
   origen: string;
@@ -134,15 +123,6 @@ const EditProjectDialog: React.FC<EditProjectDialogProps> = ({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="codigo_proyecto">Código Proyecto</Label>
-            <Input
-              id="codigo_proyecto"
-              value={formData.codigo_proyecto}
-              onChange={(e) => handleInputChange('codigo_proyecto', e.target.value)}
-            />
-          </div>
-
-          <div className="space-y-2">
             <Label htmlFor="gestor_proyecto">Gestor Proyecto</Label>
             <Input
               id="gestor_proyecto"
@@ -175,73 +155,6 @@ const EditProjectDialog: React.FC<EditProjectDialogProps> = ({
               id="tipologia_2"
               value={formData.tipologia_2}
               onChange={(e) => handleInputChange('tipologia_2', e.target.value)}
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="status">Estado</Label>
-            <Select value={formData.status} onValueChange={(value) => handleInputChange('status', value)}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="planning">Planning</SelectItem>
-                <SelectItem value="active">Active</SelectItem>
-                <SelectItem value="completed">Completed</SelectItem>
-                <SelectItem value="cancelled">Cancelled</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="priority">Prioridad</Label>
-            <Select value={formData.priority} onValueChange={(value) => handleInputChange('priority', value)}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="low">Baja</SelectItem>
-                <SelectItem value="medium">Media</SelectItem>
-                <SelectItem value="high">Alta</SelectItem>
-                <SelectItem value="urgent">Urgente</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="billing_type">Tipo de Facturación</Label>
-            <Select value={formData.billing_type} onValueChange={(value) => handleInputChange('billing_type', value)}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="billable">Facturable</SelectItem>
-                <SelectItem value="non-billable">No Facturable</SelectItem>
-                <SelectItem value="internal">Interno</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="progress">Progreso (%)</Label>
-            <Input
-              id="progress"
-              type="number"
-              min="0"
-              max="100"
-              value={formData.progress}
-              onChange={(e) => handleInputChange('progress', parseInt(e.target.value) || 0)}
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="budget">Presupuesto</Label>
-            <Input
-              id="budget"
-              type="number"
-              step="0.01"
-              value={formData.budget || ''}
-              onChange={(e) => handleInputChange('budget', parseFloat(e.target.value) || 0)}
             />
           </div>
         </div>

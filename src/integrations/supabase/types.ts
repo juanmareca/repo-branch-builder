@@ -345,92 +345,51 @@ export type Database = {
       }
       projects: {
         Row: {
-          billing_type: string
-          budget: number | null
           cliente: string
           codigo_inicial: string
-          codigo_proyecto: string
           created_at: string | null
           denominacion: string
           descripcion: string | null
-          description: string | null
-          end_date: string | null
           gestor_proyecto: string
           grupo_cliente: string
           id: string
-          name: string
           origen: string
-          priority: string
-          progress: number
           socio_responsable: string
-          squad_lead_id: string | null
-          start_date: string | null
-          status: string
           tipologia: string
           tipologia_2: string | null
           updated_at: string | null
         }
         Insert: {
-          billing_type?: string
-          budget?: number | null
           cliente?: string
           codigo_inicial?: string
-          codigo_proyecto?: string
           created_at?: string | null
           denominacion?: string
           descripcion?: string | null
-          description?: string | null
-          end_date?: string | null
           gestor_proyecto?: string
           grupo_cliente?: string
           id?: string
-          name?: string
           origen?: string
-          priority?: string
-          progress?: number
           socio_responsable?: string
-          squad_lead_id?: string | null
-          start_date?: string | null
-          status?: string
           tipologia?: string
           tipologia_2?: string | null
           updated_at?: string | null
         }
         Update: {
-          billing_type?: string
-          budget?: number | null
           cliente?: string
           codigo_inicial?: string
-          codigo_proyecto?: string
           created_at?: string | null
           denominacion?: string
           descripcion?: string | null
-          description?: string | null
-          end_date?: string | null
           gestor_proyecto?: string
           grupo_cliente?: string
           id?: string
-          name?: string
           origen?: string
-          priority?: string
-          progress?: number
           socio_responsable?: string
-          squad_lead_id?: string | null
-          start_date?: string | null
-          status?: string
           tipologia?: string
           tipologia_2?: string | null
           updated_at?: string | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "projects_squad_lead_id_fkey"
-            columns: ["squad_lead_id"]
-            isOneToOne: false
-            referencedRelation: "squad_leads"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       squad_leads: {
         Row: {

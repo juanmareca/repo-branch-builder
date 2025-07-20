@@ -69,21 +69,10 @@ interface Project {
   descripcion: string;
   cliente: string;
   grupo_cliente: string;
-  codigo_proyecto: string;
   gestor_proyecto: string;
   socio_responsable: string;
   tipologia: string;
   tipologia_2: string;
-  name: string;
-  description: string;
-  status: string;
-  start_date: string;
-  end_date: string;
-  budget: number;
-  squad_lead_id: string;
-  priority: string;
-  progress: number;
-  billing_type: string;
   created_at: string;
   updated_at: string;
   origen: string;
@@ -105,7 +94,6 @@ const ProjectsManagement = () => {
   const [searchTerm, setSearchTerm] = useState('');
   
   // Filters
-  const [statusFilter, setStatusFilter] = useState<string[]>([]);
   const [tipologiaFilter, setTipologiaFilter] = useState<string[]>([]);
   const [clienteFilter, setClienteFilter] = useState<string[]>([]);
   const [gestorFilter, setGestorFilter] = useState<string[]>([]);
@@ -146,8 +134,7 @@ const ProjectsManagement = () => {
     gestor_proyecto: '',
     socio_responsable: '',
     tipologia: '',
-    tipologia_2: '',
-    status: 'planning'
+    tipologia_2: ''
   });
   
   // Column management with persistence
@@ -169,7 +156,6 @@ const ProjectsManagement = () => {
       { key: 'socio_responsable', label: 'SOCIO RESPONSABLE', visible: true, width: 180, minWidth: 150, resizable: true },
       { key: 'tipologia', label: 'TIPOLOGÍA', visible: true, width: 150, minWidth: 120, resizable: true },
       { key: 'tipologia_2', label: 'TIPOLOGÍA 2', visible: false, width: 150, minWidth: 120, resizable: true },
-      { key: 'status', label: 'ESTADO', visible: true, width: 120, minWidth: 100, resizable: true },
       { key: 'origen', label: 'ORIGEN', visible: false, width: 120, minWidth: 100, resizable: true }
     ];
   };
@@ -190,7 +176,7 @@ const ProjectsManagement = () => {
 
   useEffect(() => {
     applyFilters();
-  }, [projects, searchTerm, statusFilter, tipologiaFilter, clienteFilter, gestorFilter, sortField, sortDirection]);
+  }, [projects, searchTerm, tipologiaFilter, clienteFilter, gestorFilter, sortField, sortDirection]);
 
   const fetchProjects = async () => {
     try {
@@ -232,11 +218,6 @@ const ProjectsManagement = () => {
       );
     }
 
-    // Status filter
-    if (statusFilter.length > 0) {
-      filtered = filtered.filter(project => statusFilter.includes(project.status));
-    }
-
     // Tipología filter
     if (tipologiaFilter.length > 0) {
       filtered = filtered.filter(project => tipologiaFilter.includes(project.tipologia));
@@ -272,7 +253,7 @@ const ProjectsManagement = () => {
 
     setFilteredProjects(filtered);
     setCurrentPage(1);
-  }, [projects, searchTerm, statusFilter, tipologiaFilter, clienteFilter, gestorFilter, sortField, sortDirection]);
+  }, [projects, searchTerm, tipologiaFilter, clienteFilter, gestorFilter, sortField, sortDirection]);
 
   const handleAddProject = async () => {
     if (!formData.codigo_inicial || !formData.denominacion || !formData.cliente) {
@@ -306,8 +287,7 @@ const ProjectsManagement = () => {
         gestor_proyecto: '',
         socio_responsable: '',
         tipologia: '',
-        tipologia_2: '',
-        status: 'planning'
+        tipologia_2: ''
       });
       fetchProjects();
     } catch (error) {
@@ -423,7 +403,7 @@ const ProjectsManagement = () => {
       'SOCIO RESPONSABLE': project.socio_responsable,
       'TIPOLOGÍA': project.tipologia,
       'TIPOLOGÍA 2': project.tipologia_2,
-      'ESTADO': project.status,
+      'ORIGEN': project.origen,
       'FECHA CREACIÓN': new Date(project.created_at).toLocaleDateString()
     }));
 
@@ -502,7 +482,6 @@ const ProjectsManagement = () => {
 
   const clearFilters = () => {
     setSearchTerm('');
-    setStatusFilter([]);
     setTipologiaFilter([]);
     setClienteFilter([]);
     setGestorFilter([]);
@@ -543,15 +522,6 @@ const ProjectsManagement = () => {
     return sortDirection === 'asc' ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />;
   };
 
-  const getStatusBadgeColor = (status: string) => {
-    switch (status) {
-      case 'planning': return 'bg-blue-100 text-blue-800';
-      case 'active': return 'bg-green-100 text-green-800';
-      case 'completed': return 'bg-gray-100 text-gray-800';
-      case 'cancelled': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
-  };
 
   // Column resizing functions
   const handleMouseDown = (e: React.MouseEvent, columnKey: string) => {
@@ -917,27 +887,6 @@ const ProjectsManagement = () => {
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                {/* Estado Filter */}
-                <div>
-                  <Label className="text-sm font-medium mb-2 block">Estado</Label>
-                  <div className="space-y-2 max-h-32 overflow-y-auto">
-                     {getUniqueValues('status').map((status) => (
-                       <div key={String(status)} className="flex items-center space-x-2">
-                         <Checkbox
-                           id={`status-${status}`}
-                           checked={statusFilter.includes(String(status))}
-                           onCheckedChange={() => toggleFilter(statusFilter, String(status), setStatusFilter)}
-                         />
-                         <Label htmlFor={`status-${status}`} className="text-sm">
-                           <Badge className={getStatusBadgeColor(String(status))}>
-                             {String(status)}
-                           </Badge>
-                        </Label>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
                 {/* Tipología Filter */}
                 <div>
                   <Label className="text-sm font-medium mb-2 block">Tipología</Label>
@@ -1264,17 +1213,13 @@ const ProjectsManagement = () => {
                                   className="cursor-pointer hover:bg-muted/50 p-1 rounded min-h-[32px] flex items-center"
                                   style={{ fontSize: `${fontSize}px` }}
                                 >
-                                  {column.key === 'status' ? (
-                                    <Badge className={getStatusBadgeColor(project[column.key])}>
-                                      {project[column.key]}
-                                    </Badge>
-                                  ) : column.key === 'denominacion' ? (
-                                    <div>
-                                      <div className="font-medium text-sm">{project.denominacion}</div>
-                                      {project.descripcion && (
-                                        <div className="text-xs text-muted-foreground truncate">{project.descripcion}</div>
-                                      )}
-                                    </div>
+                                   {column.key === 'denominacion' ? (
+                                     <div>
+                                       <div className="font-medium text-sm">{project.denominacion}</div>
+                                       {project.descripcion && (
+                                         <div className="text-xs text-muted-foreground truncate">{project.descripcion}</div>
+                                       )}
+                                     </div>
                                    ) : column.key === 'cliente' ? (
                                      <div>
                                        <div className="font-medium text-sm">{project.cliente}</div>
