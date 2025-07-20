@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -26,6 +26,24 @@ import { useNavigate } from 'react-router-dom';
 const AdminDashboard = () => {
   const { stats, loading, error } = useAdminStats();
   const navigate = useNavigate();
+  const [canNavigate, setCanNavigate] = useState(false);
+
+  // Habilitar navegación después de un pequeño delay para evitar clics accidentales
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setCanNavigate(true);
+    }, 1000);
+    return () => clearTimeout(timer);
+  }, []);
+
+  const handleNavigation = (route: string) => {
+    if (canNavigate) {
+      console.log('Navigating to:', route);
+      navigate(route);
+    } else {
+      console.log('Navigation blocked, still loading...');
+    }
+  };
 
   const handleLogout = () => {
     window.location.href = '/';
@@ -91,7 +109,7 @@ const AdminDashboard = () => {
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           {/* Recursos */}
-          <Card className="hover:shadow-lg transition-shadow cursor-pointer group" onClick={() => navigate('/resources')}>
+          <Card className="hover:shadow-lg transition-shadow cursor-pointer group" onClick={() => handleNavigation('/resources')}>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">RECURSOS</CardTitle>
               <Users className="h-5 w-5 text-blue-600 group-hover:scale-110 transition-transform" />
@@ -106,7 +124,7 @@ const AdminDashboard = () => {
           </Card>
 
           {/* Proyectos */}
-          <Card className="hover:shadow-lg transition-shadow cursor-pointer group" onClick={() => navigate('/projects')}>
+          <Card className="hover:shadow-lg transition-shadow cursor-pointer group" onClick={() => handleNavigation('/projects')}>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">PROYECTOS</CardTitle>
               <FolderOpen className="h-5 w-5 text-purple-600 group-hover:scale-110 transition-transform" />
@@ -121,7 +139,7 @@ const AdminDashboard = () => {
           </Card>
 
           {/* Capacidades */}
-          <Card className="hover:shadow-lg transition-shadow cursor-pointer group" onClick={() => navigate('/capacities')}>
+          <Card className="hover:shadow-lg transition-shadow cursor-pointer group" onClick={() => handleNavigation('/capacities')}>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">CAPACIDADES</CardTitle>
               <Zap className="h-5 w-5 text-cyan-600 group-hover:scale-110 transition-transform" />
@@ -136,7 +154,7 @@ const AdminDashboard = () => {
           </Card>
 
           {/* Festivos */}
-          <Card className="hover:shadow-lg transition-shadow cursor-pointer group" onClick={() => navigate('/holidays')}>
+          <Card className="hover:shadow-lg transition-shadow cursor-pointer group" onClick={() => handleNavigation('/holidays')}>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">FESTIVOS</CardTitle>
               <Calendar className="h-5 w-5 text-orange-600 group-hover:scale-110 transition-transform" />
@@ -163,7 +181,7 @@ const AdminDashboard = () => {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
           {/* Backups */}
-          <Card className="hover:shadow-lg transition-all group border-gray-200 hover:border-gray-300 cursor-pointer" onClick={() => navigate('/backups')}>
+          <Card className="hover:shadow-lg transition-all group border-gray-200 hover:border-gray-300 cursor-pointer" onClick={() => handleNavigation('/backups')}>
             <CardHeader className="bg-gray-50 rounded-t-lg">
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-gray-600 rounded-lg">
@@ -207,7 +225,7 @@ const AdminDashboard = () => {
           </Card>
 
           {/* Logs de Auditoría */}
-          <Card className="hover:shadow-lg transition-all group border-blue-200 hover:border-blue-300 cursor-pointer" onClick={() => navigate('/audit-logs')}>
+          <Card className="hover:shadow-lg transition-all group border-blue-200 hover:border-blue-300 cursor-pointer" onClick={() => handleNavigation('/audit-logs')}>
             <CardHeader className="bg-blue-50 rounded-t-lg">
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-blue-600 rounded-lg">
