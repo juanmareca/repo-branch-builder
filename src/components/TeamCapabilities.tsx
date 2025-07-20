@@ -4,9 +4,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Brain, Star, Award, Loader2, Users, Info, Edit, Save, X, Building2, Globe, Cog, ArrowRight, CheckCircle, AlertCircle } from 'lucide-react';
+import { Brain, Star, Award, Loader2, Users, Info, Edit, Save, X, Building2, Globe, Cog, ArrowRight, CheckCircle, AlertCircle, FileText } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useToast } from '@/hooks/use-toast';
+import jsPDF from 'jspdf';
 
 interface Capacity {
   id: string;
@@ -180,18 +181,49 @@ const TeamCapabilities: React.FC<TeamCapabilitiesProps> = ({
     };
   };
 
+  const getSAPModuleInfo = (moduleName: string): string => {
+    const modules: { [key: string]: string } = {
+      'FI-GL': 'FI-GL: Financial Accounting - General Ledger (Contabilidad General). Núcleo del módulo financiero SAP donde se registran, procesan y reportan todas las transacciones contables conforme a normas locales e internacionales (IFRS, US GAAP). Libro mayor que consolida operaciones de FI-AP, FI-AR, FI-AA, CO, MM, SD, PP. Componentes clave: Cuenta de mayor (GL account), Plan de cuentas (estructura jerárquica), Segmento/Sociedad (dimensiones contables), Centro de beneficio/coste (información analítica). Funciones: asientos manuales/automáticos, contabilidad multinorma y multimoneda, periodificación, reclasificación, cierre contable, reportes en tiempo real. Transacciones: FB50/F-02 (asientos), FS00 (cuentas), FAGLL03/FBL3N (consultas). En S/4HANA usa Universal Journal (ACDOCA) unificando todas las vistas contables con Extension Ledgers.',
+      'FI-AP': 'FI-AP: Financials - Accounts Payable (Contabilidad Financiera – Cuentas a Pagar). Submódulo SAP para gestión de deudas con proveedores desde recepción de facturas hasta pago y conciliación. Funciones principales: registro de facturas de proveedores, gestión de pagos (automáticos/manuales), anticipos y pagos a cuenta, conciliación bancaria, gestión de retenciones fiscales, reportes de antigüedad de saldos y previsiones de pagos. Se integra con MM (facturas de compras automáticas), FI-BL (ejecución de pagos), CO (asignación de costos). Flujo típico: factura recibida → verificación → pago → conciliación bancaria. Gestión del maestro de proveedor (FK01/FK02/FK03) con datos generales, societarios y de compras.',
+      'FI-AR': 'FI-AR: Financial Accounting - Accounts Receivable (Cuentas a Cobrar). Submódulo SAP FI para gestión del ciclo completo de ingresos de clientes desde factura hasta cobro. Funciones: emisión y registro de facturas de venta, gestión de pagos y anticipos, seguimiento de saldos de clientes, cobros automáticos, intereses de mora, gestión de crédito, informes de análisis de cuentas por cobrar. Ciclo: factura al cliente → registro del pago → conciliación/compensación → seguimiento de saldo → reportes de antigüedad. Transacciones clave: FB70 (factura manual), F-28 (registrar cobro), F-32 (compensar partidas), F110 (cobros automáticos), FBL5N (partidas cliente), XD01/XD02/XD03 (maestro cliente). En S/4HANA integrado en Universal Journal (ACDOCA) con apps Fiori modernas.',
+      'FI-AA': 'FI-AA: Financial Accounting - Asset Accounting (Contabilidad de Activos Fijos). Submódulo SAP FI para gestión completa de activos tangibles e intangibles durante todo su ciclo de vida (edificios, maquinaria, vehículos, hardware, software). Ciclo de vida: alta del activo → capitalización → amortización automática → transferencias → baja. Estructura: Clase de activo (tipo: edificios, equipos, software), Área de valoración (amortizaciones contable/fiscal/corporativa), Centro de coste/Ubicación, Elemento de coste (imputación a CO). Transacciones clave: AS01/AS02/AS03 (maestro activos), F-90 (alta con proveedor), ABZON (alta manual), ABUMN (transferencias), ABAVN/ABAON (bajas), AFAB (amortización). En S/4HANA se integra en tabla ACDOCA con apps Fiori modernas.',
+      'FI-Taxes': 'Financials - Taxes: Gestión de impuestos, SII y declaraciones fiscales.',
+      'SAP Ledgers': 'SAP Ledgers S4: Sistema de libros contables paralelos en S/4HANA para gestionar múltiples principios contables dentro de una empresa. Tipos: Ledger 0L (principal/Leading Ledger basado normalmente en IFRS), Ledgers no principales (contabilidad paralela bajo GAAP local, SNC, etc.), Extension Ledgers (ledger virtual para ajustes o simulaciones sin duplicar datos). Permite registrar una operación impactando varios ledgers automáticamente con reglas específicas, mayor flexibilidad para cumplir regulaciones locales e internacionales simultáneamente, reportes paralelos y consolidaciones legales. Ideal para multinacionales que necesitan cumplir múltiples marcos normativos (IFRS, GAAP, Plan General Contable local).',
+      'SAP Monedas': 'SAP Monedas S4: Gestión avanzada de múltiples monedas en S/4HANA a través del Universal Journal (tabla ACDOCA). Permite registrar automáticamente varias monedas en paralelo por cada operación contable. Tipos principales: Moneda de la sociedad (Company Code Currency - código 10), Moneda de grupo (Group Currency - código 30 para todo el grupo empresarial), Moneda de transacción (moneda real de la operación/factura/pago), Monedas adicionales (códigos 40, 50... hasta 10 monedas adicionales configurables desde S/4HANA 2022), Moneda funcional opcional (base para contabilidad de gestión CO). Evolución significativa vs. ECC con enfoque más flexible y centralizado para multinacionales con operaciones en múltiples divisas.',
+      'CO-PA (MA)': 'CO-PA (MA): Controlling – Profitability Analysis por Margen de Contribución (Marginal Accounting/Costing-Based CO-PA). Herramienta de análisis de rentabilidad por diferentes dimensiones como producto, cliente, canal de distribución, segmento de mercado, región y unidad de negocio según el margen de contribución (ingresos menos costes variables). Permite analizar márgenes brutos por múltiples dimensiones, usa segmentos de rentabilidad, genera informes avanzados de rentabilidad y se alimenta de datos de SD, FI, MM y CO. A diferencia de CO-PA (AA) que usa Universal Journal, CO-PA (MA) ofrece mayor flexibilidad analítica pero menor consistencia con FI.',
+      'CO-PCA': 'CO-PCA: Profit Center Accounting (Contabilidad de Centros de Beneficio). Forma parte del módulo SAP CO (Controlling) y proporciona información sobre la rentabilidad y desempeño económico de distintas áreas organizativas como departamentos, líneas de negocio, ubicaciones geográficas y divisiones estratégicas. Permite asignar ingresos y gastos a distintos centros de beneficio, facilita el análisis de resultados operativos por cada unidad y proporciona una visión descentralizada de la rentabilidad. En S/4HANA se integra dentro del módulo de Contabilidad de Resultados (Universal Journal) con Segment Reporting.',
+      'TR-CM': 'TR-CM: Treasury and Risk Management – Cash Management (Gestión de Tesorería – Gestión de Caja). Submódulo del antiguo SAP TR que se encarga de gestión de caja, saldos bancarios y liquidez diaria. Funciones: gestión de saldos bancarios diarios, previsión de caja (Cash Forecast), planificación de liquidez, gestión de posición de caja, integración bancaria automática (MT940, CAMT.053). Se integra con FI (cuentas bancarias, extractos), SD/MM (pedidos, entregas, cobros), CO (centros de coste), TRM (instrumentos financieros). En S/4HANA evoluciona hacia SAP Cash Management, Bank Account Management y SAP Fiori Apps. Ideal para multinacionales con muchas cuentas bancarias, control de liquidez diaria y forecasting de caja.',
+      'TR-TM': 'TR-TM: Treasury Management (Gestión de Tesorería Financiera). Submódulo clásico del SAP TR enfocado en gestión de instrumentos financieros y operaciones de tesorería estratégica. Controla inversiones, préstamos, derivados, líneas de crédito, operaciones FX, bonos, pagarés, depósitos, forwards, swaps. Se diferencia de TR-CM por su enfoque en mediano/largo plazo vs. liquidez diaria. Alta integración contable con FI (valorización, devengo, liquidación), CO, TRM y Risk Management. Ideal para portafolios de inversiones, préstamos financieros y planificación financiera estratégica. En S/4HANA forma parte de SAP Treasury and Risk Management (TRM) y Financial Risk Management.',
+      'TR-TRM': 'TR-TRM: Treasury and Risk Management (Gestión de Tesorería y Riesgos). Subcomponente avanzado del módulo SAP TR para gestión de operaciones financieras complejas. Funcionalidades: instrumentos financieros (derivados, bonos, préstamos, inversiones), riesgos de mercado y crédito, valoración y contabilización de productos financieros, análisis de exposición al riesgo, cumplimiento normativo (IFRS, EMIR, MiFID). Componentes: Transaction Manager (instrumentos financieros), Market Risk Analyzer (riesgo de mercado), Credit Risk Analyzer (riesgo de crédito), Portfolio Analyzer (carteras), Market Data Management (datos de mercado). Transacciones: FTR_CREATE/FTR_EDIT (transacciones financieras), TPM10 (valoración), TPM40 (cierre), TRMEX (datos mercado). Ideal para banca, seguros, energía y multinacionales con tesorería avanzada. En S/4HANA integrado con Fiori y Business Partner.',
+      'CO-CCA': 'CO-CCA: Controlling - Cost Center Accounting (Contabilidad de Centros de Coste). Submódulo clave de SAP CO para planificar, registrar, monitorizar y analizar costes de áreas internas de la empresa (IT, RRHH, Finanzas, Marketing). Estructura: Centro de coste (unidad organizativa que acumula costes), Área de imputación (Controlling Area), Elementos de coste primarios (costes desde FI como sueldos, energía), Elementos secundarios (distribuciones internas). Flujo: planificación → imputación de costes reales → distribuciones/asignaciones internas → análisis de desviaciones plan vs real. Transacciones clave: KSB1 (partidas individuales), KP06/KP26 (planificación), KS01/KS02/KS03 (maestro centros), KSV5/KSU5 (distribuciones). En S/4HANA usa tabla ACDOCA con apps Fiori en tiempo real.',
+      'CO-PC': 'CO-PC: Product Costing (Cálculo de Costes del Producto). Forma parte del módulo SAP CO (Controlling) y calcula los costes de fabricación, adquisición y venta de productos o servicios. Se divide en dos subcomponentes: CO-PC-PC (Product Cost Planning) para estimación de costes antes de producir usando BOMs y hojas de ruta, y CO-PC-OBJ (Cost Object Controlling) para control de costes durante la producción real. Permite calcular costes estándar, controlar costes reales vs. planificados, analizar variaciones, valorar inventarios y tomar decisiones de precios y rentabilidad. Se integra con MM, PP, FI y SD.',
+      'RE-FX': 'RE-FX: Real Estate Management - Flexible Real Estate (Gestión Inmobiliaria Flexible). Módulo SAP para gestión de activos inmobiliarios propios y arrendados. En S/4HANA reemplaza al RE clásico. Subcomponentes: gestión de contratos (arrendamientos, alquiler, subarrendamiento), gestión de inmuebles (edificios, terrenos, espacios), gestión contable IFRS/NIIF 16, Space Management (distribución de áreas), gestión de costes y rentabilidad, facturación y cobros automáticos. Se integra con FI (contabilidad de contratos), AA (activos inmobiliarios), CO (centros de coste), PS (proyectos de construcción), PM/MM (mantenimiento). En S/4HANA incluye compliance IFRS 16, Universal Journal, Apps Fiori y reporting avanzado. Ideal para inmobiliarias, retail, bancos con oficinas y empresas con muchos activos inmobiliarios.',
+      'SAP BRIM': 'SAP BRIM: Billing and Revenue Innovation Management (Gestión de Facturación e Innovación en Ingresos). Diseñado para empresas con servicios recurrentes, por consumo o suscripción que requieren facturación compleja y flexible. Componentes principales: SOM (Subscription Order Management - contratos de suscripción), CC (Convergent Charging - cálculo de precios por uso), CM (Convergent Mediation - procesamiento de datos de uso), CI (Convergent Invoicing - consolidación y emisión de facturas), FI-CA (Contract Accounts - contabilidad de clientes masiva). Ideal para telcos, utilities, transportes, empresas SaaS, medios digitales, automoción. Resuelve facturación basada en eventos, ofertas combinadas, consolidación de transacciones, precios dinámicos, cobros masivos. Completamente integrado en S/4HANA con apps Fiori.',
+      'SAP GRC': 'SAP GRC: Governance, Risk and Compliance (Gobierno Corporativo, Gestión de Riesgos y Cumplimiento Normativo). Conjunto de soluciones para controlar accesos, gestionar riesgos, detectar fraudes y cumplir normativas. Componentes principales: Access Control (GRC-AC - gestión de usuarios, roles y segregación de funciones SoD), Process Control (GRC-PC - controles internos y auditorías automatizadas), Risk Management (GRC-RM - identificación y monitorización de riesgos), Audit Management (GRC-AM - auditorías internas), Fraud Management (detección de actividades sospechosas). Resuelve accesos no autorizados, conflictos de roles, riesgos no documentados, fraudes internos y falta de trazabilidad. Totalmente compatible con S/4HANA, Fiori, workflows automatizados. Ideal para empresas con procesos sensibles, auditorías SOX/GDPR/ISO 27001.',
+      'SAP S4HANA Brownfield': 'SAP S4HANA Brownfield: Estrategia de migración que reutiliza el sistema SAP ECC existente actualizándolo a S/4HANA, conservando procesos, configuración, datos y personalizaciones. A diferencia de Greenfield (implementación nueva), Brownfield busca preservar lo construido mediante conversión técnica, limpieza de datos, adaptación de código Z, activación gradual de funcionalidades y migración al Universal Journal. Ventajas: menor coste y tiempo, conserva configuración actual, menor disrupción del negocio. Requiere: ECC actualizado (mín. EHP6), evaluación de dependencias técnicas, planificación detallada. Herramientas: SAP Readiness Check, Maintenance Planner, SUM con DMO.',
+      'SAP S4HANA Greenfield': 'Implementación nueva de SAP S/4HANA desde cero.',
+      'SAP S4 HANA Mix&Match': 'SAP S4HANA Mix & Match (Hybrid Approach): Estrategia intermedia entre Greenfield y Brownfield que combina lo mejor de ambos mundos. Reutiliza lo que funciona del sistema actual (configuraciones, desarrollos Z bien estructurados) mientras rediseña procesos obsoletos o mal implementados. Permite exportación selectiva de datos, análisis proceso por proceso, y combinación de herramientas de migración. Ventajas: flexibilidad para conservar lo útil y transformar lo necesario, coste y riesgo moderados. Ideal cuando el sistema actual tiene módulos desalineados, se quiere conservar histórico valioso pero transformar procesos clave. Herramientas: SAP SLT, Data Services, Custom Code Migration Tool, SAP Activate con ruta híbrida.'
+    };
+
+    // Buscar coincidencias parciales en el nombre del módulo
+    for (const [key, description] of Object.entries(modules)) {
+      if (moduleName.includes(key)) {
+        return description;
+      }
+    }
+
+    return 'Información no disponible para este módulo. Contacta con el administrador para más detalles.';
+  };
+
   // Función para generar currículum en texto de una persona
-  const generateCurriculum = (personName: string, capacities: Capacity[]) => {
-    // Buscar datos de la persona
-    const allMembers = getAllTeamMembers();
-    
+  const generateCurriculum = (personName: string, personCapacities: Capacity[]) => {
     // Analizar capacidades por nivel
-    const sapModules = capacities.filter(c => c.skill.includes('Módulo SAP') && c.level !== 'Nulo');
+    const sapModules = personCapacities.filter(c => c.skill.includes('Módulo SAP') && c.level !== 'Nulo');
     const expertModules = sapModules.filter(c => c.level === 'Experto' || c.level === 'Alto');
     const basicModules = sapModules.filter(c => c.level === 'Básico' || c.level === 'Medio');
     
-    const industries = capacities.filter(c => c.skill.includes('Industrias') && c.level === 'Sí');
-    const languages = capacities.filter(c => c.skill.includes('Idiomas') && c.level !== 'Nulo');
+    const industries = personCapacities.filter(c => c.skill.includes('Industrias') && c.level === 'Sí');
+    const languages = personCapacities.filter(c => c.skill.includes('Idiomas') && c.level !== 'Nulo');
     const nativeLanguage = languages.find(c => c.level === 'Experto' || c.level === 'Alto');
     const basicLanguages = languages.filter(c => c.level === 'Básico' || c.level === 'Medio');
 
@@ -226,37 +258,74 @@ const TeamCapabilities: React.FC<TeamCapabilitiesProps> = ({
     
     return curriculum;
   };
-    const modules: { [key: string]: string } = {
-      'FI-GL': 'FI-GL: Financial Accounting - General Ledger (Contabilidad General). Núcleo del módulo financiero SAP donde se registran, procesan y reportan todas las transacciones contables conforme a normas locales e internacionales (IFRS, US GAAP). Libro mayor que consolida operaciones de FI-AP, FI-AR, FI-AA, CO, MM, SD, PP. Componentes clave: Cuenta de mayor (GL account), Plan de cuentas (estructura jerárquica), Segmento/Sociedad (dimensiones contables), Centro de beneficio/coste (información analítica). Funciones: asientos manuales/automáticos, contabilidad multinorma y multimoneda, periodificación, reclasificación, cierre contable, reportes en tiempo real. Transacciones: FB50/F-02 (asientos), FS00 (cuentas), FAGLL03/FBL3N (consultas). En S/4HANA usa Universal Journal (ACDOCA) unificando todas las vistas contables con Extension Ledgers.',
-      'FI-AP': 'FI-AP: Financials - Accounts Payable (Contabilidad Financiera – Cuentas a Pagar). Submódulo SAP para gestión de deudas con proveedores desde recepción de facturas hasta pago y conciliación. Funciones principales: registro de facturas de proveedores, gestión de pagos (automáticos/manuales), anticipos y pagos a cuenta, conciliación bancaria, gestión de retenciones fiscales, reportes de antigüedad de saldos y previsiones de pagos. Se integra con MM (facturas de compras automáticas), FI-BL (ejecución de pagos), CO (asignación de costos). Flujo típico: factura recibida → verificación → pago → conciliación bancaria. Gestión del maestro de proveedor (FK01/FK02/FK03) con datos generales, societarios y de compras.',
-      'FI-AR': 'FI-AR: Financial Accounting - Accounts Receivable (Cuentas a Cobrar). Submódulo SAP FI para gestión del ciclo completo de ingresos de clientes desde factura hasta cobro. Funciones: emisión y registro de facturas de venta, gestión de pagos y anticipos, seguimiento de saldos de clientes, cobros automáticos, intereses de mora, gestión de crédito, informes de análisis de cuentas por cobrar. Ciclo: factura al cliente → registro del pago → conciliación/compensación → seguimiento de saldo → reportes de antigüedad. Transacciones clave: FB70 (factura manual), F-28 (registrar cobro), F-32 (compensar partidas), F110 (cobros automáticos), FBL5N (partidas cliente), XD01/XD02/XD03 (maestro cliente). En S/4HANA integrado en Universal Journal (ACDOCA) con apps Fiori modernas.',
-      'FI-AA': 'FI-AA: Financial Accounting - Asset Accounting (Contabilidad de Activos Fijos). Submódulo SAP FI para gestión completa de activos tangibles e intangibles durante todo su ciclo de vida (edificios, maquinaria, vehículos, hardware, software). Ciclo de vida: alta del activo → capitalización → amortización automática → transferencias → baja. Estructura: Clase de activo (tipo: edificios, equipos, software), Área de valoración (amortizaciones contable/fiscal/corporativa), Centro de coste/Ubicación, Elemento de coste (imputación a CO). Transacciones clave: AS01/AS02/AS03 (maestro activos), F-90 (alta con proveedor), ABZON (alta manual), ABUMN (transferencias), ABAVN/ABAON (bajas), AFAB (amortización). En S/4HANA se integra en tabla ACDOCA con apps Fiori modernas.',
-      'FI-Taxes': 'Financials - Taxes: Gestión de impuestos, SII y declaraciones fiscales.',
-      'SAP Ledgers': 'SAP Ledgers S4: Sistema de libros contables paralelos en S/4HANA para gestionar múltiples principios contables dentro de una empresa. Tipos: Ledger 0L (principal/Leading Ledger basado normalmente en IFRS), Ledgers no principales (contabilidad paralela bajo GAAP local, SNC, etc.), Extension Ledgers (ledger virtual para ajustes o simulaciones sin duplicar datos). Permite registrar una operación impactando varios ledgers automáticamente con reglas específicas, mayor flexibilidad para cumplir regulaciones locales e internacionales simultáneamente, reportes paralelos y consolidaciones legales. Ideal para multinacionales que necesitan cumplir múltiples marcos normativos (IFRS, GAAP, Plan General Contable local).',
-      'SAP Monedas': 'SAP Monedas S4: Gestión avanzada de múltiples monedas en S/4HANA a través del Universal Journal (tabla ACDOCA). Permite registrar automáticamente varias monedas en paralelo por cada operación contable. Tipos principales: Moneda de la sociedad (Company Code Currency - código 10), Moneda de grupo (Group Currency - código 30 para todo el grupo empresarial), Moneda de transacción (moneda real de la operación/factura/pago), Monedas adicionales (códigos 40, 50... hasta 10 monedas adicionales configurables desde S/4HANA 2022), Moneda funcional opcional (base para contabilidad de gestión CO). Evolución significativa vs. ECC con enfoque más flexible y centralizado para multinacionales con operaciones en múltiples divisas.',
-      'CO-PA (MA)': 'CO-PA (MA): Controlling – Profitability Analysis por Margen de Contribución (Marginal Accounting/Costing-Based CO-PA). Herramienta de análisis de rentabilidad por diferentes dimensiones como producto, cliente, canal de distribución, segmento de mercado, región y unidad de negocio según el margen de contribución (ingresos menos costes variables). Permite analizar márgenes brutos por múltiples dimensiones, usa segmentos de rentabilidad, genera informes avanzados de rentabilidad y se alimenta de datos de SD, FI, MM y CO. A diferencia de CO-PA (AA) que usa Universal Journal, CO-PA (MA) ofrece mayor flexibilidad analítica pero menor consistencia con FI.',
-      'CO-PCA': 'CO-PCA: Profit Center Accounting (Contabilidad de Centros de Beneficio). Forma parte del módulo SAP CO (Controlling) y proporciona información sobre la rentabilidad y desempeño económico de distintas áreas organizativas como departamentos, líneas de negocio, ubicaciones geográficas y divisiones estratégicas. Permite asignar ingresos y gastos a distintos centros de beneficio, facilita el análisis de resultados operativos por cada unidad y proporciona una visión descentralizada de la rentabilidad. En S/4HANA se integra dentro del módulo de Contabilidad de Resultados (Universal Journal) con Segment Reporting.',
-      'TR-CM': 'TR-CM: Treasury and Risk Management – Cash Management (Gestión de Tesorería – Gestión de Caja). Submódulo del antiguo SAP TR que se encarga de gestión de caja, saldos bancarios y liquidez diaria. Funciones: gestión de saldos bancarios diarios, previsión de caja (Cash Forecast), planificación de liquidez, gestión de posición de caja, integración bancaria automática (MT940, CAMT.053). Se integra con FI (cuentas bancarias, extractos), SD/MM (pedidos, entregas, cobros), CO (centros de coste), TRM (instrumentos financieros). En S/4HANA evoluciona hacia SAP Cash Management, Bank Account Management y SAP Fiori Apps. Ideal para multinacionales con muchas cuentas bancarias, control de liquidez diaria y forecasting de caja.',
-      'TR-TM': 'TR-TM: Treasury Management (Gestión de Tesorería Financiera). Submódulo clásico del SAP TR enfocado en gestión de instrumentos financieros y operaciones de tesorería estratégica. Controla inversiones, préstamos, derivados, líneas de crédito, operaciones FX, bonos, pagarés, depósitos, forwards, swaps. Se diferencia de TR-CM por su enfoque en mediano/largo plazo vs. liquidez diaria. Alta integración contable con FI (valorización, devengo, liquidación), CO, TRM y Risk Management. Ideal para portafolios de inversiones, préstamos financieros y planificación financiera estratégica. En S/4HANA forma parte de SAP Treasury and Risk Management (TRM) y Financial Risk Management.',
-      'TR-TRM': 'TR-TRM: Treasury and Risk Management (Gestión de Tesorería y Riesgos). Subcomponente avanzado del módulo SAP TR para gestión de operaciones financieras complejas. Funcionalidades: instrumentos financieros (derivados, bonos, préstamos, inversiones), riesgos de mercado y crédito, valoración y contabilización de productos financieros, análisis de exposición al riesgo, cumplimiento normativo (IFRS, EMIR, MiFID). Componentes: Transaction Manager (instrumentos financieros), Market Risk Analyzer (riesgo de mercado), Credit Risk Analyzer (riesgo de crédito), Portfolio Analyzer (carteras), Market Data Management (datos de mercado). Transacciones: FTR_CREATE/FTR_EDIT (transacciones financieras), TPM10 (valoración), TPM40 (cierre), TRMEX (datos mercado). Ideal para banca, seguros, energía y multinacionales con tesorería avanzada. En S/4HANA integrado con Fiori y Business Partner.',
-      'CO-CCA': 'CO-CCA: Controlling - Cost Center Accounting (Contabilidad de Centros de Coste). Submódulo clave de SAP CO para planificar, registrar, monitorizar y analizar costes de áreas internas de la empresa (IT, RRHH, Finanzas, Marketing). Estructura: Centro de coste (unidad organizativa que acumula costes), Área de imputación (Controlling Area), Elementos de coste primarios (costes desde FI como sueldos, energía), Elementos secundarios (distribuciones internas). Flujo: planificación → imputación de costes reales → distribuciones/asignaciones internas → análisis de desviaciones plan vs real. Transacciones clave: KSB1 (partidas individuales), KP06/KP26 (planificación), KS01/KS02/KS03 (maestro centros), KSV5/KSU5 (distribuciones). En S/4HANA usa tabla ACDOCA con apps Fiori en tiempo real.',
-      'CO-PC': 'CO-PC: Product Costing (Cálculo de Costes del Producto). Forma parte del módulo SAP CO (Controlling) y calcula los costes de fabricación, adquisición y venta de productos o servicios. Se divide en dos subcomponentes: CO-PC-PC (Product Cost Planning) para estimación de costes antes de producir usando BOMs y hojas de ruta, y CO-PC-OBJ (Cost Object Controlling) para control de costes durante la producción real. Permite calcular costes estándar, controlar costes reales vs. planificados, analizar variaciones, valorar inventarios y tomar decisiones de precios y rentabilidad. Se integra con MM, PP, FI y SD.',
-      'RE-FX': 'RE-FX: Real Estate Management - Flexible Real Estate (Gestión Inmobiliaria Flexible). Módulo SAP para gestión de activos inmobiliarios propios y arrendados. En S/4HANA reemplaza al RE clásico. Subcomponentes: gestión de contratos (arrendamientos, alquiler, subarrendamiento), gestión de inmuebles (edificios, terrenos, espacios), gestión contable IFRS/NIIF 16, Space Management (distribución de áreas), gestión de costes y rentabilidad, facturación y cobros automáticos. Se integra con FI (contabilidad de contratos), AA (activos inmobiliarios), CO (centros de coste), PS (proyectos de construcción), PM/MM (mantenimiento). En S/4HANA incluye compliance IFRS 16, Universal Journal, Apps Fiori y reporting avanzado. Ideal para inmobiliarias, retail, bancos con oficinas y empresas con muchos activos inmobiliarios.',
-      'SAP BRIM': 'SAP BRIM: Billing and Revenue Innovation Management (Gestión de Facturación e Innovación en Ingresos). Diseñado para empresas con servicios recurrentes, por consumo o suscripción que requieren facturación compleja y flexible. Componentes principales: SOM (Subscription Order Management - contratos de suscripción), CC (Convergent Charging - cálculo de precios por uso), CM (Convergent Mediation - procesamiento de datos de uso), CI (Convergent Invoicing - consolidación y emisión de facturas), FI-CA (Contract Accounts - contabilidad de clientes masiva). Ideal para telcos, utilities, transportes, empresas SaaS, medios digitales, automoción. Resuelve facturación basada en eventos, ofertas combinadas, consolidación de transacciones, precios dinámicos, cobros masivos. Completamente integrado en S/4HANA con apps Fiori.',
-      'SAP GRC': 'SAP GRC: Governance, Risk and Compliance (Gobierno Corporativo, Gestión de Riesgos y Cumplimiento Normativo). Conjunto de soluciones para controlar accesos, gestionar riesgos, detectar fraudes y cumplir normativas. Componentes principales: Access Control (GRC-AC - gestión de usuarios, roles y segregación de funciones SoD), Process Control (GRC-PC - controles internos y auditorías automatizadas), Risk Management (GRC-RM - identificación y monitorización de riesgos), Audit Management (GRC-AM - auditorías internas), Fraud Management (detección de actividades sospechosas). Resuelve accesos no autorizados, conflictos de roles, riesgos no documentados, fraudes internos y falta de trazabilidad. Totalmente compatible con S/4HANA, Fiori, workflows automatizados. Ideal para empresas con procesos sensibles, auditorías SOX/GDPR/ISO 27001.',
-      'SAP S4HANA Brownfield': 'SAP S4HANA Brownfield: Estrategia de migración que reutiliza el sistema SAP ECC existente actualizándolo a S/4HANA, conservando procesos, configuración, datos y personalizaciones. A diferencia de Greenfield (implementación nueva), Brownfield busca preservar lo construido mediante conversión técnica, limpieza de datos, adaptación de código Z, activación gradual de funcionalidades y migración al Universal Journal. Ventajas: menor coste y tiempo, conserva configuración actual, menor disrupción del negocio. Requiere: ECC actualizado (mín. EHP6), evaluación de dependencias técnicas, planificación detallada. Herramientas: SAP Readiness Check, Maintenance Planner, SUM con DMO.',
-      'SAP S4HANA Greenfield': 'Implementación nueva de SAP S/4HANA desde cero.',
-      'SAP S4 HANA Mix&Match': 'SAP S4HANA Mix & Match (Hybrid Approach): Estrategia intermedia entre Greenfield y Brownfield que combina lo mejor de ambos mundos. Reutiliza lo que funciona del sistema actual (configuraciones, desarrollos Z bien estructurados) mientras rediseña procesos obsoletos o mal implementados. Permite exportación selectiva de datos, análisis proceso por proceso, y combinación de herramientas de migración. Ventajas: flexibilidad para conservar lo útil y transformar lo necesario, coste y riesgo moderados. Ideal cuando el sistema actual tiene módulos desalineados, se quiere conservar histórico valioso pero transformar procesos clave. Herramientas: SAP SLT, Data Services, Custom Code Migration Tool, SAP Activate con ruta híbrida.'
-    };
 
-    // Buscar coincidencias parciales en el nombre del módulo
-    for (const [key, description] of Object.entries(modules)) {
-      if (moduleName.includes(key)) {
-        return description;
+  // Función para exportar currículums a PDF
+  const exportToPDF = () => {
+    const pdf = new jsPDF();
+    const pageHeight = pdf.internal.pageSize.height;
+    let yPosition = 40;
+
+    // Configurar fuentes y colores
+    pdf.setFont('helvetica', 'bold');
+    pdf.setFontSize(20);
+    pdf.setTextColor(0, 102, 204);
+
+    // Header del documento
+    pdf.text('STRATESYS - Currículums del Equipo', 20, yPosition);
+    
+    yPosition += 20;
+    pdf.setFontSize(14);
+    pdf.setTextColor(0, 0, 0);
+    pdf.text(`Squad Lead: ${currentSquadLeadName || 'No especificado'}`, 20, yPosition);
+    
+    yPosition += 10;
+    pdf.setFontSize(12);
+    pdf.setTextColor(100, 100, 100);
+    pdf.text(`Fecha de generación: ${new Date().toLocaleDateString('es-ES')}`, 20, yPosition);
+    
+    yPosition += 20;
+
+    // Generar currículums
+    const completeCapacities = generateCompleteCapacities();
+    const allMembers = getAllTeamMembers();
+
+    allMembers.forEach((personName, index) => {
+      const personCapacities = completeCapacities[personName];
+      const allPersonCapacities = Object.values(personCapacities).flat();
+      const curriculum = generateCurriculum(personName, allPersonCapacities);
+      
+      // Verificar si necesitamos una nueva página
+      if (yPosition > pageHeight - 50) {
+        pdf.addPage();
+        yPosition = 30;
       }
-    }
 
-    return 'Información no disponible para este módulo. Contacta con el administrador para más detalles.';
+      // Nombre de la persona
+      pdf.setFont('helvetica', 'bold');
+      pdf.setFontSize(14);
+      pdf.setTextColor(0, 102, 204);
+      pdf.text(`${index + 1}. ${personName}`, 20, yPosition);
+      
+      yPosition += 10;
+
+      // Currículum
+      pdf.setFont('helvetica', 'normal');
+      pdf.setFontSize(11);
+      pdf.setTextColor(0, 0, 0);
+      
+      const splitText = pdf.splitTextToSize(curriculum, 170);
+      pdf.text(splitText, 20, yPosition);
+      
+      yPosition += splitText.length * 5 + 15;
+    });
+
+    // Guardar el PDF
+    pdf.save(`Curriculum_Equipo_${currentSquadLeadName || 'Squad'}_${new Date().toISOString().split('T')[0]}.pdf`);
+    
+    toast({
+      title: "PDF generado",
+      description: "El currículum del equipo se ha exportado correctamente.",
+    });
   };
 
   const isSAPModule = (skillName: string): boolean => {
@@ -456,10 +525,16 @@ const TeamCapabilities: React.FC<TeamCapabilitiesProps> = ({
 
   return (
     <div className="space-y-6">
-      {/* Botón de actualizar capacidades */}
+      {/* Botón de actualizar capacidades y exportar PDF */}
       <div className="flex justify-between items-center">
         <h3 className="text-lg font-semibold">Capacidades del Equipo</h3>
         <div className="flex gap-2">
+          {!isEditing && (
+            <Button variant="outline" onClick={exportToPDF}>
+              <FileText className="h-4 w-4 mr-2" />
+              Exportar CV en PDF
+            </Button>
+          )}
           {isEditing ? (
             <>
               <Button 
@@ -499,6 +574,7 @@ const TeamCapabilities: React.FC<TeamCapabilitiesProps> = ({
         {allMembers.map((personName, index) => {
           const personCapacities = completeCapacities[personName];
           const isSquadLead = index === 0 && personName === currentSquadLeadName;
+          const allPersonCapacities = Object.values(personCapacities).flat();
           
           return (
             <div key={personName} className="space-y-4">
@@ -766,6 +842,23 @@ const TeamCapabilities: React.FC<TeamCapabilitiesProps> = ({
                     </CardContent>
                   </Card>
                 ))}
+              </div>
+
+              {/* Currículum en texto */}
+              <div className="ml-4">
+                <Card className="bg-gradient-to-r from-slate-50 to-slate-100 dark:from-slate-900/50 dark:to-slate-800/50 border-slate-200 dark:border-slate-700">
+                  <CardContent className="p-4">
+                    <div className="flex items-start gap-3">
+                      <FileText className="w-5 h-5 text-slate-600 dark:text-slate-400 mt-0.5 flex-shrink-0" />
+                      <div>
+                        <h4 className="font-semibold text-sm text-slate-800 dark:text-slate-200 mb-2">Currículum Profesional</h4>
+                        <p className="text-sm text-slate-700 dark:text-slate-300 leading-relaxed">
+                          {generateCurriculum(personName, allPersonCapacities)}
+                        </p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
               </div>
             </div>
           );
