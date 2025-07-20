@@ -1238,28 +1238,27 @@ const ResourcesManagement = () => {
                   </div>
                 ))}
               </div>
-              <div className="mt-4 pt-4 border-t space-y-3">
-                <div className="flex items-center space-x-2">
-                  <Checkbox 
-                    id="save-as-default"
-                    checked={false}
-                    onCheckedChange={(checked) => {
-                      if (checked) {
-                        localStorage.setItem('resources-columns-config', JSON.stringify(columns));
-                        toast({
-                          title: "Configuración guardada",
-                          description: "Esta configuración se aplicará por defecto cuando vuelvas a entrar",
-                        });
-                      }
-                    }}
-                  />
-                  <label htmlFor="save-as-default" className="text-sm font-medium">
-                    Esta es mi selección por defecto
-                  </label>
-                </div>
+              <div className="mt-4 flex items-center space-x-2">
+                <Checkbox 
+                  id="save-default"
+                  checked={false}
+                  onCheckedChange={(checked) => {
+                    if (checked) {
+                      localStorage.setItem('resources-columns-config', JSON.stringify(columns));
+                      toast({
+                        title: "Configuración guardada",
+                        description: "Esta configuración se aplicará por defecto cuando vuelvas a entrar",
+                      });
+                    }
+                  }}
+                />
+                <label htmlFor="save-default" className="text-sm text-muted-foreground">
+                  Guardar como vista por defecto
+                </label>
                 <Button 
                   variant="outline" 
                   size="sm" 
+                  className="ml-4"
                   onClick={() => {
                     setColumns(getInitialColumns().map(col => ({ ...col, visible: true })));
                     localStorage.removeItem('resources-columns-config');
@@ -1268,9 +1267,8 @@ const ResourcesManagement = () => {
                       description: "Se ha vuelto a la configuración original",
                     });
                   }}
-                  className="text-xs"
                 >
-                  Restablecer todas las columnas
+                  Resetear
                 </Button>
               </div>
             </CardContent>
