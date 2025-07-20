@@ -359,7 +359,7 @@ const HolidaysUpload = () => {
                       <h4 className="text-sm font-semibold text-amber-800 mb-2">Ejemplo de archivo Excel:</h4>
                       <div className="bg-white rounded border border-amber-300 p-2">
                         <img 
-                          src="/lovable-uploads/e3a40e37-1407-4bff-88a4-da2404014924.png" 
+                          src="/lovable-uploads/bfdc98f8-7762-4f74-9d56-74de94379b37.png" 
                           alt="Ejemplo de archivo Excel con días festivos" 
                           className="w-full max-w-md mx-auto rounded shadow-sm"
                         />
