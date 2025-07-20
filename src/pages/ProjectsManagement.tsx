@@ -872,20 +872,6 @@ const ProjectsManagement = () => {
               <Download className="h-4 w-4 mr-2" />
               Exportar Excel
             </Button>
-            
-            {/* Font Size Control */}
-            <div className="flex items-center gap-2">
-              <Type className="h-4 w-4 text-muted-foreground" />
-              <Slider
-                value={[fontSize]}
-                onValueChange={(value) => setFontSize(value[0])}
-                max={20}
-                min={8}
-                step={1}
-                className="w-20"
-              />
-              <span className="text-xs text-muted-foreground w-8">{fontSize}px</span>
-            </div>
           </div>
 
           <div className="flex items-center gap-2">
