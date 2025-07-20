@@ -16,15 +16,7 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
-} from '@/components/ui/table';
-import { 
+import {
   Calendar as CalendarIcon,
   Search,
   Filter,
@@ -144,9 +136,6 @@ const HolidaysManagement = () => {
   const [startX, setStartX] = useState(0);
   const [startWidth, setStartWidth] = useState(0);
   
-  const { toast } = useToast();
-  const navigate = useNavigate();
-
   // Form state
   const [formData, setFormData] = useState({
     date: undefined as Date | undefined,
@@ -179,8 +168,6 @@ const HolidaysManagement = () => {
   };
 
   const [columns, setColumns] = useState<ColumnConfig[]>(getInitialColumns());
-  const [resizing, setResizing] = useState<{ columnKey: keyof Holiday; startX: number; startWidth: number } | null>(null);
-  const [draggedColumn, setDraggedColumn] = useState<keyof Holiday | null>(null);
   const [editingRow, setEditingRow] = useState<string | null>(null);
 
   // Save columns configuration to localStorage whenever it changes
@@ -199,6 +186,9 @@ const HolidaysManagement = () => {
       localStorage.setItem('holidays-columns-config', JSON.stringify(cleanedColumns));
     }
   }, []);
+
+  const { toast } = useToast();
+  const navigate = useNavigate();
 
   const fetchHolidays = async () => {
     try {
@@ -287,76 +277,6 @@ const HolidaysManagement = () => {
     setFilteredHolidays(filtered);
     setCurrentPage(1); // Reset to first page when filters change
   }, [holidays, searchTerm, countryFilter, communityFilter, originFilter, festivoFilter, sortField, sortDirection]);
-
-  // Column resizing functions
-  const handleMouseDown = (e: React.MouseEvent, columnKey: string) => {
-    e.preventDefault();
-    e.stopPropagation(); // Evitar que se active el drag&drop
-    const column = columns.find(col => col.key === columnKey);
-    if (column) {
-      setResizingColumn(columnKey);
-      setStartX(e.clientX);
-      setStartWidth(column.width);
-      document.body.style.cursor = 'col-resize';
-    }
-  };
-
-  const handleMouseMove = useCallback((e: MouseEvent) => {
-    if (!resizingColumn) return;
-    
-    const diff = e.clientX - startX;
-    const newWidth = Math.max(startWidth + diff, 80); // Mínimo 80px
-    
-    setColumns(prevColumns =>
-      prevColumns.map(col =>
-        col.key === resizingColumn ? { ...col, width: newWidth } : col
-      )
-    );
-  }, [resizingColumn, startX, startWidth]);
-
-  const handleMouseUp = useCallback(() => {
-    setResizingColumn(null);
-    document.body.style.cursor = 'default';
-  }, []);
-
-  useEffect(() => {
-    if (resizingColumn) {
-      document.addEventListener('mousemove', handleMouseMove);
-      document.addEventListener('mouseup', handleMouseUp);
-      return () => {
-        document.removeEventListener('mousemove', handleMouseMove);
-        document.removeEventListener('mouseup', handleMouseUp);
-      };
-    }
-  }, [resizingColumn, handleMouseMove, handleMouseUp]);
-
-  // Column reordering function
-  const handleDragEnd = (result: any) => {
-    if (!result.destination) return;
-
-    const sourceIndex = result.source.index;
-    const destinationIndex = result.destination.index;
-
-    if (sourceIndex === destinationIndex) return;
-
-    // Solo reordenar las columnas visibles
-    const visibleColumns = columns.filter(col => col.visible);
-    const hiddenColumns = columns.filter(col => !col.visible);
-    
-    const [reorderedColumn] = visibleColumns.splice(sourceIndex, 1);
-    visibleColumns.splice(destinationIndex, 0, reorderedColumn);
-    
-    // Reconstruir el array de columnas manteniendo las ocultas al final
-    setColumns([...visibleColumns, ...hiddenColumns]);
-  };
-
-  const toggleColumnVisibility = (key: keyof Holiday) => {
-    setColumns(prevColumns =>
-      prevColumns.map(col =>
-        col.key === key ? { ...col, visible: !col.visible } : col
-      )
-    );
-  };
 
   const handleAddHoliday = async () => {
     if (!formData.date || !formData.festivo || !formData.pais) {
@@ -476,6 +396,56 @@ const HolidaysManagement = () => {
     });
   };
 
+  // Column resizing functions
+  const handleMouseDown = (e: React.MouseEvent, columnKey: string) => {
+    e.preventDefault();
+    e.stopPropagation(); // Evitar que se active el drag&drop
+    const column = columns.find(col => col.key === columnKey);
+    if (column) {
+      setResizingColumn(columnKey);
+      setStartX(e.clientX);
+      setStartWidth(column.width);
+      document.body.style.cursor = 'col-resize';
+    }
+  };
+
+  const handleMouseMove = useCallback((e: MouseEvent) => {
+    if (!resizingColumn) return;
+    
+    const diff = e.clientX - startX;
+    const newWidth = Math.max(startWidth + diff, 80); // Mínimo 80px
+    
+    setColumns(prevColumns =>
+      prevColumns.map(col =>
+        col.key === resizingColumn ? { ...col, width: newWidth } : col
+      )
+    );
+  }, [resizingColumn, startX, startWidth]);
+
+  const handleMouseUp = useCallback(() => {
+    setResizingColumn(null);
+    document.body.style.cursor = 'default';
+  }, []);
+
+  useEffect(() => {
+    if (resizingColumn) {
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+      return () => {
+        document.removeEventListener('mousemove', handleMouseMove);
+        document.removeEventListener('mouseup', handleMouseUp);
+      };
+    }
+  }, [resizingColumn, handleMouseMove, handleMouseUp]);
+
+  const toggleColumnVisibility = (key: keyof Holiday) => {
+    setColumns(prevColumns =>
+      prevColumns.map(col =>
+        col.key === key ? { ...col, visible: !col.visible } : col
+      )
+    );
+  };
+
   const clearFilters = () => {
     setSearchTerm('');
     setCountryFilter([]);
@@ -519,7 +489,6 @@ const HolidaysManagement = () => {
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
   const currentHolidays = filteredHolidays.slice(startIndex, endIndex);
-
 
   if (loading) {
     return (
@@ -574,6 +543,7 @@ const HolidaysManagement = () => {
             </div>
           </div>
         </div>
+
         {/* Action Buttons */}
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-4">
@@ -585,12 +555,12 @@ const HolidaysManagement = () => {
                   Agregar Festivo
                 </Button>
               </DialogTrigger>
-              <DialogContent className="max-w-md">
+              <DialogContent className="max-w-2xl">
                 <DialogHeader>
                   <DialogTitle>Agregar Nuevo Festivo</DialogTitle>
                 </DialogHeader>
-                <div className="space-y-4">
-                  <div>
+                <div className="grid grid-cols-2 gap-4 py-4">
+                  <div className="space-y-2">
                     <Label htmlFor="date">Fecha *</Label>
                     <Popover>
                       <PopoverTrigger asChild>
@@ -602,69 +572,67 @@ const HolidaysManagement = () => {
                           )}
                         >
                           <CalendarIcon className="mr-2 h-4 w-4" />
-                          {formData.date ? format(formData.date, "dd/MM/yyyy") : "Seleccionar fecha"}
+                          {formData.date ? format(formData.date, "PPP") : <span>Seleccionar fecha</span>}
                         </Button>
                       </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
+                      <PopoverContent className="w-auto p-0">
                         <Calendar
                           mode="single"
                           selected={formData.date}
                           onSelect={(date) => setFormData({ ...formData, date })}
                           initialFocus
-                          className="p-3 pointer-events-auto"
+                          className={cn("p-3 pointer-events-auto")}
                         />
                       </PopoverContent>
                     </Popover>
                   </div>
-
-                  <div>
+                  <div className="space-y-2">
                     <Label htmlFor="festivo">Festivo *</Label>
                     <Input
                       id="festivo"
-                      placeholder="Nombre del festivo"
                       value={formData.festivo}
                       onChange={(e) => setFormData({ ...formData, festivo: e.target.value })}
+                      placeholder="Nombre del festivo"
                     />
                   </div>
-
-                  <div>
+                  <div className="space-y-2">
                     <Label htmlFor="pais">País *</Label>
-                    <Select value={formData.pais} onValueChange={(value) => setFormData({ ...formData, pais: value, comunidad_autonoma: '' })}>
+                    <Select value={formData.pais} onValueChange={(value) => setFormData({ ...formData, pais: value })}>
                       <SelectTrigger>
                         <SelectValue placeholder="Seleccionar país" />
                       </SelectTrigger>
                       <SelectContent>
-                        {COUNTRIES.map(country => (
-                          <SelectItem key={country} value={country}>{country}</SelectItem>
+                        {COUNTRIES.map((country) => (
+                          <SelectItem key={country} value={country}>
+                            {country}
+                          </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
                   </div>
-
-                  {formData.pais === 'España' && (
-                    <div>
-                      <Label htmlFor="comunidad">Comunidad Autónoma</Label>
-                      <Select value={formData.comunidad_autonoma} onValueChange={(value) => setFormData({ ...formData, comunidad_autonoma: value })}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Seleccionar comunidad autónoma" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {SPANISH_AUTONOMOUS_COMMUNITIES.map(community => (
-                            <SelectItem key={community} value={community}>{community}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  )}
-
-                  <div className="flex gap-2 pt-4">
-                    <Button variant="outline" onClick={() => setIsAddDialogOpen(false)} className="flex-1">
-                      Cancelar
-                    </Button>
-                    <Button onClick={handleAddHoliday} className="flex-1 bg-orange-600 hover:bg-orange-700">
-                      Agregar Festivo
-                    </Button>
+                  <div className="space-y-2">
+                    <Label htmlFor="comunidad_autonoma">Comunidad Autónoma</Label>
+                    <Select value={formData.comunidad_autonoma} onValueChange={(value) => setFormData({ ...formData, comunidad_autonoma: value })}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Seleccionar comunidad" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {SPANISH_AUTONOMOUS_COMMUNITIES.map((community) => (
+                          <SelectItem key={community} value={community}>
+                            {community}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
+                </div>
+                <div className="flex justify-end gap-4">
+                  <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
+                    Cancelar
+                  </Button>
+                  <Button onClick={handleAddHoliday} className="bg-orange-600 hover:bg-orange-700">
+                    Agregar Festivo
+                  </Button>
                 </div>
               </DialogContent>
             </Dialog>
@@ -701,7 +669,7 @@ const HolidaysManagement = () => {
             <Button 
               variant="outline" 
               onClick={() => setShowColumns(!showColumns)}
-              className="text-purple-600 border-purple-600 hover:bg-purple-50"
+              className={cn("text-orange-600 border-orange-600", showColumns && "bg-orange-50")}
             >
               <Settings2 className="h-4 w-4 mr-2" />
               Columnas
@@ -715,345 +683,265 @@ const HolidaysManagement = () => {
           </div>
         )}
 
-        {/* Search */}
-        <div className="mb-6">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-            <Input
-              placeholder="Buscar festivos..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
-            />
-          </div>
-        </div>
-
-        {/* Filters */}
+        {/* Filters Section */}
         {showFilters && (
           <Card className="mb-6">
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-lg">Filtros por Columna</CardTitle>
-                <Button variant="outline" size="sm" onClick={clearFilters}>
-                  <RotateCcw className="h-4 w-4 mr-2" />
-                  Limpiar Filtros
-                </Button>
-              </div>
-            </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {/* País Filter */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
                 <div>
-                  <Label className="text-sm font-medium mb-2 block">País</Label>
-                  <div className="space-y-2 max-h-40 overflow-y-auto border rounded-md p-2">
-                    {getUniqueValues('pais').map(country => (
-                      <div key={country} className="flex items-center space-x-2">
-                        <Checkbox 
+                  <Label htmlFor="searchTerm">Buscar</Label>
+                  <Input
+                    id="searchTerm"
+                    placeholder="Buscar festivo, país o comunidad"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <Label>País</Label>
+                  <div className="max-h-40 overflow-auto border rounded p-2">
+                    {COUNTRIES.map((country) => (
+                      <div key={country} className="flex items-center">
+                        <Checkbox
                           id={`country-${country}`}
                           checked={countryFilter.includes(country)}
                           onCheckedChange={() => toggleFilter(countryFilter, country, setCountryFilter)}
                         />
-                        <label htmlFor={`country-${country}`} className="text-sm">{country}</label>
+                        <Label htmlFor={`country-${country}`} className="ml-2 cursor-pointer">{country}</Label>
                       </div>
                     ))}
                   </div>
-                  {countryFilter.length > 0 && (
-                    <div className="mt-2 flex flex-wrap gap-1">
-                      {countryFilter.map(country => (
-                        <Badge key={country} variant="secondary" className="text-xs">
-                          {country}
-                          <button 
-                            onClick={() => toggleFilter(countryFilter, country, setCountryFilter)}
-                            className="ml-1 hover:bg-secondary-foreground/20 rounded-full p-0.5"
-                          >
-                            <X className="h-3 w-3" />
-                          </button>
-                        </Badge>
-                      ))}
-                    </div>
-                  )}
                 </div>
-
-                {/* Comunidad Autónoma Filter */}
                 <div>
-                  <Label className="text-sm font-medium mb-2 block">Comunidad Autónoma</Label>
-                  <div className="space-y-2 max-h-40 overflow-y-auto border rounded-md p-2">
-                    {getUniqueValues('comunidad_autonoma').map(community => (
-                      <div key={community} className="flex items-center space-x-2">
-                        <Checkbox 
+                  <Label>Comunidad Autónoma</Label>
+                  <div className="max-h-40 overflow-auto border rounded p-2">
+                    {SPANISH_AUTONOMOUS_COMMUNITIES.map((community) => (
+                      <div key={community} className="flex items-center">
+                        <Checkbox
                           id={`community-${community}`}
                           checked={communityFilter.includes(community)}
                           onCheckedChange={() => toggleFilter(communityFilter, community, setCommunityFilter)}
                         />
-                        <label htmlFor={`community-${community}`} className="text-sm">{community}</label>
+                        <Label htmlFor={`community-${community}`} className="ml-2 cursor-pointer">{community}</Label>
                       </div>
                     ))}
                   </div>
-                  {communityFilter.length > 0 && (
-                    <div className="mt-2 flex flex-wrap gap-1">
-                      {communityFilter.map(community => (
-                        <Badge key={community} variant="secondary" className="text-xs bg-yellow-100 text-yellow-800">
-                          {community}
-                          <button 
-                            onClick={() => toggleFilter(communityFilter, community, setCommunityFilter)}
-                            className="ml-1 hover:bg-yellow-200 rounded-full p-0.5"
-                          >
-                            <X className="h-3 w-3" />
-                          </button>
-                        </Badge>
-                      ))}
-                    </div>
-                  )}
                 </div>
-
-                {/* Origen Filter */}
                 <div>
-                  <Label className="text-sm font-medium mb-2 block">Origen</Label>
-                  <div className="space-y-2 border rounded-md p-2">
-                    {getUniqueValues('origen').map(origin => (
-                      <div key={origin} className="flex items-center space-x-2">
-                        <Checkbox 
+                  <Label>Origen</Label>
+                  <div className="max-h-40 overflow-auto border rounded p-2">
+                    {getUniqueValues('origen').map((origin) => (
+                      <div key={origin} className="flex items-center">
+                        <Checkbox
                           id={`origin-${origin}`}
                           checked={originFilter.includes(origin)}
                           onCheckedChange={() => toggleFilter(originFilter, origin, setOriginFilter)}
                         />
-                        <label htmlFor={`origin-${origin}`} className="text-sm">{origin}</label>
+                        <Label htmlFor={`origin-${origin}`} className="ml-2 cursor-pointer">{origin}</Label>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <Label>Festivo</Label>
+                  <div className="max-h-40 overflow-auto border rounded p-2">
+                    {getUniqueValues('festivo').map((festivo) => (
+                      <div key={festivo} className="flex items-center">
+                        <Checkbox
+                          id={`festivo-${festivo}`}
+                          checked={festivoFilter.includes(festivo)}
+                          onCheckedChange={() => toggleFilter(festivoFilter, festivo, setFestivoFilter)}
+                        />
+                        <Label htmlFor={`festivo-${festivo}`} className="ml-2 cursor-pointer">{festivo}</Label>
                       </div>
                     ))}
                   </div>
                 </div>
               </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Column Management */}
-        {showColumns && (
-          <Card className="mb-6">
-            <CardHeader>
-              <CardTitle className="text-lg">Gestión de Columnas</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                {columns.map((column) => (
-                  <div key={column.key} className="flex items-center space-x-2">
-                    <Checkbox 
-                      id={`column-${column.key}`}
-                      checked={column.visible}
-                      onCheckedChange={(checked) => 
-                        setColumns(prev => prev.map(col => 
-                          col.key === column.key 
-                            ? { ...col, visible: !!checked }
-                            : col
-                        ))
-                      }
-                    />
-                    <label htmlFor={`column-${column.key}`} className="text-sm">
-                      {column.label}
-                    </label>
-                  </div>
-                ))}
-              </div>
-              <div className="mt-4 flex items-center space-x-2">
-                <Checkbox id="save-default" />
-                <label htmlFor="save-default" className="text-sm text-muted-foreground">
-                  Guardar como vista por defecto
-                </label>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  className="ml-4"
-                  onClick={() => {
-                    setColumns(prev => prev.map(col => ({ ...col, visible: true })));
-                  }}
-                >
-                  Resetear
+              <div className="mt-4 flex justify-end">
+                <Button variant="outline" onClick={clearFilters}>
+                  Limpiar filtros
                 </Button>
               </div>
             </CardContent>
           </Card>
         )}
 
-        {/* Pagination Controls */}
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-muted-foreground">
-              Mostrando {startIndex + 1} - {Math.min(endIndex, filteredHolidays.length)} de {filteredHolidays.length} festivos
-            </span>
-            <Select 
-              value={itemsPerPage.toString()} 
-              onValueChange={(value) => setItemsPerPage(Number(value))}
-            >
-              <SelectTrigger className="w-20">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="25">25</SelectItem>
-                <SelectItem value="50">50</SelectItem>
-                <SelectItem value="100">100</SelectItem>
-                <SelectItem value="200">200</SelectItem>
-              </SelectContent>
-            </Select>
-            <span className="text-sm text-muted-foreground">por página</span>
-          </div>
-          
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setCurrentPage(1)}
-              disabled={currentPage === 1}
-            >
-              <ChevronsLeft className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setCurrentPage(currentPage - 1)}
-              disabled={currentPage === 1}
-            >
-              <ChevronLeft className="h-4 w-4" />
-            </Button>
-            <span className="text-sm text-muted-foreground px-2">
-              Página {currentPage} de {totalPages}
-            </span>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setCurrentPage(currentPage + 1)}
-              disabled={currentPage === totalPages}
-            >
-              <ChevronRight className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setCurrentPage(totalPages)}
-              disabled={currentPage === totalPages}
-            >
-              <ChevronsRight className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
+        {/* Columns Management Section */}
+        {showColumns && (
+          <Card className="mb-6">
+            <CardContent>
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+                {columns.map((col, index) => (
+                  <div key={col.key} className="flex items-center gap-2">
+                    <Checkbox
+                      id={`col-visible-${col.key}`}
+                      checked={col.visible}
+                      onCheckedChange={() => toggleColumnVisibility(col.key)}
+                    />
+                    <Label htmlFor={`col-visible-${col.key}`} className="cursor-pointer">{col.label}</Label>
+                    {col.resizable && (
+                      <div
+                        className="ml-auto cursor-grab p-1"
+                        title="Arrastrar para reordenar"
+                        // Drag handle could be implemented here if needed
+                      >
+                        <GripVertical className="h-4 w-4 text-muted-foreground" />
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Enhanced Table */}
         <Card>
           <CardContent className="p-0">
-            <div className="overflow-auto" style={{ fontSize: `${fontSize}px` }}>
-              <DragDropContext onDragEnd={handleDragEnd}>
-                <Droppable droppableId="columns" direction="horizontal">
-                  {(provided) => (
-                    <Table {...provided.droppableProps} ref={provided.innerRef}>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead className="w-16 py-3 px-4 font-semibold text-xs text-muted-foreground bg-muted/30">
-                            ÍNDICE
-                          </TableHead>
-                          {columns.filter(col => col.visible).map((column, index) => (
-                            <Draggable key={column.key} draggableId={column.key} index={index}>
-                              {(provided) => (
-                                <TableHead 
-                                  ref={provided.innerRef}
-                                  {...provided.draggableProps}
-                                  className="py-3 px-4 font-semibold text-xs text-muted-foreground bg-muted/30 cursor-pointer hover:bg-muted/50 select-none relative group border-r"
-                                  style={{ width: column.width, ...provided.draggableProps.style }}
-                                  onClick={() => handleSort(column.key)}
-                                >
-                                  <div className="flex items-center justify-between">
-                                    <div className="flex items-center gap-2">
-                                      <div {...provided.dragHandleProps}>
-                                        <GripVertical className="w-3 h-3 opacity-50 cursor-move" />
-                                      </div>
-                                      <span>{column.label.toUpperCase()}</span>
-                                    </div>
-                                    {getSortIcon(column.key)}
-                                  </div>
-                                  {column.resizable && (
-                                    <div
-                                      className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-primary/20 group-hover:bg-primary/20"
-                                      onMouseDown={(e) => handleMouseDown(e, column.key)}
-                                    />
-                                  )}
-                                </TableHead>
-                              )}
-                            </Draggable>
-                          ))}
-                          {provided.placeholder}
-                          <TableHead className="w-24 py-3 px-4 font-semibold text-xs text-muted-foreground bg-muted/30">
-                            ACCIONES
-                          </TableHead>
-                        </TableRow>
-                      </TableHeader>
-                <TableBody>
-                  {currentHolidays.map((holiday, index) => (
-                    <TableRow 
-                      key={holiday.id}
-                      className={cn(
-                        "hover:bg-muted/30 transition-colors",
-                        holiday.origen === 'Administrador' && "bg-red-50 hover:bg-red-100"
-                      )}
+            <div className="h-[600px] overflow-auto border rounded-lg" style={{ fontSize: `${fontSize}px` }}>
+              <table className="w-full">
+                {/* Header fijo */}
+                <thead className="sticky top-0 z-50">
+                  <tr>
+                    <th 
+                      className="sticky left-0 z-60 bg-blue-50 border-r border-gray-200 p-3 text-center font-semibold text-xs"
+                      style={{ width: 64 }}
                     >
-                      <TableCell className="font-medium py-4 px-4 text-sm text-center">
-                        {startIndex + index + 1}
-                      </TableCell>
-                      
+                      ÍNDICE
+                    </th>
+                    {columns.filter(col => col.visible).map((column) => (
+                      <th 
+                        key={column.key}
+                        className="bg-blue-50 border-b border-gray-200 relative"
+                        style={{ 
+                          width: column.width,
+                          minWidth: column.minWidth,
+                          maxWidth: column.width
+                        }}
+                      >
+                        <div className="flex items-center p-3">
+                          {/* Área de ordenación */}
+                          <div 
+                            className="flex-1 cursor-pointer hover:bg-blue-100 flex items-center justify-center gap-1 py-1 px-2 rounded"
+                            onClick={() => handleSort(column.key)}
+                            title="Click para ordenar"
+                          >
+                            <span>{column.label}</span>
+                            {getSortIcon(column.key)}
+                          </div>
+                          
+                          {/* Handle de redimensionamiento */}
+                          <div
+                            className="absolute right-0 top-0 w-2 h-full cursor-col-resize bg-blue-400 opacity-0 hover:opacity-100 transition-opacity z-20"
+                            onMouseDown={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              handleMouseDown(e, column.key);
+                            }}
+                            title="Arrastrar para redimensionar"
+                          />
+                        </div>
+                      </th>
+                    ))}
+                   
+                   {/* Columna acciones fija */}
+                   <th 
+                     className="sticky right-0 z-40 bg-blue-50 border-l border-gray-200 p-3 text-center font-semibold text-xs"
+                     style={{ width: 96, minWidth: 96 }}
+                   >
+                     ACCIONES
+                   </th>
+                 </tr>
+               </thead>
+                 
+                 {/* Body */}
+                 <tbody>
+                   {currentHolidays.map((holiday, index) => (
+                     <tr key={holiday.id} className={`hover:bg-gray-50 border-b border-gray-100 ${
+                       holiday.origen === 'Administrador' ? 'bg-red-50 hover:bg-red-100 dark:bg-red-950/20 dark:hover:bg-red-900/30' : ''
+                     }`}>
+                       {/* Columna índice fija */}
+                        <td 
+                          className={cn(
+                            "sticky left-0 z-10 font-medium text-center border-r border-gray-200 p-3",
+                            holiday.origen === 'Administrador' ? "bg-red-50" : "bg-white"
+                          )}
+                          style={{ width: 64 }}
+                        >
+                          <span className="font-arial" style={{ fontSize: `${fontSize}px` }}>
+                            {startIndex + index + 1}
+                          </span>
+                        </td>
+
                       {columns.filter(col => col.visible).map((column) => {
-                        const isLastVisible = columns.filter(col => col.visible).indexOf(column) === columns.filter(col => col.visible).length - 1;
                         
                         if (column.key === 'date') {
                           return (
-                            <TableCell 
+                            <td 
                               key={column.key}
-                              className={cn("py-4 px-4", !isLastVisible && "border-r")}
+                              className={cn(
+                                "p-3 border-r border-gray-200",
+                                holiday.origen === 'Administrador' ? "bg-red-50" : "bg-white"
+                              )}
                               style={{ width: column.width }}
                             >
-                              <div className="text-sm font-medium text-foreground">
+                              <div className="text-sm font-medium text-foreground" style={{ fontSize: `${fontSize}px` }}>
                                 {format(new Date(holiday.date), 'dd/MM/yyyy')}
                               </div>
-                            </TableCell>
+                            </td>
                           );
                         }
                         
                         if (column.key === 'festivo') {
                           return (
-                            <TableCell 
+                            <td 
                               key={column.key}
-                              className={cn("py-4 px-4", !isLastVisible && "border-r")}
+                              className={cn(
+                                "p-3 border-r border-gray-200",
+                                holiday.origen === 'Administrador' ? "bg-red-50" : "bg-white"
+                              )}
                               style={{ width: column.width }}
                             >
-                              <div className="font-semibold text-foreground text-sm leading-tight">
+                              <div className="font-semibold text-foreground text-sm leading-tight" style={{ fontSize: `${fontSize}px` }}>
                                 {holiday.festivo}
                               </div>
-                            </TableCell>
+                            </td>
                           );
                         }
                         
                         if (column.key === 'pais') {
                           return (
-                            <TableCell 
+                            <td 
                               key={column.key}
-                              className={cn("py-4 px-4", !isLastVisible && "border-r")}
+                              className={cn(
+                                "p-3 border-r border-gray-200",
+                                holiday.origen === 'Administrador' ? "bg-red-50" : "bg-white"
+                              )}
                               style={{ width: column.width }}
                             >
                               <div className="space-y-1">
-                                <div className="font-medium text-foreground text-sm leading-tight">
+                                <div className="font-medium text-foreground text-sm leading-tight" style={{ fontSize: `${fontSize}px` }}>
                                   {holiday.pais}
                                 </div>
                                 {holiday.comunidad_autonoma && holiday.comunidad_autonoma !== 'NACIONAL' && (
-                                  <div className="text-xs text-muted-foreground leading-tight">
+                                  <div className="text-xs text-muted-foreground leading-tight" style={{ fontSize: `${fontSize - 2}px` }}>
                                     {holiday.comunidad_autonoma}
                                   </div>
                                 )}
                               </div>
-                            </TableCell>
+                            </td>
                           );
                         }
                         
                         if (column.key === 'origen') {
                           return (
-                            <TableCell 
+                            <td 
                               key={column.key}
-                              className={cn("py-4 px-4", !isLastVisible && "border-r")}
+                              className={cn(
+                                "p-3 border-r border-gray-200",
+                                holiday.origen === 'Administrador' ? "bg-red-50" : "bg-white"
+                              )}
                               style={{ width: column.width }}
                             >
                               <Badge 
@@ -1062,50 +950,89 @@ const HolidaysManagement = () => {
                                   "text-xs",
                                   holiday.origen === 'Administrador' ? "text-red-700 border-red-700" : "text-blue-700 border-blue-700"
                                 )}
+                                style={{ fontSize: `${fontSize - 2}px` }}
                               >
                                 {holiday.origen}
                               </Badge>
-                            </TableCell>
+                            </td>
                           );
                         }
                         
                         return null;
                       })}
-                      
-                      {/* Acciones */}
-                      <TableCell className="py-4 px-4">
-                        <div className="flex items-center gap-1">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => setEditingRow(editingRow === holiday.id ? null : holiday.id)}
-                            className="h-8 w-8 p-0"
-                          >
-                            <Edit className="h-3 w-3" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleDeleteHoliday(holiday.id)}
-                            className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
-                          >
-                            <Trash2 className="h-3 w-3" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            )}
-          </Droppable>
-        </DragDropContext>
-      </div>
-    </CardContent>
-  </Card>
 
-        {/* Bottom Pagination */}
-        <div className="flex items-center justify-center mt-6">
+                      {/* Columna de acciones fija */}
+                      <td 
+                        className={cn(
+                          "sticky right-0 z-10 p-3 border-l border-gray-200",
+                          holiday.origen === 'Administrador' ? "bg-red-50" : "bg-white"
+                        )}
+                        style={{ width: 96 }}
+                      >
+                        <div className="flex items-center justify-center gap-1">
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-8 w-8 p-0 hover:bg-blue-100"
+                              >
+                                <Edit className="h-3 w-3" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>Editar festivo</p>
+                            </TooltipContent>
+                          </Tooltip>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleDeleteHoliday(holiday.id)}
+                                className="h-8 w-8 p-0 hover:bg-red-100"
+                              >
+                                <Trash2 className="h-3 w-3 text-red-600" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>Eliminar festivo</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Pagination and Controls */}
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-6">
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-muted-foreground">Registros por página:</span>
+              <Select value={itemsPerPage.toString()} onValueChange={(value) => setItemsPerPage(Number(value))}>
+                <SelectTrigger className="w-20">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="25">25</SelectItem>
+                  <SelectItem value="50">50</SelectItem>
+                  <SelectItem value="100">100</SelectItem>
+                  <SelectItem value="200">200</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <span className="text-sm text-muted-foreground">
+              Mostrando {startIndex + 1} a {Math.min(endIndex, filteredHolidays.length)} de {filteredHolidays.length} registros
+            </span>
+          </div>
+
+          {/* Pagination Controls */}
           <div className="flex items-center gap-2">
             <Button
               variant="outline"
@@ -1123,7 +1050,7 @@ const HolidaysManagement = () => {
             >
               <ChevronLeft className="h-4 w-4" />
             </Button>
-            <span className="text-sm text-muted-foreground px-4">
+            <span className="text-sm px-4">
               Página {currentPage} de {totalPages}
             </span>
             <Button
@@ -1142,21 +1069,31 @@ const HolidaysManagement = () => {
             >
               <ChevronsRight className="h-4 w-4" />
             </Button>
-            {/* Font Size Control */}
-            <div className="flex items-center gap-2">
-              <Type className="h-4 w-4 text-muted-foreground" />
-              <Slider
-                value={[fontSize]}
-                onValueChange={(value) => setFontSize(value[0])}
-                max={20}
-                min={8}
-                step={1}
-                className="w-20"
-              />
-              <span className="text-xs text-muted-foreground w-8">{fontSize}px</span>
-            </div>
           </div>
         </div>
+
+        {/* Font Size Control */}
+        <div className="flex items-center gap-4 mb-4 p-3 bg-gray-50 rounded-lg border mt-6">
+          <div className="flex items-center gap-2">
+            <Type className="h-4 w-4 text-muted-foreground" />
+            <span className="text-sm font-medium text-muted-foreground">Tamaño de fuente:</span>
+          </div>
+          
+          <div className="flex items-center gap-3">
+            <span className="text-xs font-arial" style={{ fontSize: '8px' }}>A</span>
+            <Slider
+              value={[fontSize]}
+              onValueChange={(value) => setFontSize(value[0])}
+              max={20}
+              min={8}
+              step={1}
+              className="w-32"
+            />
+            <span className="text-lg font-arial" style={{ fontSize: '16px' }}>A</span>
+            <span className="text-xs text-muted-foreground ml-2 min-w-[35px]">{fontSize}px</span>
+          </div>
+        </div>
+      </div>
     </div>
     </TooltipProvider>
   );
