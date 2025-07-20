@@ -836,6 +836,13 @@ const HolidaysManagement = () => {
           </div>
         </div>
 
+        {/* Records info - Above table */}
+        <div className="flex items-center justify-between mb-4">
+          <span className="text-sm text-muted-foreground">
+            Mostrando {startIndex + 1} a {Math.min(endIndex, filteredHolidays.length)} de {filteredHolidays.length} registros
+          </span>
+        </div>
+
         {/* Enhanced Table */}
         <Card>
           <CardContent className="p-0">
@@ -1051,11 +1058,8 @@ const HolidaysManagement = () => {
 
          {/* Pagination and Controls */}
          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-6">
-           <div className="flex items-center gap-4">
-             <span className="text-sm text-muted-foreground">
-               Mostrando {startIndex + 1} a {Math.min(endIndex, filteredHolidays.length)} de {filteredHolidays.length} registros
-             </span>
-           </div>
+          <div className="flex items-center gap-4">
+          </div>
 
            {/* Pagination Controls */}
            <div className="flex items-center gap-2">
