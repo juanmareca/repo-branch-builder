@@ -28,7 +28,7 @@ const AdminDashboard = () => {
   const navigate = useNavigate();
 
   const handleLogout = () => {
-    navigate('/');
+    window.location.href = '/';
   };
 
   if (loading) {
