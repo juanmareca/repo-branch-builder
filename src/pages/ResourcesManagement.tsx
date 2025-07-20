@@ -432,24 +432,34 @@ const ResourcesManagement = () => {
   // Fetch all unique values from database
   const fetchAllUniqueOptions = async () => {
     try {
+      console.log('🔍 Fetching all unique options from database...');
       const { data, error } = await supabase
         .from('persons')
         .select('cex, grupo, categoria, oficina, squad_lead');
       
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching unique options:', error);
+        throw error;
+      }
       
       if (data) {
+        console.log('📊 Data from database:', data);
         const getUniqueValues = (field: keyof Person) => {
-          return Array.from(new Set(data.map(r => r[field]).filter(v => v && v.trim() !== ''))).sort();
+          const values = Array.from(new Set(data.map(r => r[field]).filter(v => v && v.trim() !== ''))).sort();
+          console.log(`Unique ${field}:`, values);
+          return values;
         };
 
-        setAllUniqueOptions({
+        const newOptions = {
           cex: getUniqueValues('cex'),
           grupo: getUniqueValues('grupo'),
           categoria: getUniqueValues('categoria'),
           oficina: getUniqueValues('oficina'),
           squadLeads: getUniqueValues('squad_lead'),
-        });
+        };
+        
+        console.log('🎯 Setting allUniqueOptions:', newOptions);
+        setAllUniqueOptions(newOptions);
       }
     } catch (error) {
       console.error('Error fetching unique options:', error);

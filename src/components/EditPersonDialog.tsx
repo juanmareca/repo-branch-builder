@@ -47,6 +47,7 @@ const EditPersonDialog: React.FC<EditPersonDialogProps> = ({
   onSave,
   availableOptions,
 }) => {
+  console.log('🔧 EditPersonDialog received availableOptions:', availableOptions);
   const [formData, setFormData] = useState<Person>({
     id: '',
     nombre: '',
@@ -263,9 +264,10 @@ const EditPersonDialog: React.FC<EditPersonDialogProps> = ({
                 list="oficina-options"
               />
               <datalist id="oficina-options">
-                {availableOptions.oficina.map((option) => (
-                  <option key={option} value={option} />
-                ))}
+                {availableOptions.oficina.map((option) => {
+                  console.log('📋 Oficina option:', option);
+                  return <option key={option} value={option} />;
+                })}
               </datalist>
             </div>
           </div>
