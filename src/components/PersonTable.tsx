@@ -99,7 +99,7 @@ const PersonTable: React.FC<PersonTableProps> = ({ persons, onEditPerson }) => {
               onClick={() => handleSort('fecha_incorporacion')}
             >
               <div className="flex items-center justify-between">
-                <span>Fecha Inc.</span>
+                <span>Fecha de Incorporación</span>
                 {getSortIcon('fecha_incorporacion')}
               </div>
             </th>
@@ -171,12 +171,19 @@ const PersonTable: React.FC<PersonTableProps> = ({ persons, onEditPerson }) => {
                <td className="px-6 py-2 whitespace-nowrap text-sm text-foreground">
                  {person.num_pers}
                </td>
-               <td className="px-6 py-2 whitespace-nowrap text-sm text-foreground">
-                 <div className="flex items-center">
-                   <Calendar className="w-4 h-4 text-muted-foreground mr-2" />
-                   {person.fecha_incorporacion}
-                 </div>
-               </td>
+                <td className="px-6 py-2 whitespace-nowrap text-sm text-foreground">
+                  <div className="flex items-center">
+                    <Calendar className="w-4 h-4 text-muted-foreground mr-2" />
+                    {person.fecha_incorporacion ? 
+                      new Date(person.fecha_incorporacion).toLocaleDateString('es-ES', {
+                        day: '2-digit',
+                        month: '2-digit',
+                        year: 'numeric'
+                      }) : 
+                      person.fecha_incorporacion
+                    }
+                  </div>
+                </td>
                <td className="px-6 py-2 whitespace-nowrap text-sm text-foreground">
                  <div className="flex items-center">
                    <Mail className="w-4 h-4 text-muted-foreground mr-2" />
