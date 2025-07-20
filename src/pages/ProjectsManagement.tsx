@@ -111,36 +111,15 @@ const ProjectsManagement = () => {
     try {
       console.log('🔄 Cargando todos los proyectos...');
       
-      // Estrategia: cargar en lotes para superar el límite de 1000
-      let allProjects: Project[] = [];
-      let from = 0;
-      const batchSize = 1000;
-      let hasMore = true;
+      const { data, error } = await supabase
+        .from('projects')
+        .select('*')
+        .order('created_at', { ascending: false });
 
-      while (hasMore) {
-        console.log(`📦 Cargando lote desde ${from} hasta ${from + batchSize - 1}`);
-        
-        const { data, error } = await supabase
-          .from('projects')
-          .select('*')
-          .range(from, from + batchSize - 1)
-          .order('created_at', { ascending: false });
-
-        if (error) throw error;
-
-        if (data && data.length > 0) {
-          allProjects = [...allProjects, ...data];
-          from += batchSize;
-          hasMore = data.length === batchSize; // Si trajo menos que batchSize, ya no hay más
-          console.log(`✅ Lote cargado: ${data.length} proyectos. Total acumulado: ${allProjects.length}`);
-        } else {
-          hasMore = false;
-          console.log('🏁 No hay más proyectos que cargar');
-        }
-      }
+      if (error) throw error;
       
-      console.log(`🎯 TOTAL FINAL de proyectos cargados: ${allProjects.length}`);
-      setProjects(allProjects);
+      console.log(`✅ Proyectos cargados: ${data?.length || 0}`);
+      setProjects(data || []);
     } catch (error: any) {
       console.error('Error fetching projects:', error);
       toast({
