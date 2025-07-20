@@ -26,11 +26,13 @@ export const useAdminStats = () => {
       setLoading(true);
       
       // Obtener conteos de todas las tablas en paralelo
+      console.log('🔄 Fetching admin stats...');
+      
       const [
-        { count: recursosCount },
-        { count: proyectosCount },
-        { count: capacidadesCount },
-        { count: festivosCount }
+        { count: recursosCount, error: recursosError },
+        { count: proyectosCount, error: proyectosError },
+        { count: capacidadesCount, error: capacidadesError },
+        { count: festivosCount, error: festivosError }
       ] = await Promise.all([
         supabase.from('persons').select('*', { count: 'exact', head: true }),
         supabase.from('projects').select('*', { count: 'exact', head: true }),
@@ -38,14 +40,32 @@ export const useAdminStats = () => {
         supabase.from('holidays').select('*', { count: 'exact', head: true })
       ]);
 
-      setStats({
+      // Debug individual counts
+      console.log('📊 Counts fetched:', {
+        recursos: recursosCount,
+        proyectos: proyectosCount,
+        capacidades: capacidadesCount,
+        festivos: festivosCount
+      });
+
+      // Check for individual errors
+      if (recursosError) console.error('❌ Recursos error:', recursosError);
+      if (proyectosError) console.error('❌ Proyectos error:', proyectosError);
+      if (capacidadesError) console.error('❌ Capacidades error:', capacidadesError);
+      if (festivosError) console.error('❌ Festivos error:', festivosError);
+
+      const newStats = {
         recursos: recursosCount || 0,
         proyectos: proyectosCount || 0,
         capacidades: capacidadesCount || 0,
         festivos: festivosCount || 0
-      });
+      };
+
+      console.log('✅ Setting new stats:', newStats);
+      setStats(newStats);
+      
     } catch (err) {
-      console.error('Error fetching admin stats:', err);
+      console.error('❌ Error fetching admin stats:', err);
       setError('Error al cargar estadísticas');
     } finally {
       setLoading(false);
