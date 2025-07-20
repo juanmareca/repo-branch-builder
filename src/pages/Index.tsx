@@ -130,7 +130,9 @@ const Index = ({ userRole, userData }: { userRole?: string; userData?: any }) =>
               <Users className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{squadLeads.length}</div>
+              <div className="text-2xl font-bold">
+                {isSquadLeadView ? 1 : squadLeads.length}
+              </div>
             </CardContent>
           </Card>
 
