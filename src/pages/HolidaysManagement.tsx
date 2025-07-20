@@ -1045,57 +1045,58 @@ const HolidaysManagement = () => {
                   ))}
                 </tbody>
               </table>
-            </div>
-          </CardContent>
-        </Card>
+             </div>
+           </CardContent>
+         </Card>
 
-        {/* Pagination and Controls */}
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-6">
-          <div className="flex items-center gap-4">
-            <span className="text-sm text-muted-foreground">
-              Mostrando {startIndex + 1} a {Math.min(endIndex, filteredHolidays.length)} de {filteredHolidays.length} registros
-            </span>
-          </div>
+         {/* Pagination and Controls */}
+         <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-6">
+           <div className="flex items-center gap-4">
+             <span className="text-sm text-muted-foreground">
+               Mostrando {startIndex + 1} a {Math.min(endIndex, filteredHolidays.length)} de {filteredHolidays.length} registros
+             </span>
+           </div>
 
-          {/* Pagination Controls */}
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setCurrentPage(1)}
-              disabled={currentPage === 1}
-            >
-              <ChevronsLeft className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setCurrentPage(currentPage - 1)}
-              disabled={currentPage === 1}
-            >
-              <ChevronLeft className="h-4 w-4" />
-            </Button>
-            <span className="text-sm px-4">
-              Página {currentPage} de {totalPages}
-            </span>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setCurrentPage(currentPage + 1)}
-              disabled={currentPage === totalPages}
-            >
-              <ChevronRight className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setCurrentPage(totalPages)}
-              disabled={currentPage === totalPages}
-            >
-              <ChevronsRight className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
+           {/* Pagination Controls */}
+           <div className="flex items-center gap-2">
+             <Button
+               variant="outline"
+               size="sm"
+               onClick={() => setCurrentPage(1)}
+               disabled={currentPage === 1}
+             >
+               <ChevronsLeft className="h-4 w-4" />
+             </Button>
+             <Button
+               variant="outline"
+               size="sm"
+               onClick={() => setCurrentPage(currentPage - 1)}
+               disabled={currentPage === 1}
+             >
+               <ChevronLeft className="h-4 w-4" />
+             </Button>
+             <span className="text-sm px-4">
+               Página {currentPage} de {totalPages}
+             </span>
+             <Button
+               variant="outline"
+               size="sm"
+               onClick={() => setCurrentPage(currentPage + 1)}
+               disabled={currentPage === totalPages}
+             >
+               <ChevronRight className="h-4 w-4" />
+             </Button>
+             <Button
+               variant="outline"
+               size="sm"
+               onClick={() => setCurrentPage(totalPages)}
+               disabled={currentPage === totalPages}
+             >
+               <ChevronsRight className="h-4 w-4" />
+             </Button>
+           </div>
+         </div>
+
 
       </div>
     </div>
