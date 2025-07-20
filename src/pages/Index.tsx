@@ -19,6 +19,8 @@ const Index = ({ userRole, userData }: { userRole?: string; userData?: any }) =>
   // Detectar si estamos en la vista de Squad Lead
   const isSquadLeadView = location.pathname === '/squad-team' && userRole === 'squad_lead';
   
+  console.log('Debug - isSquadLeadView:', isSquadLeadView, 'pathname:', location.pathname, 'userRole:', userRole);
+  
   useEffect(() => {
     // Si es Squad Lead, filtrar automáticamente por su equipo
     if (isSquadLeadView && userData?.name) {
@@ -242,7 +244,7 @@ const Index = ({ userRole, userData }: { userRole?: string; userData?: any }) =>
         </Card>
 
         {/* Nueva sección de Capacidades del Equipo - Solo para Squad Leads */}
-        {isSquadLeadView && (
+        {location.pathname === '/squad-team' && (
           <Card className="mt-8">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
