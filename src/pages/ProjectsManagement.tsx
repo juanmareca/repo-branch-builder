@@ -225,36 +225,16 @@ const ProjectsManagement = () => {
       setLoading(true);
       console.log('🔄 Cargando todos los proyectos...');
       
-      // Obtener todos los proyectos sin límite usando paginación
-      let allProjects: any[] = [];
-      let from = 0;
-      const batchSize = 1000;
-      let hasMore = true;
+      const { data, error } = await supabase
+        .from('projects')
+        .select('*')
+        .order('denominacion', { ascending: true })
+        .limit(10000); // Aumentar límite para obtener todos los proyectos
 
-      while (hasMore) {
-        const { data, error } = await supabase
-          .from('projects')
-          .select('*')
-          .order('denominacion', { ascending: true })
-          .range(from, from + batchSize - 1);
-
-        if (error) throw error;
-        
-        if (data && data.length > 0) {
-          allProjects = [...allProjects, ...data];
-          from += batchSize;
-          
-          // Si obtuvimos menos registros que el batchSize, hemos llegado al final
-          if (data.length < batchSize) {
-            hasMore = false;
-          }
-        } else {
-          hasMore = false;
-        }
-      }
-
-      console.log('✅ Proyectos cargados:', allProjects.length);
-      setProjects(allProjects);
+      if (error) throw error;
+      
+      console.log('✅ Proyectos cargados:', data?.length);
+      setProjects(data || []);
     } catch (error: any) {
       toast({
         title: "Error al cargar proyectos",
