@@ -24,12 +24,14 @@ const App = () => {
   const [userData, setUserData] = useState<any>(null);
 
   const handleLogin = (role: string, userData?: any) => {
+    console.log('App - handleLogin called with role:', role);
     setUserRole(role);
     setUserData(userData);
     setIsLoading(true);
   };
 
   const handleLoadingComplete = () => {
+    console.log('App - Loading complete. UserRole is:', userRole);
     setIsLoading(false);
     setIsAuthenticated(true);
   };
@@ -39,6 +41,8 @@ const App = () => {
     setUserRole('');
     setUserData(null);
   };
+
+  console.log('App render - isAuthenticated:', isAuthenticated, 'isLoading:', isLoading, 'userRole:', userRole);
 
   if (!isAuthenticated && !isLoading) {
     return (
@@ -64,6 +68,18 @@ const App = () => {
     );
   }
 
+  // Cuando está autenticado, determinar qué mostrar
+  const getHomeComponent = () => {
+    console.log('App - getHomeComponent called. UserRole:', userRole);
+    if (userRole === 'admin') {
+      console.log('App - Returning AdminDashboard');
+      return <AdminDashboard />;
+    } else {
+      console.log('App - Returning Index');
+      return <Index />;
+    }
+  };
+
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
@@ -71,7 +87,7 @@ const App = () => {
         <Sonner />
         <BrowserRouter>
           <Routes>
-            <Route path="/" element={userRole === 'admin' ? <AdminDashboard /> : <Index />} />
+            <Route path="/" element={getHomeComponent()} />
             <Route path="/admin" element={<AdminDashboard />} />
             <Route path="/holidays" element={<HolidaysManagement />} />
             <Route path="/backups" element={<BackupsManagement />} />
