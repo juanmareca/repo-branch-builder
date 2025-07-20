@@ -1,14 +1,28 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useSquadData } from '../hooks/useSquadData';
 import PersonTable from '../components/PersonTable';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Users, Loader2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Users, Loader2, ArrowLeft } from 'lucide-react';
+import { useNavigate, useLocation } from 'react-router-dom';
 
-const Index = () => {
+const Index = ({ userRole, userData }: { userRole?: string; userData?: any }) => {
   const { persons, squadLeads, loading, error } = useSquadData();
   const [selectedSquadLead, setSelectedSquadLead] = useState<string>('all');
+  const navigate = useNavigate();
+  const location = useLocation();
+  
+  // Detectar si estamos en la vista de Squad Lead
+  const isSquadLeadView = location.pathname === '/squad-team' && userRole === 'squad_lead';
+  
+  useEffect(() => {
+    // Si es Squad Lead, filtrar automáticamente por su equipo
+    if (isSquadLeadView && userData?.name) {
+      setSelectedSquadLead(userData.name);
+    }
+  }, [isSquadLeadView, userData]);
 
   if (loading) {
     return (
@@ -39,23 +53,40 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-background">
       <div className="container mx-auto py-8 px-4">
+        {/* Header con botón de volver para Squad Leads */}
+        {isSquadLeadView && (
+          <div className="flex items-center gap-4 mb-6">
+            <Button variant="outline" onClick={() => navigate('/squad-dashboard')} className="gap-2">
+              <ArrowLeft className="h-4 w-4" />
+              Panel Principal
+            </Button>
+          </div>
+        )}
+        
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-foreground mb-2">
-            Gestión de Asignaciones y Capacidades
+            {isSquadLeadView ? 'Mi Equipo' : 'Gestión de Asignaciones y Capacidades'}
           </h1>
           <p className="text-muted-foreground">
-            Sistema de gestión de recursos humanos y asignaciones de proyectos
+            {isSquadLeadView 
+              ? 'Miembros de tu equipo de trabajo'
+              : 'Sistema de gestión de recursos humanos y asignaciones de proyectos'
+            }
           </p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Personas</CardTitle>
+              <CardTitle className="text-sm font-medium">
+                {isSquadLeadView ? 'Mi Equipo' : 'Total Personas'}
+              </CardTitle>
               <Users className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{persons.length}</div>
+              <div className="text-2xl font-bold">
+                {isSquadLeadView ? filteredPersons.length : persons.length}
+              </div>
             </CardContent>
           </Card>
 
@@ -80,44 +111,51 @@ const Index = () => {
           </Card>
         </div>
 
-        <Card className="mb-6">
-          <CardHeader>
-            <CardTitle>Filtros</CardTitle>
-            <CardDescription>
-              Filtra las personas por Squad Lead
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center gap-4">
-              <Select value={selectedSquadLead} onValueChange={setSelectedSquadLead}>
-                <SelectTrigger className="w-[280px]">
-                  <SelectValue placeholder="Selecciona un Squad Lead" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos los Squad Leads</SelectItem>
-                  {squadLeads.map((lead) => (
-                    <SelectItem key={lead.id} value={lead.name}>
-                      {lead.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {selectedSquadLead !== 'all' && (
-                <Badge variant="secondary">
-                  Filtrando por: {selectedSquadLead}
-                </Badge>
-              )}
-            </div>
-          </CardContent>
-        </Card>
+        {/* Filtros - Solo mostrar para admins */}
+        {!isSquadLeadView && (
+          <Card className="mb-6">
+            <CardHeader>
+              <CardTitle>Filtros</CardTitle>
+              <CardDescription>
+                Filtra las personas por Squad Lead
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center gap-4">
+                <Select value={selectedSquadLead} onValueChange={setSelectedSquadLead}>
+                  <SelectTrigger className="w-[280px]">
+                    <SelectValue placeholder="Selecciona un Squad Lead" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todos los Squad Leads</SelectItem>
+                    {squadLeads.map((lead) => (
+                      <SelectItem key={lead.id} value={lead.name}>
+                        {lead.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {selectedSquadLead !== 'all' && (
+                  <Badge variant="secondary">
+                    Filtrando por: {selectedSquadLead}
+                  </Badge>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         <Card>
           <CardHeader>
-            <CardTitle>Personal Asignado</CardTitle>
+            <CardTitle>
+              {isSquadLeadView ? 'Miembros del Equipo' : 'Personal Asignado'}
+            </CardTitle>
             <CardDescription>
-              {selectedSquadLead === 'all' 
-                ? 'Listado completo de todas las personas'
-                : `Personas asignadas a ${selectedSquadLead}`
+              {isSquadLeadView 
+                ? 'Listado de los miembros de tu equipo'
+                : selectedSquadLead === 'all' 
+                  ? 'Listado completo de todas las personas'
+                  : `Personas asignadas a ${selectedSquadLead}`
               }
             </CardDescription>
           </CardHeader>

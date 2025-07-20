@@ -99,7 +99,7 @@ const App = () => {
             {/* Squad Lead Routes */}
             <Route path="/squad-dashboard" element={userRole === 'squad_lead' ? <SquadLeadDashboard /> : <Navigate to="/" replace />} />
             <Route path="/squad-assignments" element={userRole === 'squad_lead' ? <SquadAssignments /> : <Navigate to="/" replace />} />
-            <Route path="/squad-team" element={userRole === 'squad_lead' ? <Index /> : <Navigate to="/" replace />} />
+            <Route path="/squad-team" element={userRole === 'squad_lead' ? <Index userRole={userRole} userData={userData} /> : <Navigate to="/" replace />} />
             <Route path="/squad-projects" element={userRole === 'squad_lead' ? <ProjectsManagement /> : <Navigate to="/" replace />} />
             <Route path="/squad-capacities" element={userRole === 'squad_lead' ? <CapacitiesManagement /> : <Navigate to="/" replace />} />
             <Route path="/squad-availability" element={userRole === 'squad_lead' ? <Index /> : <Navigate to="/" replace />} />
