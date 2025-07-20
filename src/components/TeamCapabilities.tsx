@@ -97,7 +97,7 @@ const TeamCapabilities: React.FC<TeamCapabilitiesProps> = ({ teamMembers }) => {
       'RE-FX': 'Real Estate - Flexible Real Estate Management: Gestión inmobiliaria flexible.',
       'SAP BRIM': 'SAP Billing and Revenue Innovation Management: Facturación y gestión de ingresos.',
       'SAP GRC': 'SAP Governance, Risk and Compliance: Gobierno, riesgo y cumplimiento normativo.',
-      'SAP S4HANA Brownfield': 'Migración de SAP ECC a S/4HANA manteniendo datos y customizaciones.',
+      'SAP S4HANA Brownfield': 'SAP S4HANA Brownfield: Estrategia de migración que reutiliza el sistema SAP ECC existente actualizándolo a S/4HANA, conservando procesos, configuración, datos y personalizaciones. A diferencia de Greenfield (implementación nueva), Brownfield busca preservar lo construido mediante conversión técnica, limpieza de datos, adaptación de código Z, activación gradual de funcionalidades y migración al Universal Journal. Ventajas: menor coste y tiempo, conserva configuración actual, menor disrupción del negocio. Requiere: ECC actualizado (mín. EHP6), evaluación de dependencias técnicas, planificación detallada. Herramientas: SAP Readiness Check, Maintenance Planner, SUM con DMO.',
       'SAP S4HANA Greenfield': 'Implementación nueva de SAP S/4HANA desde cero.',
       'SAP S4 HANA Mix&Match': 'Implementación híbrida combinando elementos nuevos y migrados.'
     };
