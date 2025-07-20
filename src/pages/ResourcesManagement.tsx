@@ -107,7 +107,7 @@ const ResourcesManagement = () => {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   
   // Font size control
-  const [fontSize, setFontSize] = useState(10); // Tamaño inicial en px
+  const [fontSize, setFontSize] = useState(12); // Tamaño inicial en px
   
   // Column resizing
   const [resizingColumn, setResizingColumn] = useState<string | null>(null);
