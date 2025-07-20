@@ -50,7 +50,6 @@ import ResourcesUpload from '@/components/FileUpload/ResourcesUpload';
 import EditPersonDialog from '@/components/EditPersonDialog';
 import PersonTable from '@/components/PersonTable';
 import * as XLSX from 'xlsx';
-import * as XLSXStyle from 'xlsx-style';
 
 interface Person {
   id: string;
@@ -353,12 +352,11 @@ const ResourcesManagement = () => {
   };
 
   const handleExportExcel = () => {
-    // Crear los datos
     const exportData = filteredResources.map((resource, index) => ({
       'ÍNDICE': index + 1,
       'CÓDIGO': resource.num_pers,
       'NOMBRE': resource.nombre,
-      'FECHA INCORPORACIÓN': resource.fecha_incorporacion,
+      'FECHA INCORPORACIÓN': resource.fecha_incorporacion, // Ya está en formato DD/MM/YYYY
       'EMAIL': resource.mail_empresa,
       'SQUAD LEAD': resource.squad_lead,
       'CEX': resource.cex,
@@ -367,72 +365,77 @@ const ResourcesManagement = () => {
       'OFICINA': resource.oficina
     }));
 
-    // Crear la hoja de trabajo
     const ws = XLSX.utils.json_to_sheet(exportData);
     
-    // Obtener el rango de la hoja
-    const range = XLSX.utils.decode_range(ws['!ref'] || 'A1');
+    // Aplicar estilos profesionales a las cabeceras
+    const headerRange = XLSX.utils.decode_range(ws['!ref']);
     
-    // Aplicar estilos profesionales a las cabeceras (primera fila)
-    for (let col = range.s.c; col <= range.e.c; col++) {
+    // Estilo para las cabeceras
+    for (let col = headerRange.s.c; col <= headerRange.e.c; col++) {
       const cellAddress = XLSX.utils.encode_cell({ r: 0, c: col });
-      if (ws[cellAddress]) {
+      if (!ws[cellAddress]) continue;
+      
+      ws[cellAddress].s = {
+        fill: {
+          patternType: "solid",
+          fgColor: { rgb: "4472C4" } // Azul profesional
+        },
+        font: {
+          color: { rgb: "FFFFFF" },
+          bold: true,
+          sz: 12
+        },
+        alignment: {
+          horizontal: "center",
+          vertical: "center"
+        },
+        border: {
+          top: { style: "thin", color: { rgb: "000000" } },
+          bottom: { style: "thin", color: { rgb: "000000" } },
+          left: { style: "thin", color: { rgb: "000000" } },
+          right: { style: "thin", color: { rgb: "000000" } }
+        }
+      };
+    }
+    
+    // Aplicar bordes a todas las celdas de datos
+    for (let row = headerRange.s.r + 1; row <= headerRange.e.r; row++) {
+      for (let col = headerRange.s.c; col <= headerRange.e.c; col++) {
+        const cellAddress = XLSX.utils.encode_cell({ r: row, c: col });
+        if (!ws[cellAddress]) continue;
+        
         ws[cellAddress].s = {
-          fill: { fgColor: { rgb: "4472C4" } },
-          font: { color: { rgb: "FFFFFF" }, bold: true, sz: 12 },
-          alignment: { horizontal: "center", vertical: "center" },
           border: {
-            top: { style: "thin", color: { rgb: "000000" } },
-            bottom: { style: "thin", color: { rgb: "000000" } },
-            left: { style: "thin", color: { rgb: "000000" } },
-            right: { style: "thin", color: { rgb: "000000" } }
+            top: { style: "thin", color: { rgb: "D9D9D9" } },
+            bottom: { style: "thin", color: { rgb: "D9D9D9" } },
+            left: { style: "thin", color: { rgb: "D9D9D9" } },
+            right: { style: "thin", color: { rgb: "D9D9D9" } }
           }
         };
       }
     }
     
-    // Aplicar bordes a las celdas de datos
-    for (let row = range.s.r + 1; row <= range.e.r; row++) {
-      for (let col = range.s.c; col <= range.e.c; col++) {
-        const cellAddress = XLSX.utils.encode_cell({ r: row, c: col });
-        if (ws[cellAddress]) {
-          ws[cellAddress].s = {
-            border: {
-              top: { style: "thin", color: { rgb: "CCCCCC" } },
-              bottom: { style: "thin", color: { rgb: "CCCCCC" } },
-              left: { style: "thin", color: { rgb: "CCCCCC" } },
-              right: { style: "thin", color: { rgb: "CCCCCC" } }
-            }
-          };
-        }
-      }
-    }
-    
-    // Establecer anchos de columna
-    ws['!cols'] = [
-      { wch: 8 }, { wch: 12 }, { wch: 35 }, { wch: 18 }, { wch: 35 },
-      { wch: 35 }, { wch: 8 }, { wch: 20 }, { wch: 25 }, { wch: 15 }
-    ];
+    // Ajustar ancho de columnas automáticamente
+    const colWidths = [];
+    const headers = Object.keys(exportData[0] || {});
+    headers.forEach((header, index) => {
+      let maxLength = header.length;
+      exportData.forEach(row => {
+        const cellValue = row[header] ? row[header].toString() : '';
+        maxLength = Math.max(maxLength, cellValue.length);
+      });
+      colWidths.push({ wch: Math.min(maxLength + 2, 50) }); // Máximo 50 caracteres
+    });
+    ws['!cols'] = colWidths;
 
-    // Crear el libro de trabajo
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Recursos');
-    
-    // Usar XLSXStyle para escribir con estilos
-    try {
-      XLSXStyle.writeFile(wb, `recursos_${new Date().toISOString().split('T')[0]}.xlsx`);
-      toast({
-        title: "Éxito",
-        description: "Excel exportado con formato profesional",
-      });
-    } catch (error) {
-      // Fallback con XLSX normal si hay problemas con estilos
-      XLSX.writeFile(wb, `recursos_${new Date().toISOString().split('T')[0]}.xlsx`);
-      toast({
-        title: "Éxito",
-        description: "Excel exportado (formato básico)",
-      });
-    }
+    XLSX.writeFile(wb, `recursos_${new Date().toISOString().split('T')[0]}.xlsx`);
+
+    toast({
+      title: "Éxito",
+      description: "Archivo Excel exportado correctamente",
+    });
   };
 
   const clearFilters = () => {
