@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Slider } from '@/components/ui/slider';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -36,7 +37,8 @@ import {
   ChevronLeft,
   ChevronRight,
   ChevronsLeft,
-  ChevronsRight
+  ChevronsRight,
+  Type
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
@@ -98,6 +100,9 @@ const ResourcesManagement = () => {
   const [showColumns, setShowColumns] = useState(false);
   const [showUpload, setShowUpload] = useState(false);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  
+  // Font size control
+  const [fontSize, setFontSize] = useState(10); // Tamaño inicial en px
   
   // Column resizing
   const [resizingColumn, setResizingColumn] = useState<string | null>(null);
@@ -947,6 +952,31 @@ const ResourcesManagement = () => {
           </div>
         </div>
 
+        {/* Font Size Control */}
+        <div className="flex items-center gap-4 mb-4 p-3 bg-gray-50 rounded-lg border">
+          <div className="flex items-center gap-2">
+            <Type className="h-4 w-4 text-muted-foreground" />
+            <span className="text-sm font-medium text-muted-foreground">Tamaño de fuente:</span>
+          </div>
+          
+          <div className="flex items-center gap-3">
+            <span className="text-xs font-arial" style={{ fontSize: '8px' }}>A</span>
+            <Slider
+              value={[fontSize]}
+              onValueChange={(value) => setFontSize(value[0])}
+              max={16}
+              min={8}
+              step={1}
+              className="w-32"
+            />
+            <span className="text-lg font-arial" style={{ fontSize: '16px' }}>A</span>
+          </div>
+          
+          <span className="text-sm text-muted-foreground">
+            {fontSize}px
+          </span>
+        </div>
+
         {/* Resources Table */}
         <Card>
           <CardContent className="p-0">
@@ -1021,12 +1051,14 @@ const ResourcesManagement = () => {
                       {currentResources.map((resource, index) => (
                         <tr key={resource.id} className="hover:bg-gray-50 border-b border-gray-100">
                           {/* Columna índice fija */}
-                          <td 
-                            className="sticky left-0 z-10 bg-white font-medium text-center border-r border-gray-200 p-3"
-                            style={{ width: 64 }}
-                          >
-                            {startIndex + index + 1}
-                          </td>
+                           <td 
+                             className="sticky left-0 z-10 bg-white font-medium text-center border-r border-gray-200 p-3"
+                             style={{ width: 64 }}
+                           >
+                             <span className="font-arial" style={{ fontSize: `${fontSize}px` }}>
+                               {startIndex + index + 1}
+                             </span>
+                           </td>
                           
                           {/* Celdas de datos */}
                           {columns.filter(col => col.visible).map(column => (
@@ -1039,46 +1071,49 @@ const ResourcesManagement = () => {
                                 maxWidth: column.width
                               }}
                             >
-                              <div className="overflow-hidden text-ellipsis">
-                                {column.key === 'nombre' ? (
-                                  <div className="flex flex-col">
-                                    <span className="font-medium">{resource.nombre}</span>
-                                    <span className="text-sm text-muted-foreground">{resource.squad_lead}</span>
-                                  </div>
-                                ) : column.key === 'fecha_incorporacion' ? (
-                                  (() => {
-                                    if (!resource.fecha_incorporacion) return '-';
-                                    
-                                    const fechaStr = String(resource.fecha_incorporacion);
-                                    
-                                    // Si ya está en formato DD/MM/YYYY, devolverla tal como está
-                                    if (fechaStr.match(/^\d{2}\/\d{2}\/\d{4}$/)) {
-                                      return fechaStr;
-                                    }
-                                    
-                                    // Si es un número (timestamp de Excel)
-                                    if (!isNaN(Number(fechaStr))) {
-                                      const excelDate = Number(fechaStr);
-                                      const jsDate = new Date((excelDate - 25569) * 86400 * 1000);
-                                      return format(jsDate, 'dd/MM/yyyy');
-                                    }
-                                    
-                                    // Para otros formatos, intentar parsear
-                                    try {
-                                      return format(new Date(fechaStr), 'dd/MM/yyyy');
-                                    } catch {
-                                      return fechaStr; // Si falla, devolver el original
-                                    }
-                                  })()
-                                ) : column.key === 'grupo' ? (
-                                  <div className="flex flex-col">
-                                    <span className="font-medium">{resource.grupo}</span>
-                                    <span className="text-sm text-muted-foreground">{resource.categoria}</span>
-                                  </div>
-                                ) : (
-                                  resource[column.key] || '-'
-                                )}
-                              </div>
+                               <div 
+                                 className="overflow-hidden text-ellipsis font-arial"
+                                 style={{ fontSize: `${fontSize}px` }}
+                               >
+                                 {column.key === 'nombre' ? (
+                                   <div className="flex flex-col">
+                                     <span className="font-medium">{resource.nombre}</span>
+                                     <span className="text-muted-foreground opacity-75">{resource.squad_lead}</span>
+                                   </div>
+                                 ) : column.key === 'fecha_incorporacion' ? (
+                                   (() => {
+                                     if (!resource.fecha_incorporacion) return '-';
+                                     
+                                     const fechaStr = String(resource.fecha_incorporacion);
+                                     
+                                     // Si ya está en formato DD/MM/YYYY, devolverla tal como está
+                                     if (fechaStr.match(/^\d{2}\/\d{2}\/\d{4}$/)) {
+                                       return fechaStr;
+                                     }
+                                     
+                                     // Si es un número (timestamp de Excel)
+                                     if (!isNaN(Number(fechaStr))) {
+                                       const excelDate = Number(fechaStr);
+                                       const jsDate = new Date((excelDate - 25569) * 86400 * 1000);
+                                       return format(jsDate, 'dd/MM/yyyy');
+                                     }
+                                     
+                                     // Para otros formatos, intentar parsear
+                                     try {
+                                       return format(new Date(fechaStr), 'dd/MM/yyyy');
+                                     } catch {
+                                       return fechaStr; // Si falla, devolver el original
+                                     }
+                                   })()
+                                 ) : column.key === 'grupo' ? (
+                                   <div className="flex flex-col">
+                                     <span className="font-medium">{resource.grupo}</span>
+                                     <span className="text-muted-foreground opacity-75">{resource.categoria}</span>
+                                   </div>
+                                 ) : (
+                                   resource[column.key] || '-'
+                                 )}
+                               </div>
                             </td>
                           ))}
                           
