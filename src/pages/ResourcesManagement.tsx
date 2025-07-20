@@ -1,19 +1,46 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
 import { 
-  Users, Search, FileDown, Trash2, Eye, Plus, Filter, X, Settings2, RotateCcw, Edit, 
-  ChevronUp, ChevronDown, ChevronsUpDown, ArrowLeft, Home, LogOut, ChevronLeft, ChevronRight, 
-  ChevronsLeft, ChevronsRight, GripVertical, MoreHorizontal 
+  Table, 
+  TableBody, 
+  TableCell, 
+  TableHead, 
+  TableHeader, 
+  TableRow 
+} from '@/components/ui/table';
+import { 
+  Users,
+  Search,
+  Filter,
+  Settings2,
+  Plus,
+  Download,
+  X,
+  Edit,
+  Trash2,
+  Save,
+  RotateCcw,
+  Home,
+  LogOut,
+  ChevronUp,
+  ChevronDown,
+  ChevronsUpDown,
+  ChevronLeft,
+  ChevronRight,
+  ChevronsLeft,
+  ChevronsRight
 } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
-import { cn } from '@/lib/utils';
 import ResourcesUpload from '@/components/FileUpload/ResourcesUpload';
 import * as XLSX from 'xlsx';
 
@@ -35,37 +62,72 @@ interface Person {
   updated_at: string;
 }
 
+interface ColumnConfig {
+  key: keyof Person;
+  label: string;
+  visible: boolean;
+  width: number;
+  minWidth: number;
+  resizable: boolean;
+}
+
 const ResourcesManagement = () => {
   const [resources, setResources] = useState<Person[]>([]);
   const [filteredResources, setFilteredResources] = useState<Person[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [squadFilter, setSquadFilter] = useState<string>('all');
-  const [grupoFilter, setGrupoFilter] = useState<string>('all');
-  const [categoriaFilter, setCategoriaFilter] = useState<string>('all');
-  const [oficinaFilter, setOficinaFilter] = useState<string>('all');
+  
+  // Filters
+  const [squadFilter, setSquadFilter] = useState<string[]>([]);
+  const [grupoFilter, setGrupoFilter] = useState<string[]>([]);
+  const [categoriaFilter, setCategoriaFilter] = useState<string[]>([]);
+  const [oficinaFilter, setOficinaFilter] = useState<string[]>([]);
+  
+  // Sorting
   const [sortField, setSortField] = useState<keyof Person>('nombre');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
   
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(999999);
+  const [itemsPerPage, setItemsPerPage] = useState(50);
+  
+  // UI states
+  const [showFilters, setShowFilters] = useState(false);
+  const [showColumns, setShowColumns] = useState(false);
+  const [showUpload, setShowUpload] = useState(false);
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  
+  // Form data
+  const [formData, setFormData] = useState({
+    num_pers: '',
+    nombre: '',
+    fecha_incorporacion: '',
+    mail_empresa: '',
+    squad_lead: '',
+    cex: '',
+    grupo: '',
+    categoria: '',
+    oficina: '',
+    skill1: '',
+    skill2: '',
+    nivel_ingles: ''
+  });
   
   // Column management
-  const [visibleColumns, setVisibleColumns] = useState({
-    num_pers: true,
-    nombre: true,
-    fecha_incorporacion: true,
-    mail_empresa: true,
-    squad_lead: true,
-    cex: true,
-    grupo: true,
-    categoria: true,
-    oficina: true,
-    skill1: false,
-    skill2: false,
-    nivel_ingles: false
-  });
+  const [columns, setColumns] = useState<ColumnConfig[]>([
+    { key: 'num_pers', label: 'CÓDIGO', visible: true, width: 100, minWidth: 80, resizable: true },
+    { key: 'nombre', label: 'NOMBRE', visible: true, width: 200, minWidth: 150, resizable: true },
+    { key: 'fecha_incorporacion', label: 'FECHA INC.', visible: true, width: 120, minWidth: 100, resizable: true },
+    { key: 'mail_empresa', label: 'EMAIL', visible: true, width: 200, minWidth: 150, resizable: true },
+    { key: 'squad_lead', label: 'SQUAD LEAD', visible: true, width: 150, minWidth: 120, resizable: true },
+    { key: 'cex', label: 'CEX', visible: true, width: 80, minWidth: 60, resizable: true },
+    { key: 'grupo', label: 'GRUPO', visible: true, width: 120, minWidth: 100, resizable: true },
+    { key: 'categoria', label: 'CATEGORÍA', visible: true, width: 120, minWidth: 100, resizable: true },
+    { key: 'oficina', label: 'OFICINA', visible: true, width: 100, minWidth: 80, resizable: true },
+    { key: 'skill1', label: 'SKILL 1', visible: false, width: 100, minWidth: 80, resizable: true },
+    { key: 'skill2', label: 'SKILL 2', visible: false, width: 100, minWidth: 80, resizable: true },
+    { key: 'nivel_ingles', label: 'NIVEL INGLÉS', visible: false, width: 120, minWidth: 100, resizable: true }
+  ]);
 
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -80,6 +142,7 @@ const ResourcesManagement = () => {
 
   const fetchResources = async () => {
     try {
+      setLoading(true);
       console.log('🔄 Cargando todos los recursos...');
       
       const { data, error } = await supabase
@@ -102,10 +165,10 @@ const ResourcesManagement = () => {
     }
   };
 
-  const applyFilters = () => {
+  const applyFilters = useCallback(() => {
     let filtered = [...resources];
 
-    // Filtro de búsqueda
+    // Search filter
     if (searchTerm) {
       filtered = filtered.filter(resource =>
         resource.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -115,33 +178,189 @@ const ResourcesManagement = () => {
       );
     }
 
-    // Filtros específicos
-    if (squadFilter !== 'all') {
-      filtered = filtered.filter(resource => resource.squad_lead === squadFilter);
-    }
-    if (grupoFilter !== 'all') {
-      filtered = filtered.filter(resource => resource.grupo === grupoFilter);
-    }
-    if (categoriaFilter !== 'all') {
-      filtered = filtered.filter(resource => resource.categoria === categoriaFilter);
-    }
-    if (oficinaFilter !== 'all') {
-      filtered = filtered.filter(resource => resource.oficina === oficinaFilter);
+    // Squad Lead filter
+    if (squadFilter.length > 0) {
+      filtered = filtered.filter(resource => squadFilter.includes(resource.squad_lead));
     }
 
-    // Ordenamiento
-    filtered.sort((a, b) => {
-      const aValue = a[sortField] || '';
-      const bValue = b[sortField] || '';
-      
-      if (sortDirection === 'asc') {
-        return aValue.toString().localeCompare(bValue.toString());
-      } else {
-        return bValue.toString().localeCompare(aValue.toString());
-      }
-    });
+    // Grupo filter
+    if (grupoFilter.length > 0) {
+      filtered = filtered.filter(resource => grupoFilter.includes(resource.grupo));
+    }
+
+    // Categoría filter
+    if (categoriaFilter.length > 0) {
+      filtered = filtered.filter(resource => categoriaFilter.includes(resource.categoria));
+    }
+
+    // Oficina filter
+    if (oficinaFilter.length > 0) {
+      filtered = filtered.filter(resource => oficinaFilter.includes(resource.oficina));
+    }
+
+    // Apply sorting
+    if (sortField) {
+      filtered.sort((a, b) => {
+        let aValue: any = a[sortField];
+        let bValue: any = b[sortField];
+        
+        // Convert to string for comparison
+        aValue = String(aValue).toLowerCase();
+        bValue = String(bValue).toLowerCase();
+        
+        if (sortDirection === 'asc') {
+          return aValue < bValue ? -1 : aValue > bValue ? 1 : 0;
+        } else {
+          return aValue > bValue ? -1 : aValue < bValue ? 1 : 0;
+        }
+      });
+    }
 
     setFilteredResources(filtered);
+    setCurrentPage(1); // Reset to first page when filters change
+  }, [resources, searchTerm, squadFilter, grupoFilter, categoriaFilter, oficinaFilter, sortField, sortDirection]);
+
+  const handleAddResource = async () => {
+    if (!formData.num_pers || !formData.nombre) {
+      toast({
+        title: "Error",
+        description: "Por favor, complete al menos el código y nombre",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('persons')
+        .insert(formData);
+
+      if (error) throw error;
+
+      toast({
+        title: "Éxito",
+        description: "Recurso agregado correctamente",
+      });
+
+      setIsAddDialogOpen(false);
+      setFormData({
+        num_pers: '',
+        nombre: '',
+        fecha_incorporacion: '',
+        mail_empresa: '',
+        squad_lead: '',
+        cex: '',
+        grupo: '',
+        categoria: '',
+        oficina: '',
+        skill1: '',
+        skill2: '',
+        nivel_ingles: ''
+      });
+      fetchResources();
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "No se pudo agregar el recurso",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleUpdateResource = async (id: string, field: string, value: string) => {
+    try {
+      const { error } = await supabase
+        .from('persons')
+        .update({ [field]: value })
+        .eq('id', id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Éxito",
+        description: "Recurso actualizado correctamente",
+      });
+
+      fetchResources();
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "No se pudo actualizar el recurso",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDeleteResource = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('persons')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Éxito",
+        description: "Recurso eliminado correctamente",
+      });
+
+      fetchResources();
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "No se pudo eliminar el recurso",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleExportExcel = () => {
+    const exportData = filteredResources.map((resource, index) => ({
+      'ÍNDICE': index + 1,
+      'CÓDIGO': resource.num_pers,
+      'NOMBRE': resource.nombre,
+      'FECHA INCORPORACIÓN': resource.fecha_incorporacion,
+      'EMAIL': resource.mail_empresa,
+      'SQUAD LEAD': resource.squad_lead,
+      'CEX': resource.cex,
+      'GRUPO': resource.grupo,
+      'CATEGORÍA': resource.categoria,
+      'OFICINA': resource.oficina,
+      'SKILL 1': resource.skill1,
+      'SKILL 2': resource.skill2,
+      'NIVEL INGLÉS': resource.nivel_ingles
+    }));
+
+    const ws = XLSX.utils.json_to_sheet(exportData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Recursos');
+    XLSX.writeFile(wb, `recursos_${new Date().toISOString().split('T')[0]}.xlsx`);
+
+    toast({
+      title: "Éxito",
+      description: "Archivo Excel exportado correctamente",
+    });
+  };
+
+  const clearFilters = () => {
+    setSearchTerm('');
+    setSquadFilter([]);
+    setGrupoFilter([]);
+    setCategoriaFilter([]);
+    setOficinaFilter([]);
+  };
+
+  const getUniqueValues = (field: keyof Person) => {
+    return [...new Set(resources.map(resource => resource[field]).filter(Boolean))].sort();
+  };
+
+  const toggleFilter = (currentFilter: string[], value: string, setFilter: React.Dispatch<React.SetStateAction<string[]>>) => {
+    if (currentFilter.includes(value)) {
+      setFilter(currentFilter.filter(item => item !== value));
+    } else {
+      setFilter([...currentFilter, value]);
+    }
   };
 
   const handleSort = (field: keyof Person) => {
@@ -158,48 +377,13 @@ const ResourcesManagement = () => {
     return sortDirection === 'asc' ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />;
   };
 
-  const exportToExcel = () => {
-    const dataToExport = filteredResources.map(resource => ({
-      'Código Empleado': resource.num_pers,
-      'Nombre': resource.nombre,
-      'Fecha Incorporación': resource.fecha_incorporacion,
-      'Mail Empresa': resource.mail_empresa,
-      'Squad Lead': resource.squad_lead,
-      'CEX': resource.cex,
-      'Grupo': resource.grupo,
-      'Categoría': resource.categoria,
-      'Oficina': resource.oficina,
-      'Skill 1': resource.skill1,
-      'Skill 2': resource.skill2,
-      'Nivel Inglés': resource.nivel_ingles
-    }));
-
-    const ws = XLSX.utils.json_to_sheet(dataToExport);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'Recursos');
-    XLSX.writeFile(wb, 'recursos.xlsx');
-
-    toast({
-      title: "Exportación completada",
-      description: `Se han exportado ${dataToExport.length} recursos a Excel`,
-    });
+  const toggleColumnVisibility = (key: keyof Person) => {
+    setColumns(prevColumns =>
+      prevColumns.map(col =>
+        col.key === key ? { ...col, visible: !col.visible } : col
+      )
+    );
   };
-
-  const clearAllFilters = () => {
-    setSearchTerm('');
-    setSquadFilter('all');
-    setGrupoFilter('all');
-    setCategoriaFilter('all');
-    setOficinaFilter('all');
-    setSortField('nombre');
-    setSortDirection('asc');
-  };
-
-  // Get unique values for filters
-  const uniqueSquadLeads = [...new Set(resources.map(r => r.squad_lead).filter(Boolean))];
-  const uniqueGrupos = [...new Set(resources.map(r => r.grupo).filter(Boolean))];
-  const uniqueCategorias = [...new Set(resources.map(r => r.categoria).filter(Boolean))];
-  const uniqueOficinas = [...new Set(resources.map(r => r.oficina).filter(Boolean))];
 
   // Pagination calculations
   const totalPages = Math.ceil(filteredResources.length / itemsPerPage);
@@ -225,6 +409,17 @@ const ResourcesManagement = () => {
         <div className="mb-6">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-blue-600 rounded-lg">
+                  <Users className="h-6 w-6 text-white" />
+                </div>
+                <div>
+                  <h1 className="text-3xl font-bold text-foreground">Gestión de Recursos ({filteredResources.length})</h1>
+                  <p className="text-muted-foreground">Administra los recursos humanos y personal</p>
+                </div>
+              </div>
+            </div>
+            <div className="flex items-center gap-4">
               <Button 
                 variant="outline" 
                 size="sm"
@@ -247,305 +442,470 @@ const ResourcesManagement = () => {
               </Button>
             </div>
           </div>
-          
-          <div className="flex items-center gap-3 mb-2">
-            <div className="p-2 bg-blue-600 rounded-lg">
-              <Users className="h-6 w-6 text-white" />
-            </div>
-            <h1 className="text-3xl font-bold text-foreground">Gestión de Recursos</h1>
+        </div>
+
+        {/* Action Buttons */}
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-4">
+            {/* Add Resource Dialog */}
+            <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+              <DialogTrigger asChild>
+                <Button className="bg-orange-600 hover:bg-orange-700 text-white">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Agregar Recurso
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-2xl">
+                <DialogHeader>
+                  <DialogTitle>Agregar Nuevo Recurso</DialogTitle>
+                </DialogHeader>
+                <div className="grid grid-cols-2 gap-4 py-4">
+                  <div>
+                    <Label htmlFor="num_pers">Código Empleado *</Label>
+                    <Input
+                      id="num_pers"
+                      value={formData.num_pers}
+                      onChange={(e) => setFormData({ ...formData, num_pers: e.target.value })}
+                      placeholder="Ej: 4002383"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="nombre">Nombre *</Label>
+                    <Input
+                      id="nombre"
+                      value={formData.nombre}
+                      onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
+                      placeholder="Nombre completo"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="fecha_incorporacion">Fecha Incorporación</Label>
+                    <Input
+                      id="fecha_incorporacion"
+                      value={formData.fecha_incorporacion}
+                      onChange={(e) => setFormData({ ...formData, fecha_incorporacion: e.target.value })}
+                      placeholder="DD/MM/YYYY"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="mail_empresa">Email Empresa</Label>
+                    <Input
+                      id="mail_empresa"
+                      type="email"
+                      value={formData.mail_empresa}
+                      onChange={(e) => setFormData({ ...formData, mail_empresa: e.target.value })}
+                      placeholder="email@empresa.com"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="squad_lead">Squad Lead</Label>
+                    <Input
+                      id="squad_lead"
+                      value={formData.squad_lead}
+                      onChange={(e) => setFormData({ ...formData, squad_lead: e.target.value })}
+                      placeholder="Nombre del Squad Lead"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="cex">CEX</Label>
+                    <Input
+                      id="cex"
+                      value={formData.cex}
+                      onChange={(e) => setFormData({ ...formData, cex: e.target.value })}
+                      placeholder="Código CEX"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="grupo">Grupo</Label>
+                    <Input
+                      id="grupo"
+                      value={formData.grupo}
+                      onChange={(e) => setFormData({ ...formData, grupo: e.target.value })}
+                      placeholder="Grupo"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="categoria">Categoría</Label>
+                    <Input
+                      id="categoria"
+                      value={formData.categoria}
+                      onChange={(e) => setFormData({ ...formData, categoria: e.target.value })}
+                      placeholder="Categoría profesional"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="oficina">Oficina</Label>
+                    <Input
+                      id="oficina"
+                      value={formData.oficina}
+                      onChange={(e) => setFormData({ ...formData, oficina: e.target.value })}
+                      placeholder="Oficina"
+                    />
+                  </div>
+                </div>
+                <div className="flex justify-end gap-2">
+                  <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
+                    Cancelar
+                  </Button>
+                  <Button onClick={handleAddResource} className="bg-orange-600 hover:bg-orange-700">
+                    <Save className="h-4 w-4 mr-2" />
+                    Agregar Recurso
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
+
+            <Button
+              onClick={() => setShowUpload(!showUpload)}
+              variant="outline"
+              className="text-amber-600 border-amber-600 hover:bg-amber-50"
+            >
+              <Download className="h-4 w-4 mr-2" />
+              Cargar Excel
+            </Button>
+
+            <Button 
+              variant="outline" 
+              onClick={handleExportExcel}
+              disabled={filteredResources.length === 0}
+              className="text-amber-600 border-amber-600 hover:bg-amber-50"
+            >
+              <Download className="h-4 w-4 mr-2" />
+              Exportar Excel
+            </Button>
           </div>
-          <p className="text-muted-foreground">
-            Administra la información de recursos humanos y personal
-          </p>
+
+          <div className="flex items-center gap-2">
+            <Button 
+              variant="outline" 
+              onClick={() => setShowFilters(!showFilters)}
+              className={cn("text-orange-600 border-orange-600", showFilters && "bg-orange-50")}
+            >
+              <Filter className="h-4 w-4 mr-2" />
+              Filtros
+            </Button>
+            <Button 
+              variant="outline" 
+              onClick={() => setShowColumns(!showColumns)}
+              className="text-purple-600 border-purple-600 hover:bg-purple-50"
+            >
+              <Settings2 className="h-4 w-4 mr-2" />
+              Columnas
+            </Button>
+          </div>
         </div>
 
-        {/* Upload Section */}
-        <div className="mb-8">
-          <ResourcesUpload />
+        {showUpload && (
+          <div className="mb-8">
+            <ResourcesUpload />
+          </div>
+        )}
+
+        {/* Search */}
+        <div className="mb-6">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+            <Input
+              placeholder="Buscar recursos..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10"
+            />
+          </div>
         </div>
 
-        {/* Filters and Search */}
-        <Card className="mb-6">
-          <CardHeader>
-            <CardTitle className="flex items-center justify-between">
-              <span className="flex items-center gap-2">
-                <Filter className="h-5 w-5" />
-                Filtros y Búsqueda
-              </span>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={clearAllFilters}
-                className="flex items-center gap-2"
-              >
-                <RotateCcw className="h-4 w-4" />
-                Limpiar Filtros
-              </Button>
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-              <div className="relative">
-                <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Buscar recursos..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-9"
-                />
-              </div>
-
-              <Select value={squadFilter} onValueChange={setSquadFilter}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Squad Lead" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos los Squad Leads</SelectItem>
-                  {uniqueSquadLeads.map(squad => (
-                    <SelectItem key={squad} value={squad}>{squad}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-
-              <Select value={grupoFilter} onValueChange={setGrupoFilter}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Grupo" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos los Grupos</SelectItem>
-                  {uniqueGrupos.map(grupo => (
-                    <SelectItem key={grupo} value={grupo}>{grupo}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-
-              <Select value={categoriaFilter} onValueChange={setCategoriaFilter}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Categoría" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todas las Categorías</SelectItem>
-                  {uniqueCategorias.map(categoria => (
-                    <SelectItem key={categoria} value={categoria}>{categoria}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-
-              <Select value={oficinaFilter} onValueChange={setOficinaFilter}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Oficina" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todas las Oficinas</SelectItem>
-                  {uniqueOficinas.map(oficina => (
-                    <SelectItem key={oficina} value={oficina}>{oficina}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="flex flex-wrap gap-2">
-              {searchTerm && (
-                <Badge variant="secondary" className="flex items-center gap-1">
-                  Búsqueda: {searchTerm}
-                  <X className="h-3 w-3 cursor-pointer" onClick={() => setSearchTerm('')} />
-                </Badge>
-              )}
-              {squadFilter !== 'all' && (
-                <Badge variant="secondary" className="flex items-center gap-1">
-                  Squad: {squadFilter}
-                  <X className="h-3 w-3 cursor-pointer" onClick={() => setSquadFilter('all')} />
-                </Badge>
-              )}
-              {grupoFilter !== 'all' && (
-                <Badge variant="secondary" className="flex items-center gap-1">
-                  Grupo: {grupoFilter}
-                  <X className="h-3 w-3 cursor-pointer" onClick={() => setGrupoFilter('all')} />
-                </Badge>
-              )}
-              {categoriaFilter !== 'all' && (
-                <Badge variant="secondary" className="flex items-center gap-1">
-                  Categoría: {categoriaFilter}
-                  <X className="h-3 w-3 cursor-pointer" onClick={() => setCategoriaFilter('all')} />
-                </Badge>
-              )}
-              {oficinaFilter !== 'all' && (
-                <Badge variant="secondary" className="flex items-center gap-1">
-                  Oficina: {oficinaFilter}
-                  <X className="h-3 w-3 cursor-pointer" onClick={() => setOficinaFilter('all')} />
-                </Badge>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Results and Actions */}
-        <Card className="mb-6">
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle className="flex items-center gap-2">
-                <Users className="h-5 w-5" />
-                Recursos ({filteredResources.length} de {resources.length})
-              </CardTitle>
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={exportToExcel}
-                  className="flex items-center gap-2"
-                >
-                  <FileDown className="h-4 w-4" />
-                  Exportar Excel
+        {/* Filters */}
+        {showFilters && (
+          <Card className="mb-6">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-lg">Filtros por Columna</CardTitle>
+                <Button variant="outline" size="sm" onClick={clearFilters}>
+                  <RotateCcw className="h-4 w-4 mr-2" />
+                  Limpiar Filtros
                 </Button>
               </div>
-            </div>
-          </CardHeader>
-          <CardContent>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                {/* Squad Lead Filter */}
+                <div>
+                  <Label className="text-sm font-medium mb-2 block">Squad Lead</Label>
+                  <div className="space-y-2 max-h-40 overflow-y-auto border rounded-md p-2">
+                    {getUniqueValues('squad_lead').map(squad => (
+                      <div key={squad} className="flex items-center space-x-2">
+                        <Checkbox 
+                          id={`squad-${squad}`}
+                          checked={squadFilter.includes(squad)}
+                          onCheckedChange={() => toggleFilter(squadFilter, squad, setSquadFilter)}
+                        />
+                        <label htmlFor={`squad-${squad}`} className="text-sm">{squad}</label>
+                      </div>
+                    ))}
+                  </div>
+                  {squadFilter.length > 0 && (
+                    <div className="mt-2 flex flex-wrap gap-1">
+                      {squadFilter.map(squad => (
+                        <Badge key={squad} variant="secondary" className="text-xs">
+                          {squad}
+                          <button 
+                            onClick={() => toggleFilter(squadFilter, squad, setSquadFilter)}
+                            className="ml-1 hover:bg-secondary-foreground/20 rounded-full p-0.5"
+                          >
+                            <X className="h-3 w-3" />
+                          </button>
+                        </Badge>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Grupo Filter */}
+                <div>
+                  <Label className="text-sm font-medium mb-2 block">Grupo</Label>
+                  <div className="space-y-2 max-h-40 overflow-y-auto border rounded-md p-2">
+                    {getUniqueValues('grupo').map(grupo => (
+                      <div key={grupo} className="flex items-center space-x-2">
+                        <Checkbox 
+                          id={`grupo-${grupo}`}
+                          checked={grupoFilter.includes(grupo)}
+                          onCheckedChange={() => toggleFilter(grupoFilter, grupo, setGrupoFilter)}
+                        />
+                        <label htmlFor={`grupo-${grupo}`} className="text-sm">{grupo}</label>
+                      </div>
+                    ))}
+                  </div>
+                  {grupoFilter.length > 0 && (
+                    <div className="mt-2 flex flex-wrap gap-1">
+                      {grupoFilter.map(grupo => (
+                        <Badge key={grupo} variant="secondary" className="text-xs bg-yellow-100 text-yellow-800">
+                          {grupo}
+                          <button 
+                            onClick={() => toggleFilter(grupoFilter, grupo, setGrupoFilter)}
+                            className="ml-1 hover:bg-yellow-200 rounded-full p-0.5"
+                          >
+                            <X className="h-3 w-3" />
+                          </button>
+                        </Badge>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Categoría Filter */}
+                <div>
+                  <Label className="text-sm font-medium mb-2 block">Categoría</Label>
+                  <div className="space-y-2 max-h-40 overflow-y-auto border rounded-md p-2">
+                    {getUniqueValues('categoria').map(categoria => (
+                      <div key={categoria} className="flex items-center space-x-2">
+                        <Checkbox 
+                          id={`categoria-${categoria}`}
+                          checked={categoriaFilter.includes(categoria)}
+                          onCheckedChange={() => toggleFilter(categoriaFilter, categoria, setCategoriaFilter)}
+                        />
+                        <label htmlFor={`categoria-${categoria}`} className="text-sm">{categoria}</label>
+                      </div>
+                    ))}
+                  </div>
+                  {categoriaFilter.length > 0 && (
+                    <div className="mt-2 flex flex-wrap gap-1">
+                      {categoriaFilter.map(categoria => (
+                        <Badge key={categoria} variant="secondary" className="text-xs bg-green-100 text-green-800">
+                          {categoria}
+                          <button 
+                            onClick={() => toggleFilter(categoriaFilter, categoria, setCategoriaFilter)}
+                            className="ml-1 hover:bg-green-200 rounded-full p-0.5"
+                          >
+                            <X className="h-3 w-3" />
+                          </button>
+                        </Badge>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Oficina Filter */}
+                <div>
+                  <Label className="text-sm font-medium mb-2 block">Oficina</Label>
+                  <div className="space-y-2 max-h-40 overflow-y-auto border rounded-md p-2">
+                    {getUniqueValues('oficina').map(oficina => (
+                      <div key={oficina} className="flex items-center space-x-2">
+                        <Checkbox 
+                          id={`oficina-${oficina}`}
+                          checked={oficinaFilter.includes(oficina)}
+                          onCheckedChange={() => toggleFilter(oficinaFilter, oficina, setOficinaFilter)}
+                        />
+                        <label htmlFor={`oficina-${oficina}`} className="text-sm">{oficina}</label>
+                      </div>
+                    ))}
+                  </div>
+                  {oficinaFilter.length > 0 && (
+                    <div className="mt-2 flex flex-wrap gap-1">
+                      {oficinaFilter.map(oficina => (
+                        <Badge key={oficina} variant="secondary" className="text-xs bg-blue-100 text-blue-800">
+                          {oficina}
+                          <button 
+                            onClick={() => toggleFilter(oficinaFilter, oficina, setOficinaFilter)}
+                            className="ml-1 hover:bg-blue-200 rounded-full p-0.5"
+                          >
+                            <X className="h-3 w-3" />
+                          </button>
+                        </Badge>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Column Configuration */}
+        {showColumns && (
+          <Card className="mb-6">
+            <CardHeader>
+              <CardTitle className="text-lg">Configuración de Columnas</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                {columns.map(column => (
+                  <div key={column.key} className="flex items-center space-x-2">
+                    <Checkbox 
+                      id={`column-${column.key}`}
+                      checked={column.visible}
+                      onCheckedChange={() => toggleColumnVisibility(column.key)}
+                    />
+                    <label htmlFor={`column-${column.key}`} className="text-sm font-medium">
+                      {column.label}
+                    </label>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Pagination Info */}
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-4">
+            <span className="text-sm text-muted-foreground">
+              Mostrando {startIndex + 1} - {Math.min(endIndex, filteredResources.length)} de {filteredResources.length} recursos
+            </span>
+            <Select value={itemsPerPage.toString()} onValueChange={(value) => setItemsPerPage(Number(value))}>
+              <SelectTrigger className="w-24">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="25">25</SelectItem>
+                <SelectItem value="50">50</SelectItem>
+                <SelectItem value="100">100</SelectItem>
+                <SelectItem value="200">200</SelectItem>
+              </SelectContent>
+            </Select>
+            <span className="text-sm text-muted-foreground">por página</span>
+          </div>
+
+          {/* Pagination Controls */}
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentPage(1)}
+              disabled={currentPage === 1}
+            >
+              <ChevronsLeft className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentPage(currentPage - 1)}
+              disabled={currentPage === 1}
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            <span className="text-sm px-4">
+              Página {currentPage} de {totalPages}
+            </span>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentPage(currentPage + 1)}
+              disabled={currentPage === totalPages}
+            >
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentPage(totalPages)}
+              disabled={currentPage === totalPages}
+            >
+              <ChevronsRight className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+
+        {/* Resources Table */}
+        <Card>
+          <CardContent className="p-0">
             <div className="overflow-x-auto">
-              <table className="w-full border-collapse">
-                <thead>
-                  <tr className="border-b">
-                    {visibleColumns.num_pers && (
-                      <th className="text-left p-3 font-medium cursor-pointer hover:bg-muted/50" onClick={() => handleSort('num_pers')}>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-16">ÍNDICE</TableHead>
+                    {columns.filter(col => col.visible).map(column => (
+                      <TableHead 
+                        key={column.key}
+                        className="cursor-pointer hover:bg-muted/50"
+                        onClick={() => handleSort(column.key)}
+                        style={{ width: column.width }}
+                      >
                         <div className="flex items-center gap-2">
-                          Código
-                          {getSortIcon('num_pers')}
+                          {column.label}
+                          {getSortIcon(column.key)}
                         </div>
-                      </th>
-                    )}
-                    {visibleColumns.nombre && (
-                      <th className="text-left p-3 font-medium cursor-pointer hover:bg-muted/50" onClick={() => handleSort('nombre')}>
+                      </TableHead>
+                    ))}
+                    <TableHead className="w-24">ACCIONES</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {currentResources.map((resource, index) => (
+                    <TableRow key={resource.id}>
+                      <TableCell className="font-medium">
+                        {startIndex + index + 1}
+                      </TableCell>
+                      {columns.filter(col => col.visible).map(column => (
+                        <TableCell key={column.key}>
+                          {resource[column.key] || '-'}
+                        </TableCell>
+                      ))}
+                      <TableCell>
                         <div className="flex items-center gap-2">
-                          Nombre
-                          {getSortIcon('nombre')}
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              // Handle edit - could open a dialog similar to add
+                              console.log('Edit resource:', resource.id);
+                            }}
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleDeleteResource(resource.id)}
+                            className="text-red-600 hover:text-red-700"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
                         </div>
-                      </th>
-                    )}
-                    {visibleColumns.fecha_incorporacion && (
-                      <th className="text-left p-3 font-medium cursor-pointer hover:bg-muted/50" onClick={() => handleSort('fecha_incorporacion')}>
-                        <div className="flex items-center gap-2">
-                          Fecha Inc.
-                          {getSortIcon('fecha_incorporacion')}
-                        </div>
-                      </th>
-                    )}
-                    {visibleColumns.mail_empresa && (
-                      <th className="text-left p-3 font-medium cursor-pointer hover:bg-muted/50" onClick={() => handleSort('mail_empresa')}>
-                        <div className="flex items-center gap-2">
-                          Email
-                          {getSortIcon('mail_empresa')}
-                        </div>
-                      </th>
-                    )}
-                    {visibleColumns.squad_lead && (
-                      <th className="text-left p-3 font-medium cursor-pointer hover:bg-muted/50" onClick={() => handleSort('squad_lead')}>
-                        <div className="flex items-center gap-2">
-                          Squad Lead
-                          {getSortIcon('squad_lead')}
-                        </div>
-                      </th>
-                    )}
-                    {visibleColumns.cex && (
-                      <th className="text-left p-3 font-medium cursor-pointer hover:bg-muted/50" onClick={() => handleSort('cex')}>
-                        <div className="flex items-center gap-2">
-                          CEX
-                          {getSortIcon('cex')}
-                        </div>
-                      </th>
-                    )}
-                    {visibleColumns.grupo && (
-                      <th className="text-left p-3 font-medium cursor-pointer hover:bg-muted/50" onClick={() => handleSort('grupo')}>
-                        <div className="flex items-center gap-2">
-                          Grupo
-                          {getSortIcon('grupo')}
-                        </div>
-                      </th>
-                    )}
-                    {visibleColumns.categoria && (
-                      <th className="text-left p-3 font-medium cursor-pointer hover:bg-muted/50" onClick={() => handleSort('categoria')}>
-                        <div className="flex items-center gap-2">
-                          Categoría
-                          {getSortIcon('categoria')}
-                        </div>
-                      </th>
-                    )}
-                    {visibleColumns.oficina && (
-                      <th className="text-left p-3 font-medium cursor-pointer hover:bg-muted/50" onClick={() => handleSort('oficina')}>
-                        <div className="flex items-center gap-2">
-                          Oficina
-                          {getSortIcon('oficina')}
-                        </div>
-                      </th>
-                    )}
-                    {visibleColumns.skill1 && (
-                      <th className="text-left p-3 font-medium cursor-pointer hover:bg-muted/50" onClick={() => handleSort('skill1')}>
-                        <div className="flex items-center gap-2">
-                          Skill 1
-                          {getSortIcon('skill1')}
-                        </div>
-                      </th>
-                    )}
-                    {visibleColumns.skill2 && (
-                      <th className="text-left p-3 font-medium cursor-pointer hover:bg-muted/50" onClick={() => handleSort('skill2')}>
-                        <div className="flex items-center gap-2">
-                          Skill 2
-                          {getSortIcon('skill2')}
-                        </div>
-                      </th>
-                    )}
-                    {visibleColumns.nivel_ingles && (
-                      <th className="text-left p-3 font-medium cursor-pointer hover:bg-muted/50" onClick={() => handleSort('nivel_ingles')}>
-                        <div className="flex items-center gap-2">
-                          Nivel Inglés
-                          {getSortIcon('nivel_ingles')}
-                        </div>
-                      </th>
-                    )}
-                  </tr>
-                </thead>
-                <tbody>
-                  {currentResources.map((resource) => (
-                    <tr key={resource.id} className="border-b hover:bg-muted/50">
-                      {visibleColumns.num_pers && (
-                        <td className="p-3 text-sm">{resource.num_pers}</td>
-                      )}
-                      {visibleColumns.nombre && (
-                        <td className="p-3 text-sm font-medium">{resource.nombre}</td>
-                      )}
-                      {visibleColumns.fecha_incorporacion && (
-                        <td className="p-3 text-sm">{resource.fecha_incorporacion}</td>
-                      )}
-                      {visibleColumns.mail_empresa && (
-                        <td className="p-3 text-sm">{resource.mail_empresa}</td>
-                      )}
-                      {visibleColumns.squad_lead && (
-                        <td className="p-3 text-sm">{resource.squad_lead}</td>
-                      )}
-                      {visibleColumns.cex && (
-                        <td className="p-3 text-sm">{resource.cex}</td>
-                      )}
-                      {visibleColumns.grupo && (
-                        <td className="p-3 text-sm">{resource.grupo}</td>
-                      )}
-                      {visibleColumns.categoria && (
-                        <td className="p-3 text-sm">{resource.categoria}</td>
-                      )}
-                      {visibleColumns.oficina && (
-                        <td className="p-3 text-sm">{resource.oficina}</td>
-                      )}
-                      {visibleColumns.skill1 && (
-                        <td className="p-3 text-sm">{resource.skill1}</td>
-                      )}
-                      {visibleColumns.skill2 && (
-                        <td className="p-3 text-sm">{resource.skill2}</td>
-                      )}
-                      {visibleColumns.nivel_ingles && (
-                        <td className="p-3 text-sm">{resource.nivel_ingles}</td>
-                      )}
-                    </tr>
+                      </TableCell>
+                    </TableRow>
                   ))}
-                </tbody>
-              </table>
+                </TableBody>
+              </Table>
             </div>
 
             {filteredResources.length === 0 && (
