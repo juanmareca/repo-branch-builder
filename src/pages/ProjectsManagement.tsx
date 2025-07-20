@@ -111,28 +111,36 @@ const ProjectsManagement = () => {
     try {
       console.log('🔄 Cargando todos los proyectos...');
       
-      // Primero obtener el conteo total
-      const { count, error: countError } = await supabase
-        .from('projects')
-        .select('*', { count: 'exact', head: true });
+      // Estrategia: cargar en lotes para superar el límite de 1000
+      let allProjects: Project[] = [];
+      let from = 0;
+      const batchSize = 1000;
+      let hasMore = true;
 
-      if (countError) {
-        console.error('Error getting count:', countError);
-      } else {
-        console.log(`📊 Total de proyectos en la base de datos: ${count}`);
+      while (hasMore) {
+        console.log(`📦 Cargando lote desde ${from} hasta ${from + batchSize - 1}`);
+        
+        const { data, error } = await supabase
+          .from('projects')
+          .select('*')
+          .range(from, from + batchSize - 1)
+          .order('created_at', { ascending: false });
+
+        if (error) throw error;
+
+        if (data && data.length > 0) {
+          allProjects = [...allProjects, ...data];
+          from += batchSize;
+          hasMore = data.length === batchSize; // Si trajo menos que batchSize, ya no hay más
+          console.log(`✅ Lote cargado: ${data.length} proyectos. Total acumulado: ${allProjects.length}`);
+        } else {
+          hasMore = false;
+          console.log('🏁 No hay más proyectos que cargar');
+        }
       }
-
-      // Obtener todos los proyectos sin límite usando range
-      const { data, error } = await supabase
-        .from('projects')
-        .select('*')
-        .range(0, 4999) // Rango amplio para obtener hasta 5000 registros
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
       
-      console.log(`✅ Proyectos cargados: ${data?.length || 0}`);
-      setProjects(data || []);
+      console.log(`🎯 TOTAL FINAL de proyectos cargados: ${allProjects.length}`);
+      setProjects(allProjects);
     } catch (error: any) {
       console.error('Error fetching projects:', error);
       toast({
