@@ -826,12 +826,12 @@ const HolidaysManagement = () => {
                 {/* Header fijo */}
                 <thead className="sticky top-0 z-50">
                   <tr>
-                    <th 
-                      className="sticky left-0 z-60 bg-blue-50 border-r border-gray-200 p-3 text-center font-semibold text-xs"
-                      style={{ width: 64 }}
-                    >
-                      ÍNDICE
-                    </th>
+                     <th 
+                       className="sticky left-0 z-60 bg-blue-50 border-r border-gray-200 p-3 text-center font-semibold"
+                       style={{ width: 64 }}
+                     >
+                       <span style={{ fontSize: `${fontSize}px` }}>ÍNDICE</span>
+                     </th>
                     {columns.filter(col => col.visible).map((column) => (
                       <th 
                         key={column.key}
@@ -848,9 +848,9 @@ const HolidaysManagement = () => {
                             className="flex-1 cursor-pointer hover:bg-blue-100 flex items-center justify-center gap-1 py-1 px-2 rounded"
                             onClick={() => handleSort(column.key)}
                             title="Click para ordenar"
-                          >
-                            <span>{column.label}</span>
-                            {getSortIcon(column.key)}
+                           >
+                             <span style={{ fontSize: `${fontSize}px` }}>{column.label}</span>
+                             {getSortIcon(column.key)}
                           </div>
                           
                           {/* Handle de redimensionamiento */}
@@ -868,13 +868,13 @@ const HolidaysManagement = () => {
                     ))}
                    
                    {/* Columna acciones fija */}
-                   <th 
-                     className="sticky right-0 z-40 bg-blue-50 border-l border-gray-200 p-3 text-center font-semibold text-xs"
-                     style={{ width: 96, minWidth: 96 }}
-                   >
-                     ACCIONES
-                   </th>
-                 </tr>
+                    <th 
+                      className="sticky right-0 z-40 bg-blue-50 border-l border-gray-200 p-3 text-center font-semibold"
+                      style={{ width: 96, minWidth: 96 }}
+                    >
+                       <span style={{ fontSize: `${fontSize}px` }}>ACCIONES</span>
+                     </th>
+                   </tr>
                </thead>
                  
                  {/* Body */}
