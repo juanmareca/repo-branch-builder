@@ -457,7 +457,6 @@ const ResourcesManagement = () => {
   // Fetch all unique values from database
   const fetchAllUniqueOptions = async () => {
     try {
-      console.log('🔍 Fetching all unique options from database...');
       const { data, error } = await supabase
         .from('persons')
         .select('cex, grupo, categoria, oficina, squad_lead');
@@ -468,11 +467,8 @@ const ResourcesManagement = () => {
       }
       
       if (data) {
-        console.log('📊 Data from database:', data);
         const getUniqueValues = (field: keyof Person) => {
-          const values = Array.from(new Set(data.map(r => r[field]).filter(v => v && v.trim() !== ''))).sort();
-          console.log(`Unique ${field}:`, values);
-          return values;
+          return Array.from(new Set(data.map(r => r[field]).filter(v => v && v.trim() !== ''))).sort();
         };
 
         const newOptions = {
@@ -483,7 +479,6 @@ const ResourcesManagement = () => {
           squadLeads: getUniqueValues('squad_lead'),
         };
         
-        console.log('🎯 Setting allUniqueOptions:', newOptions);
         setAllUniqueOptions(newOptions);
       }
     } catch (error) {
@@ -1083,17 +1078,39 @@ const ResourcesManagement = () => {
                   </div>
                 ))}
               </div>
-              <div className="mt-4 pt-4 border-t">
+              <div className="mt-4 pt-4 border-t space-y-3">
+                <div className="flex items-center space-x-2">
+                  <Checkbox 
+                    id="save-as-default"
+                    checked={false}
+                    onCheckedChange={(checked) => {
+                      if (checked) {
+                        localStorage.setItem('resources-columns-config', JSON.stringify(columns));
+                        toast({
+                          title: "Configuración guardada",
+                          description: "Esta configuración se aplicará por defecto cuando vuelvas a entrar",
+                        });
+                      }
+                    }}
+                  />
+                  <label htmlFor="save-as-default" className="text-sm font-medium">
+                    Esta es mi selección por defecto
+                  </label>
+                </div>
                 <Button 
                   variant="outline" 
                   size="sm" 
                   onClick={() => {
-                    setColumns(getInitialColumns());
+                    setColumns(getInitialColumns().map(col => ({ ...col, visible: true })));
                     localStorage.removeItem('resources-columns-config');
+                    toast({
+                      title: "Configuración restablecida",
+                      description: "Se ha vuelto a la configuración original",
+                    });
                   }}
                   className="text-xs"
                 >
-                  Restablecer por defecto
+                  Restablecer todas las columnas
                 </Button>
               </div>
             </CardContent>

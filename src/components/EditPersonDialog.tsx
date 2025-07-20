@@ -47,7 +47,6 @@ const EditPersonDialog: React.FC<EditPersonDialogProps> = ({
   onSave,
   availableOptions,
 }) => {
-  console.log('🔧 EditPersonDialog received availableOptions:', availableOptions);
   const [formData, setFormData] = useState<Person>({
     id: '',
     nombre: '',
@@ -255,21 +254,33 @@ const EditPersonDialog: React.FC<EditPersonDialogProps> = ({
 
           <div className="space-y-2">
             <Label htmlFor="oficina">Oficina</Label>
-            <div className="relative">
-              <Input
-                id="oficina"
-                value={formData.oficina}
-                onChange={(e) => handleInputChange('oficina', e.target.value)}
-                placeholder="Escribir o seleccionar oficina"
-                list="oficina-options"
-              />
-              <datalist id="oficina-options">
-                {availableOptions.oficina.map((option) => {
-                  console.log('📋 Oficina option:', option);
-                  return <option key={option} value={option} />;
-                })}
-              </datalist>
-            </div>
+            <Select
+              value={formData.oficina}
+              onValueChange={(value) => handleInputChange('oficina', value)}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Seleccionar o escribir oficina" />
+              </SelectTrigger>
+              <SelectContent className="bg-background border border-border z-50">
+                {/* Opción para escribir manualmente */}
+                <div className="px-2 py-1">
+                  <Input
+                    placeholder="Escribir nueva oficina..."
+                    value={formData.oficina}
+                    onChange={(e) => handleInputChange('oficina', e.target.value)}
+                    className="h-8"
+                    onKeyDown={(e) => e.stopPropagation()}
+                  />
+                </div>
+                <div className="border-t my-1"></div>
+                {/* Opciones existentes */}
+                {availableOptions.oficina.map((option) => (
+                  <SelectItem key={option} value={option}>
+                    {option}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="space-y-2">
