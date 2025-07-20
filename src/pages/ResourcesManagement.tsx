@@ -134,7 +134,8 @@ const ResourcesManagement = () => {
     { key: 'mail_empresa', label: 'EMAIL', visible: true, width: 200, minWidth: 150, resizable: true },
     { key: 'cex', label: 'CEX', visible: true, width: 80, minWidth: 60, resizable: true },
     { key: 'grupo', label: 'GRUPO / CATEGORÍA', visible: true, width: 180, minWidth: 140, resizable: true },
-    { key: 'oficina', label: 'OFICINA', visible: true, width: 100, minWidth: 80, resizable: true }
+    { key: 'oficina', label: 'OFICINA', visible: true, width: 100, minWidth: 80, resizable: true },
+    { key: 'origen', label: 'ORIGEN', visible: false, width: 120, minWidth: 100, resizable: true }
   ]);
 
   const { toast } = useToast();
@@ -1196,14 +1197,23 @@ const ResourcesManagement = () => {
                                         return fechaStr; // Si falla, devolver el original
                                       }
                                     })()
-                                  ) : column.key === 'grupo' ? (
-                                    <div className="flex flex-col">
-                                      <span className="font-medium">{resource.grupo}</span>
-                                      <span className="text-muted-foreground opacity-75">{resource.categoria}</span>
-                                    </div>
-                                  ) : (
-                                    resource[column.key] || '-'
-                                  )}
+                                   ) : column.key === 'grupo' ? (
+                                     <div className="flex flex-col">
+                                       <span className="font-medium">{resource.grupo}</span>
+                                       <span className="text-muted-foreground opacity-75">{resource.categoria}</span>
+                                     </div>
+                                   ) : column.key === 'origen' ? (
+                                     <span className={cn(
+                                       "px-2 py-1 text-xs font-medium rounded-full",
+                                       resource.origen === 'Administrador' 
+                                         ? "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300"
+                                         : "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300"
+                                     )}>
+                                       {resource.origen || 'Fichero'}
+                                     </span>
+                                   ) : (
+                                     resource[column.key] || '-'
+                                   )}
                                 </div>
                              </td>
                            ))}
