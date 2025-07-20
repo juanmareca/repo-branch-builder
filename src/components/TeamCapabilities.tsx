@@ -180,7 +180,52 @@ const TeamCapabilities: React.FC<TeamCapabilitiesProps> = ({
     };
   };
 
-  const getSAPModuleInfo = (moduleName: string): string => {
+  // Función para generar currículum en texto de una persona
+  const generateCurriculum = (personName: string, capacities: Capacity[]) => {
+    // Buscar datos de la persona
+    const allMembers = getAllTeamMembers();
+    
+    // Analizar capacidades por nivel
+    const sapModules = capacities.filter(c => c.skill.includes('Módulo SAP') && c.level !== 'Nulo');
+    const expertModules = sapModules.filter(c => c.level === 'Experto' || c.level === 'Alto');
+    const basicModules = sapModules.filter(c => c.level === 'Básico' || c.level === 'Medio');
+    
+    const industries = capacities.filter(c => c.skill.includes('Industrias') && c.level === 'Sí');
+    const languages = capacities.filter(c => c.skill.includes('Idiomas') && c.level !== 'Nulo');
+    const nativeLanguage = languages.find(c => c.level === 'Experto' || c.level === 'Alto');
+    const basicLanguages = languages.filter(c => c.level === 'Básico' || c.level === 'Medio');
+
+    // Generar texto del currículum
+    let curriculum = `${personName}`;
+    
+    // Conocimientos SAP
+    if (expertModules.length > 0) {
+      curriculum += `, conoce en profundidad los módulos ${expertModules.map(m => m.skill.replace('Módulo SAP - ', '').replace(/^\([^)]*\)\s*/, '')).join(', ')} de SAP`;
+    }
+    
+    if (basicModules.length > 0) {
+      curriculum += expertModules.length > 0 ? ' y de manera básica ' : ', tiene conocimientos básicos de ';
+      curriculum += `${basicModules.map(m => m.skill.replace('Módulo SAP - ', '').replace(/^\([^)]*\)\s*/, '')).join(', ')}`;
+    }
+    
+    // Experiencia en industrias
+    if (industries.length > 0) {
+      curriculum += `. Tiene experiencia en las industrias de ${industries.map(i => i.skill.replace('Industrias - ', '')).join(' y ')}`;
+    }
+    
+    // Idiomas
+    if (nativeLanguage) {
+      curriculum += ` y su idioma nativo es el ${nativeLanguage.skill.replace('Idiomas - ', '').toLowerCase()}`;
+    }
+    
+    if (basicLanguages.length > 0) {
+      curriculum += ` y tiene conocimientos ${basicLanguages.length === 1 ? 'básicos' : 'de nivel medio/básico'} de ${basicLanguages.map(l => l.skill.replace('Idiomas - ', '').toLowerCase()).join(', ')}`;
+    }
+    
+    curriculum += '.';
+    
+    return curriculum;
+  };
     const modules: { [key: string]: string } = {
       'FI-GL': 'FI-GL: Financial Accounting - General Ledger (Contabilidad General). Núcleo del módulo financiero SAP donde se registran, procesan y reportan todas las transacciones contables conforme a normas locales e internacionales (IFRS, US GAAP). Libro mayor que consolida operaciones de FI-AP, FI-AR, FI-AA, CO, MM, SD, PP. Componentes clave: Cuenta de mayor (GL account), Plan de cuentas (estructura jerárquica), Segmento/Sociedad (dimensiones contables), Centro de beneficio/coste (información analítica). Funciones: asientos manuales/automáticos, contabilidad multinorma y multimoneda, periodificación, reclasificación, cierre contable, reportes en tiempo real. Transacciones: FB50/F-02 (asientos), FS00 (cuentas), FAGLL03/FBL3N (consultas). En S/4HANA usa Universal Journal (ACDOCA) unificando todas las vistas contables con Extension Ledgers.',
       'FI-AP': 'FI-AP: Financials - Accounts Payable (Contabilidad Financiera – Cuentas a Pagar). Submódulo SAP para gestión de deudas con proveedores desde recepción de facturas hasta pago y conciliación. Funciones principales: registro de facturas de proveedores, gestión de pagos (automáticos/manuales), anticipos y pagos a cuenta, conciliación bancaria, gestión de retenciones fiscales, reportes de antigüedad de saldos y previsiones de pagos. Se integra con MM (facturas de compras automáticas), FI-BL (ejecución de pagos), CO (asignación de costos). Flujo típico: factura recibida → verificación → pago → conciliación bancaria. Gestión del maestro de proveedor (FK01/FK02/FK03) con datos generales, societarios y de compras.',
