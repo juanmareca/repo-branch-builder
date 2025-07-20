@@ -254,21 +254,20 @@ const EditPersonDialog: React.FC<EditPersonDialogProps> = ({
 
           <div className="space-y-2">
             <Label htmlFor="oficina">Oficina</Label>
-            <Select
-              value={formData.oficina}
-              onValueChange={(value) => handleInputChange('oficina', value)}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Seleccionar Oficina" />
-              </SelectTrigger>
-              <SelectContent className="bg-background border border-border z-50">
+            <div className="relative">
+              <Input
+                id="oficina"
+                value={formData.oficina}
+                onChange={(e) => handleInputChange('oficina', e.target.value)}
+                placeholder="Escribir o seleccionar oficina"
+                list="oficina-options"
+              />
+              <datalist id="oficina-options">
                 {availableOptions.oficina.map((option) => (
-                  <SelectItem key={option} value={option}>
-                    {option}
-                  </SelectItem>
+                  <option key={option} value={option} />
                 ))}
-              </SelectContent>
-            </Select>
+              </datalist>
+            </div>
           </div>
 
           <div className="space-y-2">
