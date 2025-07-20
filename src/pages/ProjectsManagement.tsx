@@ -59,6 +59,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
 import ProjectsUpload from '@/components/FileUpload/ProjectsUpload';
+import EditProjectDialog from '@/components/EditProjectDialog';
 import * as XLSX from 'xlsx';
 
 interface Project {
@@ -124,6 +125,8 @@ const ProjectsManagement = () => {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isDefaultViewSaved, setIsDefaultViewSaved] = useState(false);
   const [editingRow, setEditingRow] = useState<string | null>(null);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [editingProject, setEditingProject] = useState<Project | null>(null);
   
   // Font size control
   const [fontSize, setFontSize] = useState(12);
@@ -166,7 +169,8 @@ const ProjectsManagement = () => {
       { key: 'socio_responsable', label: 'SOCIO RESPONSABLE', visible: true, width: 180, minWidth: 150, resizable: true },
       { key: 'tipologia', label: 'TIPOLOGÍA', visible: true, width: 150, minWidth: 120, resizable: true },
       { key: 'tipologia_2', label: 'TIPOLOGÍA 2', visible: false, width: 150, minWidth: 120, resizable: true },
-      { key: 'status', label: 'ESTADO', visible: true, width: 120, minWidth: 100, resizable: true }
+      { key: 'status', label: 'ESTADO', visible: true, width: 120, minWidth: 100, resizable: true },
+      { key: 'origen', label: 'ORIGEN', visible: false, width: 120, minWidth: 100, resizable: true }
     ];
   };
 
@@ -363,6 +367,50 @@ const ProjectsManagement = () => {
     }
   };
 
+  const handleEditProject = (project: Project) => {
+    setEditingProject(project);
+    setEditDialogOpen(true);
+  };
+
+  const handleSaveProject = async (updatedProject: Project) => {
+    try {
+      const { error } = await supabase
+        .from('projects')
+        .update({
+          ...updatedProject,
+          origen: 'Administrador', // Cambiar origen a Administrador cuando se edita
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', updatedProject.id);
+
+      if (error) throw error;
+
+      // Actualizar el estado local
+      setProjects(prev => 
+        prev.map(project => 
+          project.id === updatedProject.id 
+            ? { ...updatedProject, origen: 'Administrador' }
+            : project
+        )
+      );
+
+      toast({
+        title: "Éxito",
+        description: "Proyecto actualizado correctamente",
+      });
+
+      setEditDialogOpen(false);
+      setEditingProject(null);
+    } catch (error) {
+      console.error('Error updating project:', error);
+      toast({
+        title: "Error",
+        description: "Error al actualizar el proyecto",
+        variant: "destructive",
+      });
+    }
+  };
+
   const handleExportExcel = () => {
     const exportData = filteredProjects.map((project, index) => ({
       'ÍNDICE': index + 1,
@@ -479,6 +527,7 @@ const ProjectsManagement = () => {
       setFilter([...currentFilter, value]);
     }
   };
+
 
   const handleSort = (field: keyof Project) => {
     if (sortField === field) {
@@ -1226,16 +1275,25 @@ const ProjectsManagement = () => {
                                         <div className="text-xs text-muted-foreground truncate">{project.descripcion}</div>
                                       )}
                                     </div>
-                                  ) : column.key === 'cliente' ? (
-                                    <div>
-                                      <div className="font-medium text-sm">{project.cliente}</div>
-                                      {project.grupo_cliente && (
-                                        <div className="text-xs text-muted-foreground">{project.grupo_cliente}</div>
-                                      )}
-                                    </div>
-                                  ) : (
-                                    <span className="truncate">{project[column.key] || '-'}</span>
-                                  )}
+                                   ) : column.key === 'cliente' ? (
+                                     <div>
+                                       <div className="font-medium text-sm">{project.cliente}</div>
+                                       {project.grupo_cliente && (
+                                         <div className="text-xs text-muted-foreground">{project.grupo_cliente}</div>
+                                       )}
+                                     </div>
+                                   ) : column.key === 'origen' ? (
+                                     <span className={cn(
+                                       "px-2 py-1 text-xs font-medium rounded-full",
+                                       project.origen === 'Administrador' 
+                                         ? "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300"
+                                         : "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300"
+                                     )}>
+                                       {project.origen || 'Fichero'}
+                                     </span>
+                                   ) : (
+                                     <span className="truncate">{project[column.key] || '-'}</span>
+                                   )}
                                 </div>
                               )}
                             </td>
@@ -1255,8 +1313,8 @@ const ProjectsManagement = () => {
                                    <Button
                                      variant="ghost"
                                      size="sm"
-                                      onClick={() => setEditingRow(project.id)}
-                                     className="h-8 w-8 p-0"
+                                       onClick={() => handleEditProject(project)}
+                                      className="h-8 w-8 p-0"
                                    >
                                      <Edit className="h-4 w-4" />
                                    </Button>
@@ -1298,6 +1356,14 @@ const ProjectsManagement = () => {
             )}
            </CardContent>
         </Card>
+
+        {/* Edit Project Dialog */}
+        <EditProjectDialog
+          project={editingProject}
+          open={editDialogOpen}
+          onOpenChange={setEditDialogOpen}
+          onSave={handleSaveProject}
+        />
       </div>
     </div>
     </TooltipProvider>
