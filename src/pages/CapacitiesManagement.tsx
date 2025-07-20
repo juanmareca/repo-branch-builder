@@ -233,6 +233,7 @@ export default function CapacitiesManagement() {
       const { data, error } = await supabase
         .from('capacities')
         .select('*')
+        .limit(50000)
         .order('person_name', { ascending: true });
 
       if (error) throw error;
