@@ -208,6 +208,12 @@ const TeamCapabilities: React.FC<TeamCapabilitiesProps> = ({ teamMembers }) => {
     <div className="space-y-8">
       {sortedPersons.map((personName) => {
         const personCapacities = groupedByPerson[personName];
+        
+        // Add safety check to prevent Object.values error
+        if (!personCapacities) {
+          return null;
+        }
+        
         const isSquadLead = personName === sortedPersons[0]; // El primero es el squad lead
         
         return (
@@ -243,7 +249,7 @@ const TeamCapabilities: React.FC<TeamCapabilitiesProps> = ({ teamMembers }) => {
                     ? 'text-blue-600 dark:text-blue-400' 
                     : 'text-green-600 dark:text-green-400'
                 }`}>
-                  {Object.values(personCapacities).flat().length} capacidades registradas
+                  {Object.values(personCapacities || {}).flat().length} capacidades registradas
                 </p>
               </div>
             </div>
