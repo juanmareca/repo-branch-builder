@@ -10,6 +10,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
 import { 
   Table, 
   TableBody, 
@@ -39,7 +45,8 @@ import {
   ChevronRight,
   ChevronsLeft,
   ChevronsRight,
-  Type
+  Type,
+  CalendarIcon
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
@@ -750,12 +757,15 @@ const ResourcesManagement = () => {
                   Agregar Recurso
                 </Button>
               </DialogTrigger>
-              <DialogContent className="max-w-2xl">
+              <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
-                  <DialogTitle>Agregar Nuevo Recurso</DialogTitle>
+                  <DialogTitle className="flex items-center gap-2">
+                    <Plus className="h-5 w-5" />
+                    Agregar Nuevo Recurso
+                  </DialogTitle>
                 </DialogHeader>
-                <div className="grid grid-cols-2 gap-4 py-4">
-                  <div>
+                <div className="grid grid-cols-2 gap-6 py-4">
+                  <div className="space-y-2">
                     <Label htmlFor="num_pers">Código Empleado *</Label>
                     <Input
                       id="num_pers"
@@ -764,7 +774,7 @@ const ResourcesManagement = () => {
                       placeholder="Ej: 4002383"
                     />
                   </div>
-                  <div>
+                  <div className="space-y-2">
                     <Label htmlFor="nombre">Nombre *</Label>
                     <Input
                       id="nombre"
@@ -773,16 +783,38 @@ const ResourcesManagement = () => {
                       placeholder="Nombre completo"
                     />
                   </div>
-                  <div>
+                  <div className="space-y-2">
                     <Label htmlFor="fecha_incorporacion">Fecha Incorporación</Label>
-                    <Input
-                      id="fecha_incorporacion"
-                      value={formData.fecha_incorporacion}
-                      onChange={(e) => setFormData({ ...formData, fecha_incorporacion: e.target.value })}
-                      placeholder="DD/MM/YYYY"
-                    />
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          className={cn(
+                            "w-full justify-start text-left font-normal",
+                            !formData.fecha_incorporacion && "text-muted-foreground"
+                          )}
+                        >
+                          <CalendarIcon className="mr-2 h-4 w-4" />
+                          {formData.fecha_incorporacion ? formData.fecha_incorporacion : "Seleccionar fecha"}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0 bg-background border border-border z-50" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={formData.fecha_incorporacion ? new Date(formData.fecha_incorporacion.split('/').reverse().join('-')) : undefined}
+                          onSelect={(date) => {
+                            if (date) {
+                              const formatted = format(date, 'dd/MM/yyyy');
+                              setFormData({ ...formData, fecha_incorporacion: formatted });
+                            }
+                          }}
+                          initialFocus
+                          className={cn("p-3 pointer-events-auto")}
+                        />
+                      </PopoverContent>
+                    </Popover>
                   </div>
-                  <div>
+                  <div className="space-y-2">
                     <Label htmlFor="mail_empresa">Email Empresa</Label>
                     <Input
                       id="mail_empresa"
@@ -792,58 +824,124 @@ const ResourcesManagement = () => {
                       placeholder="email@empresa.com"
                     />
                   </div>
-                  <div>
+                  <div className="space-y-2">
                     <Label htmlFor="squad_lead">Squad Lead</Label>
-                    <Input
-                      id="squad_lead"
+                    <Select
                       value={formData.squad_lead}
-                      onChange={(e) => setFormData({ ...formData, squad_lead: e.target.value })}
-                      placeholder="Nombre del Squad Lead"
-                    />
+                      onValueChange={(value) => setFormData({ ...formData, squad_lead: value })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Seleccionar Squad Lead" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-background border border-border z-50">
+                        {getAvailableOptions().squadLeads.map((option) => (
+                          <SelectItem key={option} value={option}>
+                            {option}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
-                  <div>
+                  <div className="space-y-2">
                     <Label htmlFor="cex">CEX</Label>
-                    <Input
-                      id="cex"
+                    <Select
                       value={formData.cex}
-                      onChange={(e) => setFormData({ ...formData, cex: e.target.value })}
-                      placeholder="Código CEX"
-                    />
+                      onValueChange={(value) => setFormData({ ...formData, cex: value })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Seleccionar CEX" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-background border border-border z-50">
+                        {getAvailableOptions().cex.map((option) => (
+                          <SelectItem key={option} value={option}>
+                            {option}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
-                  <div>
+                  <div className="space-y-2">
                     <Label htmlFor="grupo">Grupo</Label>
-                    <Input
-                      id="grupo"
+                    <Select
                       value={formData.grupo}
-                      onChange={(e) => setFormData({ ...formData, grupo: e.target.value })}
-                      placeholder="Grupo"
-                    />
+                      onValueChange={(value) => setFormData({ ...formData, grupo: value })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Seleccionar Grupo" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-background border border-border z-50">
+                        {getAvailableOptions().grupo.map((option) => (
+                          <SelectItem key={option} value={option}>
+                            {option}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
-                  <div>
+                  <div className="space-y-2">
                     <Label htmlFor="categoria">Categoría</Label>
-                    <Input
-                      id="categoria"
+                    <Select
                       value={formData.categoria}
-                      onChange={(e) => setFormData({ ...formData, categoria: e.target.value })}
-                      placeholder="Categoría profesional"
-                    />
+                      onValueChange={(value) => setFormData({ ...formData, categoria: value })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Seleccionar Categoría" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-background border border-border z-50">
+                        {getAvailableOptions().categoria.map((option) => (
+                          <SelectItem key={option} value={option}>
+                            {option}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
-                  <div>
+                  <div className="space-y-2">
                     <Label htmlFor="oficina">Oficina</Label>
-                    <Input
-                      id="oficina"
-                      value={formData.oficina}
-                      onChange={(e) => setFormData({ ...formData, oficina: e.target.value })}
-                      placeholder="Oficina"
-                    />
+                    <div className="space-y-2">
+                      <Input
+                        id="oficina"
+                        value={formData.oficina}
+                        onChange={(e) => setFormData({ ...formData, oficina: e.target.value })}
+                        placeholder="Escribir oficina manualmente..."
+                        className="w-full"
+                      />
+                      <div className="text-xs text-muted-foreground">
+                        O seleccionar de las opciones existentes:
+                      </div>
+                      <Select
+                        value=""
+                        onValueChange={(value) => setFormData({ ...formData, oficina: value })}
+                      >
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder="Seleccionar oficina existente..." />
+                        </SelectTrigger>
+                        <SelectContent className="bg-background border border-border z-50">
+                          {getAvailableOptions().oficina.map((option) => (
+                            <SelectItem key={option} value={option}>
+                              {option}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </div>
                 </div>
-                <div className="flex justify-end gap-2">
-                  <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
+
+                <div className="flex justify-end gap-4 pt-4 border-t">
+                  <Button
+                    variant="outline"
+                    onClick={() => setIsAddDialogOpen(false)}
+                    className="flex items-center gap-2"
+                  >
+                    <X className="h-4 w-4" />
                     Cancelar
                   </Button>
-                  <Button onClick={handleAddResource} className="bg-orange-600 hover:bg-orange-700">
-                    <Save className="h-4 w-4 mr-2" />
+                  <Button
+                    onClick={handleAddResource}
+                    className="flex items-center gap-2 bg-orange-600 hover:bg-orange-700"
+                  >
+                    <Save className="h-4 w-4" />
                     Agregar Recurso
                   </Button>
                 </div>
