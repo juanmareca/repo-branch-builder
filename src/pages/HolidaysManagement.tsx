@@ -836,11 +836,50 @@ const HolidaysManagement = () => {
           </div>
         </div>
 
-        {/* Records info - Above table */}
-        <div className="flex items-center justify-between mb-4">
+        {/* Records info and Pagination - Above table */}
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-4">
           <span className="text-sm text-muted-foreground">
             Mostrando {startIndex + 1} a {Math.min(endIndex, filteredHolidays.length)} de {filteredHolidays.length} registros
           </span>
+          
+          {/* Pagination Controls */}
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentPage(1)}
+              disabled={currentPage === 1}
+            >
+              <ChevronsLeft className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentPage(currentPage - 1)}
+              disabled={currentPage === 1}
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            <span className="text-sm px-4">
+              Página {currentPage} de {totalPages}
+            </span>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentPage(currentPage + 1)}
+              disabled={currentPage === totalPages}
+            >
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentPage(totalPages)}
+              disabled={currentPage === totalPages}
+            >
+              <ChevronsRight className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
 
         {/* Enhanced Table */}
