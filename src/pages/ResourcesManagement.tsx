@@ -953,105 +953,68 @@ const ResourcesManagement = () => {
             <div className="border border-gray-200 rounded-lg bg-white shadow-sm overflow-hidden">
               {/* Contenedor scrolleable principal */}
               <div className="max-h-[600px] overflow-auto relative">
-                <DragDropContext onDragEnd={handleDragEnd}>
-                  <table className="w-full border-collapse">
-                    {/* Header sticky */}
-                    <thead className="sticky top-0 z-30 bg-white border-b border-gray-200">
-                      <tr>
-                        {/* Columna índice fija */}
-                        <th 
-                          className="sticky left-0 z-40 bg-blue-50 border-r border-gray-200 p-3 text-center font-semibold text-xs"
-                          style={{ width: 64 }}
-                        >
-                          ÍNDICE
-                        </th>
-                        
-                        {/* Headers draggables */}
-                        <Droppable droppableId="table-headers" direction="horizontal">
-                          {(provided) => (
-                            <th 
-                              ref={provided.innerRef} 
-                              {...provided.droppableProps}
-                              className="p-0 border-0"
-                            >
-                              <div className="flex">
-                                {columns.filter(col => col.visible).map((column, index) => (
-                                  <Draggable 
-                                    key={column.key} 
-                                    draggableId={column.key} 
-                                    index={index}
-                                  >
-                                    {(provided, snapshot) => (
-                                      <div
-                                        ref={provided.innerRef}
-                                        {...provided.draggableProps}
-                                        className={`relative bg-blue-50 border-r border-gray-200 text-center font-semibold text-xs flex items-center ${
-                                          snapshot.isDragging ? 'opacity-75 shadow-xl z-50' : ''
-                                        }`}
-                                        style={{ 
-                                          width: column.width,
-                                          minWidth: column.minWidth,
-                                          maxWidth: column.width,
-                                          ...provided.draggableProps.style
-                                        }}
-                                      >
-                                        {/* Drag handle */}
-                                        <div 
-                                          {...provided.dragHandleProps}
-                                          className="absolute left-1 top-1/2 transform -translate-y-1/2 cursor-move p-1 hover:bg-blue-200 rounded z-10"
-                                          title="Arrastrar para mover columna"
-                                        >
-                                          <div className="flex flex-col gap-0.5">
-                                            <div className="w-1 h-1 bg-gray-500 rounded-full"></div>
-                                            <div className="w-1 h-1 bg-gray-500 rounded-full"></div>
-                                            <div className="w-1 h-1 bg-gray-500 rounded-full"></div>
-                                          </div>
-                                        </div>
-                                        
-                                        {/* Área de ordenación */}
-                                        <div 
-                                          className="flex-1 p-3 cursor-pointer hover:bg-blue-100 flex items-center justify-center gap-1"
-                                          onClick={() => handleSort(column.key)}
-                                          title="Click para ordenar"
-                                        >
-                                          <span>{column.label}</span>
-                                          {getSortIcon(column.key)}
-                                        </div>
-                                        
-                                        {/* Handle de redimensionamiento */}
-                                        <div
-                                          className="absolute right-0 top-0 w-2 h-full cursor-col-resize bg-blue-400 opacity-0 hover:opacity-100 transition-opacity z-20"
-                                          onMouseDown={(e) => {
-                                            e.preventDefault();
-                                            e.stopPropagation();
-                                            handleMouseDown(e, column.key);
-                                          }}
-                                          onDoubleClick={(e) => {
-                                            e.preventDefault();
-                                            e.stopPropagation();
-                                            autoResizeColumn(column.key);
-                                          }}
-                                          title="Arrastrar para redimensionar | Doble click para ajustar automáticamente"
-                                        />
-                                      </div>
-                                    )}
-                                  </Draggable>
-                                ))}
-                                {provided.placeholder}
-                              </div>
-                            </th>
-                          )}
-                        </Droppable>
-                        
-                        {/* Columna acciones fija */}
-                        <th 
-                          className="sticky right-0 z-40 bg-blue-50 border-l border-gray-200 p-3 text-center font-semibold text-xs"
-                          style={{ width: 96 }}
-                        >
-                          ACCIONES
-                        </th>
-                      </tr>
-                    </thead>
+                <table className="w-full border-collapse">
+                  {/* Header sticky */}
+                  <thead className="sticky top-0 z-30 bg-blue-50 border-b border-gray-200">
+                    <tr>
+                      {/* Columna índice fija */}
+                      <th 
+                        className="sticky left-0 z-40 bg-blue-50 border-r border-gray-200 p-3 text-center font-semibold text-xs"
+                        style={{ width: 64, minWidth: 64 }}
+                      >
+                        ÍNDICE
+                      </th>
+                      
+                       {/* Headers de columnas */}
+                       {columns.filter(col => col.visible).map((column) => (
+                         <th
+                           key={column.key}
+                           className="relative bg-blue-50 border-r border-gray-200 text-center font-semibold text-xs"
+                           style={{ 
+                             width: column.width,
+                             minWidth: column.minWidth,
+                             maxWidth: column.width
+                           }}
+                         >
+                           <div className="flex items-center p-3">
+                             {/* Área de ordenación */}
+                             <div 
+                               className="flex-1 cursor-pointer hover:bg-blue-100 flex items-center justify-center gap-1 py-1 px-2 rounded"
+                               onClick={() => handleSort(column.key)}
+                               title="Click para ordenar"
+                             >
+                               <span>{column.label}</span>
+                               {getSortIcon(column.key)}
+                             </div>
+                             
+                             {/* Handle de redimensionamiento */}
+                             <div
+                               className="absolute right-0 top-0 w-2 h-full cursor-col-resize bg-blue-400 opacity-0 hover:opacity-100 transition-opacity z-20"
+                               onMouseDown={(e) => {
+                                 e.preventDefault();
+                                 e.stopPropagation();
+                                 handleMouseDown(e, column.key);
+                               }}
+                               onDoubleClick={(e) => {
+                                 e.preventDefault();
+                                 e.stopPropagation();
+                                 autoResizeColumn(column.key);
+                               }}
+                               title="Arrastrar para redimensionar | Doble click para ajustar automáticamente"
+                             />
+                           </div>
+                         </th>
+                       ))}
+                      
+                      {/* Columna acciones fija */}
+                      <th 
+                        className="sticky right-0 z-40 bg-blue-50 border-l border-gray-200 p-3 text-center font-semibold text-xs"
+                        style={{ width: 96, minWidth: 96 }}
+                      >
+                        ACCIONES
+                      </th>
+                    </tr>
+                  </thead>
                     
                     {/* Body */}
                     <tbody>
@@ -1148,11 +1111,10 @@ const ResourcesManagement = () => {
                           </td>
                         </tr>
                       ))}
-                    </tbody>
+                     </tbody>
                   </table>
-                </DragDropContext>
+                </div>
               </div>
-            </div>
 
             {filteredResources.length === 0 && (
               <div className="text-center py-8">
