@@ -109,12 +109,28 @@ const ProjectsManagement = () => {
 
   const fetchProjects = async () => {
     try {
+      console.log('🔄 Cargando todos los proyectos...');
+      
+      // Primero obtener el conteo total
+      const { count, error: countError } = await supabase
+        .from('projects')
+        .select('*', { count: 'exact', head: true });
+
+      if (countError) {
+        console.error('Error getting count:', countError);
+      } else {
+        console.log(`📊 Total de proyectos en la base de datos: ${count}`);
+      }
+
+      // Luego obtener todos los proyectos sin límite
       const { data, error } = await supabase
         .from('projects')
         .select('*')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
+      
+      console.log(`✅ Proyectos cargados: ${data?.length || 0}`);
       setProjects(data || []);
     } catch (error: any) {
       console.error('Error fetching projects:', error);
