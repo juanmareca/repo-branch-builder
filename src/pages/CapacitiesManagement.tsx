@@ -100,7 +100,7 @@ export default function CapacitiesManagement() {
   
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(1000);
+  const [itemsPerPage, setItemsPerPage] = useState(999999);
   
   // Column management
   const [columns, setColumns] = useState<ColumnConfig[]>([
@@ -233,7 +233,7 @@ export default function CapacitiesManagement() {
       const { data, error } = await supabase
         .from('capacities')
         .select('*')
-        .limit(50000)
+        
         .order('person_name', { ascending: true });
 
       if (error) throw error;
