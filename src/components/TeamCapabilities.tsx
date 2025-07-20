@@ -2,7 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Brain, Star, Award, Loader2, Users } from 'lucide-react';
+import { Brain, Star, Award, Loader2, Users, Info } from 'lucide-react';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Button } from '@/components/ui/button';
 
 interface Capacity {
   id: string;
@@ -75,6 +77,47 @@ const TeamCapabilities: React.FC<TeamCapabilitiesProps> = ({ teamMembers }) => {
       default:
         return 'bg-gray-100 text-gray-800 border-gray-200 dark:bg-gray-900/20 dark:text-gray-400';
     }
+  };
+
+  const getSAPModuleInfo = (moduleName: string): string => {
+    const modules: { [key: string]: string } = {
+      'FI-GL': 'Financials - General Ledger: Gestión del libro mayor general, contabilización automática y manual de asientos contables.',
+      'FI-AP': 'Financials - Accounts Payable: Gestión de cuentas por pagar, proveedores y facturación.',
+      'FI-AR': 'Financials - Accounts Receivable: Gestión de cuentas por cobrar y clientes.',
+      'FI-AA': 'Financials - Assets Accounting: Contabilidad de activos fijos, depreciaciones y gestión de bienes.',
+      'FI-Taxes': 'Financials - Taxes: Gestión de impuestos, SII y declaraciones fiscales.',
+      'SAP Ledgers': 'SAP Ledgers S4: Gestión de libros contables en SAP S/4HANA.',
+      'SAP Monedas': 'SAP Monedas S4: Gestión de múltiples monedas y tipos de cambio.',
+      'CO-PA': 'Controlling - Profitability Analysis: Análisis de rentabilidad por productos, clientes o segmentos.',
+      'TR-CM': 'Treasury - Cash Management: Gestión de tesorería y flujo de caja.',
+      'TR-TRM': 'Treasury and Risk Management: Gestión de riesgos financieros y tesorería.',
+      'CO-CCA': 'Controlling - Cost Center Accounting: Contabilidad de centros de coste.',
+      'CO-PC': 'Controlling - Product Costing: Cálculo de costes de productos.',
+      'RE-FX': 'Real Estate - Flexible Real Estate Management: Gestión inmobiliaria flexible.',
+      'SAP BRIM': 'SAP Billing and Revenue Innovation Management: Facturación y gestión de ingresos.',
+      'SAP GRC': 'SAP Governance, Risk and Compliance: Gobierno, riesgo y cumplimiento normativo.',
+      'SAP S4HANA Brownfield': 'Migración de SAP ECC a S/4HANA manteniendo datos y customizaciones.',
+      'SAP S4HANA Greenfield': 'Implementación nueva de SAP S/4HANA desde cero.',
+      'SAP S4 HANA Mix&Match': 'Implementación híbrida combinando elementos nuevos y migrados.'
+    };
+
+    // Buscar coincidencias parciales en el nombre del módulo
+    for (const [key, description] of Object.entries(modules)) {
+      if (moduleName.includes(key)) {
+        return description;
+      }
+    }
+
+    return 'Información no disponible para este módulo. Contacta con el administrador para más detalles.';
+  };
+
+  const isSAPModule = (skillName: string): boolean => {
+    return skillName.toLowerCase().includes('módulo sap') || 
+           skillName.toLowerCase().includes('sap') ||
+           skillName.includes('FI-') ||
+           skillName.includes('CO-') ||
+           skillName.includes('TR-') ||
+           skillName.includes('RE-');
   };
 
   const getSkillIcon = (skill: string) => {
@@ -234,9 +277,34 @@ const TeamCapabilities: React.FC<TeamCapabilitiesProps> = ({ teamMembers }) => {
                           >
                             <div className="flex items-start justify-between gap-2 mb-2">
                               <div className="flex-1 min-w-0">
-                                <h4 className="font-medium text-sm leading-tight group-hover:text-primary transition-colors">
-                                  {capacity.skill.replace('Módulo SAP - ', '')}
-                                </h4>
+                                <div className="flex items-center gap-2">
+                                  <h4 className="font-medium text-sm leading-tight group-hover:text-primary transition-colors">
+                                    {capacity.skill.replace('Módulo SAP - ', '')}
+                                  </h4>
+                                  {isSAPModule(capacity.skill) && (
+                                    <Popover>
+                                      <PopoverTrigger asChild>
+                                        <Button
+                                          variant="ghost"
+                                          size="sm"
+                                          className="h-5 w-5 p-0 hover:bg-primary/10"
+                                        >
+                                          <Info className="h-3 w-3 text-muted-foreground hover:text-primary" />
+                                        </Button>
+                                      </PopoverTrigger>
+                                      <PopoverContent className="w-80 p-3">
+                                        <div className="space-y-2">
+                                          <h4 className="font-semibold text-sm">
+                                            {capacity.skill.replace('Módulo SAP - ', '')}
+                                          </h4>
+                                          <p className="text-xs text-muted-foreground leading-relaxed">
+                                            {getSAPModuleInfo(capacity.skill)}
+                                          </p>
+                                        </div>
+                                      </PopoverContent>
+                                    </Popover>
+                                  )}
+                                </div>
                               </div>
                               <Badge 
                                 variant="outline" 
