@@ -114,7 +114,6 @@ const ProjectsManagement = () => {
   const [showUpload, setShowUpload] = useState(false);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isDefaultViewSaved, setIsDefaultViewSaved] = useState(false);
-  const [editingRow, setEditingRow] = useState<string | null>(null);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [editingProject, setEditingProject] = useState<Project | null>(null);
   
@@ -156,20 +155,23 @@ const ProjectsManagement = () => {
     if (savedColumns) {
       try {
         const parsed = JSON.parse(savedColumns);
+        // Filter out any fields that no longer exist in our Project interface
+        const validKeys = defaultColumns.map(col => col.key);
+        const validSavedColumns = parsed.filter((col: ColumnConfig) => 
+          validKeys.includes(col.key)
+        );
+        
         // Merge saved config with default config to ensure new fields are included
         const mergedColumns = defaultColumns.map(defaultCol => {
-          const savedCol = parsed.find((col: ColumnConfig) => col.key === defaultCol.key);
+          const savedCol = validSavedColumns.find((col: ColumnConfig) => col.key === defaultCol.key);
           return savedCol ? { ...defaultCol, ...savedCol } : defaultCol;
         });
         
-        // Add any saved columns that don't exist in default (for backwards compatibility)
-        const extraColumns = parsed.filter((savedCol: ColumnConfig) => 
-          !defaultColumns.some(defaultCol => defaultCol.key === savedCol.key)
-        );
-        
-        return [...mergedColumns, ...extraColumns];
+        return mergedColumns;
       } catch (error) {
         console.error('Error parsing saved columns config:', error);
+        // Clear invalid localStorage data
+        localStorage.removeItem('projects-columns-config');
       }
     }
     
@@ -185,6 +187,30 @@ const ProjectsManagement = () => {
 
   const { toast } = useToast();
   const navigate = useNavigate();
+
+  // Clean up obsolete localStorage on component mount
+  useEffect(() => {
+    const savedColumns = localStorage.getItem('projects-columns-config');
+    if (savedColumns) {
+      try {
+        const parsed = JSON.parse(savedColumns);
+        // Check if saved config has obsolete fields like 'status'
+        const hasObsoleteFields = parsed.some((col: any) => 
+          ['status', 'priority', 'billing_type', 'progress', 'budget'].includes(col.key)
+        );
+        
+        if (hasObsoleteFields) {
+          console.log('🧹 Cleaning obsolete column configuration...');
+          localStorage.removeItem('projects-columns-config');
+          // Force reload columns with clean config
+          setColumns(getInitialColumns());
+        }
+      } catch (error) {
+        console.error('Error checking saved columns:', error);
+        localStorage.removeItem('projects-columns-config');
+      }
+    }
+  }, []);
 
   useEffect(() => {
     fetchProjects();
@@ -1067,8 +1093,14 @@ const ProjectsManagement = () => {
                   size="sm" 
                   className="ml-4"
                   onClick={() => {
+                    // Clear localStorage to ensure clean state
+                    localStorage.removeItem('projects-columns-config');
                     setColumns(getInitialColumns());
                     setIsDefaultViewSaved(false);
+                    toast({
+                      title: "Configuración reseteada",
+                      description: "Se ha limpiado la configuración guardada y aplicado la configuración por defecto",
+                    });
                   }}
                 >
                   Resetear
@@ -1264,56 +1296,37 @@ const ProjectsManagement = () => {
                                 maxWidth: column.width
                               }}
                             >
-                              {editingRow === project.id ? (
-                                <Input
-                                  defaultValue={project[column.key] || ''}
-                                  onBlur={(e) => {
-                                    handleUpdateProject(project.id, column.key, e.target.value);
-                                    setEditingRow(null);
-                                  }}
-                                  onKeyPress={(e) => {
-                                    if (e.key === 'Enter') {
-                                      handleUpdateProject(project.id, column.key, (e.target as HTMLInputElement).value);
-                                      setEditingRow(null);
-                                    }
-                                  }}
-                                  className="h-8"
-                                  autoFocus
-                                />
-                              ) : (
-                                <div
-                                  onClick={() => setEditingRow(project.id)}
-                                  className="cursor-pointer hover:bg-muted/50 p-1 rounded min-h-[32px] flex items-center"
-                                  style={{ fontSize: `${fontSize}px` }}
-                                >
-                                   {column.key === 'denominacion' ? (
-                                     <div>
-                                       <div className="font-medium text-sm">{project.denominacion}</div>
-                                       {project.descripcion && (
-                                         <div className="text-xs text-muted-foreground truncate">{project.descripcion}</div>
-                                       )}
-                                     </div>
-                                   ) : column.key === 'cliente' ? (
-                                     <div>
-                                       <div className="font-medium text-sm">{project.cliente}</div>
-                                       {project.grupo_cliente && (
-                                         <div className="text-xs text-muted-foreground">{project.grupo_cliente}</div>
-                                       )}
-                                     </div>
-                                   ) : column.key === 'origen' ? (
-                                     <span className={cn(
-                                       "px-2 py-1 text-xs font-medium rounded-full",
-                                       project.origen === 'Administrador' 
-                                         ? "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300"
-                                         : "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300"
-                                     )}>
-                                       {project.origen || 'Fichero'}
-                                     </span>
-                                   ) : (
-                                     <span className="truncate">{project[column.key] || '-'}</span>
-                                   )}
-                                </div>
-                              )}
+                              <div
+                                className="p-1 rounded min-h-[32px] flex items-center"
+                                style={{ fontSize: `${fontSize}px` }}
+                              >
+                                 {column.key === 'denominacion' ? (
+                                   <div>
+                                     <div className="font-medium text-sm">{project.denominacion}</div>
+                                     {project.descripcion && (
+                                       <div className="text-xs text-muted-foreground truncate">{project.descripcion}</div>
+                                     )}
+                                   </div>
+                                 ) : column.key === 'cliente' ? (
+                                   <div>
+                                     <div className="font-medium text-sm">{project.cliente}</div>
+                                     {project.grupo_cliente && (
+                                       <div className="text-xs text-muted-foreground">{project.grupo_cliente}</div>
+                                     )}
+                                   </div>
+                                 ) : column.key === 'origen' ? (
+                                   <span className={cn(
+                                     "px-2 py-1 text-xs font-medium rounded-full",
+                                     project.origen === 'Administrador' 
+                                       ? "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300"
+                                       : "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300"
+                                   )}>
+                                     {project.origen || 'Fichero'}
+                                   </span>
+                                 ) : (
+                                   <span className="truncate">{project[column.key] || '-'}</span>
+                                 )}
+                              </div>
                             </td>
                           ))}
 
