@@ -796,6 +796,24 @@ const HolidaysManagement = () => {
           </Card>
         )}
 
+        {/* Records per page selector */}
+        <div className="flex items-center gap-4 mb-4 p-3 bg-gray-50 rounded-lg border">
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-muted-foreground">Registros por página:</span>
+            <Select value={itemsPerPage.toString()} onValueChange={(value) => setItemsPerPage(Number(value))}>
+              <SelectTrigger className="w-20">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="25">25</SelectItem>
+                <SelectItem value="50">50</SelectItem>
+                <SelectItem value="100">100</SelectItem>
+                <SelectItem value="200">200</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
         {/* Font Size Control */}
         <div className="flex items-center gap-4 mb-4 p-3 bg-gray-50 rounded-lg border">
           <div className="flex items-center gap-2">
@@ -1034,21 +1052,6 @@ const HolidaysManagement = () => {
         {/* Pagination and Controls */}
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-6">
           <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-muted-foreground">Registros por página:</span>
-              <Select value={itemsPerPage.toString()} onValueChange={(value) => setItemsPerPage(Number(value))}>
-                <SelectTrigger className="w-20">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="25">25</SelectItem>
-                  <SelectItem value="50">50</SelectItem>
-                  <SelectItem value="100">100</SelectItem>
-                  <SelectItem value="200">200</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            
             <span className="text-sm text-muted-foreground">
               Mostrando {startIndex + 1} a {Math.min(endIndex, filteredHolidays.length)} de {filteredHolidays.length} registros
             </span>
