@@ -359,6 +359,18 @@ const HolidaysUpload = () => {
             )}
           </div>
 
+          {/* Imagen de ejemplo del Excel */}
+          <div className="mb-6 p-4 bg-amber-50 rounded-lg border border-amber-200">
+            <h4 className="text-sm font-semibold text-amber-800 mb-2">Ejemplo de archivo Excel:</h4>
+            <div className="bg-white rounded border border-amber-300 p-2">
+              <img 
+                src="/lovable-uploads/f1109839-35ce-4bd2-919d-be3b8d15076c.png" 
+                alt="Ejemplo de archivo Excel con días festivos" 
+                className="w-full max-w-md mx-auto rounded shadow-sm"
+              />
+            </div>
+          </div>
+
           {/* Zona de Carga */}
           <div className="border-2 border-dashed border-amber-300 rounded-lg p-8 text-center mb-4 hover:border-amber-400 transition-colors">
             <Upload className="h-12 w-12 text-amber-500 mx-auto mb-4" />

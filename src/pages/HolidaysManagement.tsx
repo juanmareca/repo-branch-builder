@@ -796,6 +796,28 @@ const HolidaysManagement = () => {
           </Card>
         )}
 
+        {/* Font Size Control */}
+        <div className="flex items-center gap-4 mb-4 p-3 bg-gray-50 rounded-lg border">
+          <div className="flex items-center gap-2">
+            <Type className="h-4 w-4 text-muted-foreground" />
+            <span className="text-sm font-medium text-muted-foreground">Tamaño de fuente:</span>
+          </div>
+          
+          <div className="flex items-center gap-3">
+            <span className="text-xs font-arial" style={{ fontSize: '8px' }}>A</span>
+            <Slider
+              value={[fontSize]}
+              onValueChange={(value) => setFontSize(value[0])}
+              max={20}
+              min={8}
+              step={1}
+              className="w-32"
+            />
+            <span className="text-lg font-arial" style={{ fontSize: '16px' }}>A</span>
+            <span className="text-xs text-muted-foreground ml-2 min-w-[35px]">{fontSize}px</span>
+          </div>
+        </div>
+
         {/* Enhanced Table */}
         <Card>
           <CardContent className="p-0">
@@ -1072,27 +1094,6 @@ const HolidaysManagement = () => {
           </div>
         </div>
 
-        {/* Font Size Control */}
-        <div className="flex items-center gap-4 mb-4 p-3 bg-gray-50 rounded-lg border mt-6">
-          <div className="flex items-center gap-2">
-            <Type className="h-4 w-4 text-muted-foreground" />
-            <span className="text-sm font-medium text-muted-foreground">Tamaño de fuente:</span>
-          </div>
-          
-          <div className="flex items-center gap-3">
-            <span className="text-xs font-arial" style={{ fontSize: '8px' }}>A</span>
-            <Slider
-              value={[fontSize]}
-              onValueChange={(value) => setFontSize(value[0])}
-              max={20}
-              min={8}
-              step={1}
-              className="w-32"
-            />
-            <span className="text-lg font-arial" style={{ fontSize: '16px' }}>A</span>
-            <span className="text-xs text-muted-foreground ml-2 min-w-[35px]">{fontSize}px</span>
-          </div>
-        </div>
       </div>
     </div>
     </TooltipProvider>
