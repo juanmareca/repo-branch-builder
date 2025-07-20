@@ -97,6 +97,8 @@ const ProjectsManagement = () => {
   const [tipologiaFilter, setTipologiaFilter] = useState<string[]>([]);
   const [clienteFilter, setClienteFilter] = useState<string[]>([]);
   const [gestorFilter, setGestorFilter] = useState<string[]>([]);
+  const [socioResponsableFilter, setSocioResponsableFilter] = useState<string[]>([]);
+  const [origenFilter, setOrigenFilter] = useState<string[]>([]);
   
   // Sorting
   const [sortField, setSortField] = useState<keyof Project>('denominacion');
@@ -190,7 +192,7 @@ const ProjectsManagement = () => {
 
   useEffect(() => {
     applyFilters();
-  }, [projects, searchTerm, tipologiaFilter, clienteFilter, gestorFilter, sortField, sortDirection]);
+  }, [projects, searchTerm, tipologiaFilter, clienteFilter, gestorFilter, socioResponsableFilter, origenFilter, sortField, sortDirection]);
 
   const fetchProjects = async () => {
     try {
@@ -247,6 +249,16 @@ const ProjectsManagement = () => {
       filtered = filtered.filter(project => gestorFilter.includes(project.gestor_proyecto));
     }
 
+    // Socio Responsable filter
+    if (socioResponsableFilter.length > 0) {
+      filtered = filtered.filter(project => socioResponsableFilter.includes(project.socio_responsable));
+    }
+
+    // Origen filter
+    if (origenFilter.length > 0) {
+      filtered = filtered.filter(project => origenFilter.includes(project.origen));
+    }
+
     // Apply sorting
     if (sortField) {
       filtered.sort((a, b) => {
@@ -267,7 +279,7 @@ const ProjectsManagement = () => {
 
     setFilteredProjects(filtered);
     setCurrentPage(1);
-  }, [projects, searchTerm, tipologiaFilter, clienteFilter, gestorFilter, sortField, sortDirection]);
+  }, [projects, searchTerm, tipologiaFilter, clienteFilter, gestorFilter, socioResponsableFilter, origenFilter, sortField, sortDirection]);
 
   const handleAddProject = async () => {
     if (!formData.codigo_inicial || !formData.denominacion || !formData.cliente) {
@@ -499,6 +511,8 @@ const ProjectsManagement = () => {
     setTipologiaFilter([]);
     setClienteFilter([]);
     setGestorFilter([]);
+    setSocioResponsableFilter([]);
+    setOrigenFilter([]);
   };
 
   const getUniqueValues = (field: keyof Project) => {
@@ -900,7 +914,7 @@ const ProjectsManagement = () => {
               </div>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
                 {/* Tipología Filter */}
                 <div>
                   <Label className="text-sm font-medium mb-2 block">Tipología</Label>
@@ -955,9 +969,54 @@ const ProjectsManagement = () => {
                         </Label>
                       </div>
                     ))}
-                  </div>
-                </div>
-              </div>
+                   </div>
+                 </div>
+
+                 {/* Socio Responsable Filter */}
+                 <div>
+                   <Label className="text-sm font-medium mb-2 block">Socio Responsable</Label>
+                   <div className="space-y-2 max-h-32 overflow-y-auto">
+                      {getUniqueValues('socio_responsable').map((socio) => (
+                        <div key={String(socio)} className="flex items-center space-x-2">
+                          <Checkbox
+                            id={`socio-${socio}`}
+                            checked={socioResponsableFilter.includes(String(socio))}
+                            onCheckedChange={() => toggleFilter(socioResponsableFilter, String(socio), setSocioResponsableFilter)}
+                          />
+                         <Label htmlFor={`socio-${socio}`} className="text-sm">
+                            {String(socio)}
+                         </Label>
+                       </div>
+                     ))}
+                   </div>
+                 </div>
+
+                 {/* Origen Filter */}
+                 <div>
+                   <Label className="text-sm font-medium mb-2 block">Origen</Label>
+                   <div className="space-y-2 max-h-32 overflow-y-auto">
+                      {getUniqueValues('origen').map((origen) => (
+                        <div key={String(origen)} className="flex items-center space-x-2">
+                          <Checkbox
+                            id={`origen-${origen}`}
+                            checked={origenFilter.includes(String(origen))}
+                            onCheckedChange={() => toggleFilter(origenFilter, String(origen), setOrigenFilter)}
+                          />
+                         <Label htmlFor={`origen-${origen}`} className="text-sm">
+                            <span className={cn(
+                              "px-2 py-1 text-xs font-medium rounded-full",
+                              String(origen) === 'Administrador' 
+                                ? "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300"
+                                : "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300"
+                            )}>
+                              {String(origen) || 'Fichero'}
+                            </span>
+                         </Label>
+                       </div>
+                     ))}
+                   </div>
+                 </div>
+               </div>
             </CardContent>
           </Card>
         )}
