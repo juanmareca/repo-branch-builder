@@ -19,4 +19,8 @@ export default defineConfig(({ mode }) => ({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  // Force cache refresh by clearing dependencies
+  optimizeDeps: {
+    force: true
+  },
 }));
