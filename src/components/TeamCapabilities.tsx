@@ -68,6 +68,7 @@ const TeamCapabilities: React.FC<TeamCapabilitiesProps> = ({
   currentSquadLeadName 
 }) => {
   const [capacities, setCapacities] = useState<Capacity[]>([]);
+  const [personsData, setPersonsData] = useState<{[key: string]: any}>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isEditing, setIsEditing] = useState(false);
@@ -93,21 +94,39 @@ const TeamCapabilities: React.FC<TeamCapabilitiesProps> = ({
         
         if (allMembers.length === 0) {
           setCapacities([]);
+          setPersonsData({});
           setLoading(false);
           return;
         }
 
-        const { data, error } = await supabase
+        // Obtener capacidades
+        const { data: capacitiesData, error: capacitiesError } = await supabase
           .from('capacities')
           .select('*')
           .in('person_name', allMembers)
           .order('person_name')
           .order('skill');
 
-        if (error) throw error;
-        setCapacities(data || []);
+        if (capacitiesError) throw capacitiesError;
+        setCapacities(capacitiesData || []);
+
+        // Obtener datos de personas (fecha de incorporación, oficina, etc.)
+        const { data: personsQueryData, error: personsError } = await supabase
+          .from('persons')
+          .select('nombre, fecha_incorporacion, oficina')
+          .in('nombre', allMembers);
+
+        if (personsError) throw personsError;
+        
+        // Crear un mapa de personas para fácil acceso
+        const personsMap: {[key: string]: any} = {};
+        personsQueryData?.forEach(person => {
+          personsMap[person.nombre] = person;
+        });
+        setPersonsData(personsMap);
+
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Error fetching capacities');
+        setError(err instanceof Error ? err.message : 'Error fetching data');
       } finally {
         setLoading(false);
       }
@@ -215,8 +234,41 @@ const TeamCapabilities: React.FC<TeamCapabilitiesProps> = ({
     return 'Información no disponible para este módulo. Contacta con el administrador para más detalles.';
   };
 
+  // Función para calcular años en Stratesys
+  const calculateYearsInStratesys = (fechaIncorporacion: string): string => {
+    if (!fechaIncorporacion || fechaIncorporacion === '') return '';
+    
+    try {
+      // Asumiendo que la fecha está en formato DD/MM/YYYY o similar
+      const parts = fechaIncorporacion.split('/');
+      if (parts.length !== 3) return '';
+      
+      const day = parseInt(parts[0]);
+      const month = parseInt(parts[1]) - 1; // Los meses en JS van de 0-11
+      const year = parseInt(parts[2]);
+      
+      const incorporationDate = new Date(year, month, day);
+      const today = new Date();
+      
+      const diffTime = today.getTime() - incorporationDate.getTime();
+      const diffYears = diffTime / (1000 * 3600 * 24 * 365.25);
+      
+      const years = Math.floor(diffYears);
+      if (years < 1) return 'menos de un año';
+      if (years === 1) return '1 año';
+      return `${years} años`;
+    } catch (error) {
+      return '';
+    }
+  };
+
   // Función para generar currículum en texto de una persona
   const generateCurriculum = (personName: string, personCapacities: Capacity[]) => {
+    // Obtener datos de la persona
+    const personInfo = personsData[personName];
+    const yearsInStratesys = personInfo?.fecha_incorporacion ? calculateYearsInStratesys(personInfo.fecha_incorporacion) : '';
+    const office = personInfo?.oficina || '';
+    
     // Analizar capacidades por nivel
     const sapModules = personCapacities.filter(c => c.skill.includes('Módulo SAP') && c.level !== 'Nulo');
     const expertModules = sapModules.filter(c => c.level === 'Experto' || c.level === 'Alto');
@@ -229,6 +281,18 @@ const TeamCapabilities: React.FC<TeamCapabilitiesProps> = ({
 
     // Generar texto del currículum
     let curriculum = `${personName}`;
+    
+    // Añadir información de oficina y años en Stratesys
+    if (office || yearsInStratesys) {
+      curriculum += ', ';
+      if (office && yearsInStratesys) {
+        curriculum += `de la oficina de ${office}, lleva ${yearsInStratesys} en Stratesys`;
+      } else if (office) {
+        curriculum += `de la oficina de ${office}`;
+      } else if (yearsInStratesys) {
+        curriculum += `lleva ${yearsInStratesys} en Stratesys`;
+      }
+    }
     
     // Conocimientos SAP
     if (expertModules.length > 0) {
