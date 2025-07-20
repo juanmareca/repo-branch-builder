@@ -488,9 +488,15 @@ const TeamCapabilities: React.FC<TeamCapabilitiesProps> = ({
                       ? 'text-blue-600 dark:text-blue-400' 
                       : 'text-green-600 dark:text-green-400'
                   }`}>
-                     {ALL_SKILLS.length} capacidades ({Object.values(personCapacities).flat().filter(c => 
-                       c.level !== 'Nulo' && c.level !== 'No'
-                     ).length} registradas)
+                    {(() => {
+                      const totalCapacities = ALL_SKILLS.length;
+                      const experiencedCapacities = Object.values(personCapacities).flat().filter(c => 
+                        c.level !== 'Nulo' && c.level !== 'No'
+                      ).length;
+                      const percentage = totalCapacities > 0 ? Math.round((experiencedCapacities / totalCapacities) * 100) : 0;
+                      
+                      return `${totalCapacities} capacidades disponibles (${experiencedCapacities} con experiencia) - ${percentage}%`;
+                    })()}
                   </p>
                 </div>
               </div>
