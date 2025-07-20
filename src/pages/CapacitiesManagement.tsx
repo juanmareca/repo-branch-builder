@@ -703,7 +703,7 @@ export default function CapacitiesManagement() {
           </Card>
         )}
 
-        {/* Content - Vista de tarjetas o tabla */}
+        {/* Content - Vista de tarjetas o visual */}
         {isCardViewEnabled && viewMode === 'card' ? (
           <div className="columns-1 md:columns-2 lg:columns-3 gap-6 space-y-6">
             {filteredEmployees.map((employee) => (
@@ -711,75 +711,136 @@ export default function CapacitiesManagement() {
             ))}
           </div>
         ) : (
-          /* Tabla de empleados */
-          <Card>
-            <CardContent className="p-0">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-16 py-2">ÍNDICE</TableHead>
-                    <TableHead className="py-2">EMPLEADO</TableHead>
-                    <TableHead className="py-2 text-center">CAPACIDADES</TableHead>
-                    <TableHead className="py-2 text-center">MÓDULOS SAP</TableHead>
-                    <TableHead className="py-2 text-center">IMPLANTACIÓN</TableHead>
-                    <TableHead className="py-2 text-center">IDIOMAS</TableHead>
-                    <TableHead className="py-2 text-center">INDUSTRIAS</TableHead>
-                    <TableHead className="w-24 py-2">ACCIONES</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredEmployees.map((employee, index) => (
-                    <TableRow key={employee.id}>
-                      <TableCell className="font-medium py-2">{index + 1}</TableCell>
-                      <TableCell className="py-2 font-medium">{employee.person_name}</TableCell>
-                      <TableCell className="py-2 text-center">
-                        <Badge variant="outline">{employee.capacities.length}</Badge>
-                      </TableCell>
-                      <TableCell className="py-2 text-center">
-                        <Badge variant="outline" className="bg-blue-50">
-                          {Object.keys(employee.sap_modules).length}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="py-2 text-center">
-                        <Badge variant="outline" className="bg-purple-50">
-                          {Object.keys(employee.sap_implementation).length}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="py-2 text-center">
-                        <Badge variant="outline" className="bg-green-50">
-                          {Object.keys(employee.languages).length}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="py-2 text-center">
-                        <Badge variant="outline" className="bg-orange-50">
-                          {Object.keys(employee.industries).length}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="py-2">
-                        <div className="flex items-center gap-1">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleDeleteEmployee(employee.person_name)}
-                            className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
+          /* Vista visual de capacidades */
+          <div className="space-y-6">
+            {filteredEmployees.map((employee, index) => (
+              <Card key={employee.id} className="border-l-4 border-l-cyan-500">
+                <CardHeader className="pb-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 bg-cyan-100 rounded-full flex items-center justify-center text-cyan-700 font-bold text-sm">
+                        {index + 1}
+                      </div>
+                      <CardTitle className="text-lg">{employee.person_name}</CardTitle>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Badge variant="outline" className="bg-cyan-50">
+                        {employee.capacities.length} capacidades
+                      </Badge>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleDeleteEmployee(employee.person_name)}
+                        className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid gap-6">
+                    {/* Módulos SAP e Implantaciones */}
+                    {(Object.keys(employee.sap_modules).length > 0 || Object.keys(employee.sap_implementation).length > 0) && (
+                      <div>
+                        <div className="bg-yellow-100 text-yellow-800 px-3 py-1 rounded text-sm font-medium mb-3 inline-block">
+                          Módulos SAP e IMPLANTACIONES
                         </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                  {filteredEmployees.length === 0 && (
-                    <TableRow>
-                      <TableCell colSpan={8} className="py-8 text-center text-muted-foreground">
-                        No hay empleados registrados. Sube un archivo para comenzar.
-                      </TableCell>
-                    </TableRow>
-                  )}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
+                        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-2">
+                          {/* Módulos SAP */}
+                          {Object.entries(employee.sap_modules).map(([skill, level]) => (
+                            <div key={skill} className={`px-3 py-2 rounded text-xs font-medium text-center ${
+                              level === 'Básico' ? 'bg-yellow-200 text-yellow-800' :
+                              level === 'Medio' ? 'bg-orange-200 text-orange-800' :
+                              level === 'Alto' ? 'bg-blue-200 text-blue-800' :
+                              level === 'Experto' ? 'bg-green-200 text-green-800' :
+                              'bg-gray-200 text-gray-800'
+                            }`}>
+                              <div className="font-semibold">{skill}</div>
+                              <div className="text-xs">{level}</div>
+                            </div>
+                          ))}
+                          {/* Implantaciones SAP */}
+                          {Object.entries(employee.sap_implementation).map(([skill, level]) => (
+                            <div key={skill} className={`px-3 py-2 rounded text-xs font-medium text-center ${
+                              level === 'Nulo' ? 'bg-red-200 text-red-800' :
+                              level === 'Básico' ? 'bg-yellow-200 text-yellow-800' :
+                              level === 'Medio' ? 'bg-orange-200 text-orange-800' :
+                              level === 'Alto' ? 'bg-blue-200 text-blue-800' :
+                              level === 'Experto' ? 'bg-green-200 text-green-800' :
+                              'bg-gray-200 text-gray-800'
+                            }`}>
+                              <div className="font-semibold">{skill}</div>
+                              <div className="text-xs">{level}</div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Idiomas */}
+                    {Object.keys(employee.languages).length > 0 && (
+                      <div>
+                        <div className="bg-blue-100 text-blue-800 px-3 py-1 rounded text-sm font-medium mb-3 inline-block">
+                          IDIOMAS
+                        </div>
+                        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-2">
+                          {Object.entries(employee.languages).map(([skill, level]) => (
+                            <div key={skill} className={`px-3 py-2 rounded text-xs font-medium text-center ${
+                              level === 'Nulo' ? 'bg-gray-200 text-gray-800' :
+                              level === 'Básico' ? 'bg-yellow-200 text-yellow-800' :
+                              level === 'Medio' ? 'bg-orange-200 text-orange-800' :
+                              level === 'Alto' ? 'bg-blue-200 text-blue-800' :
+                              level === 'Bilingüe' || level === 'Experto' ? 'bg-green-200 text-green-800' :
+                              'bg-blue-100 text-blue-800'
+                            }`}>
+                              <div className="font-semibold">{skill}</div>
+                              <div className="text-xs">{level}</div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Industrias */}
+                    {Object.keys(employee.industries).length > 0 && (
+                      <div>
+                        <div className="bg-green-100 text-green-800 px-3 py-1 rounded text-sm font-medium mb-3 inline-block">
+                          INDUSTRIAS
+                        </div>
+                        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-2">
+                          {Object.entries(employee.industries).map(([skill, level]) => (
+                            <div key={skill} className={`px-3 py-2 rounded text-xs font-medium text-center ${
+                              level === 'No' ? 'bg-red-200 text-red-800' :
+                              level === 'Sí' ? 'bg-green-200 text-green-800' :
+                              'bg-green-100 text-green-800'
+                            }`}>
+                              <div className="font-semibold">{skill}</div>
+                              <div className="text-xs">{level}</div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Fecha de evaluación */}
+                    {employee.evaluation_date && (
+                      <div className="text-xs text-muted-foreground">
+                        Última evaluación: {formatDate(employee.evaluation_date)}
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+            {filteredEmployees.length === 0 && (
+              <Card>
+                <CardContent className="py-8 text-center text-muted-foreground">
+                  No hay empleados registrados. Sube un archivo para comenzar.
+                </CardContent>
+              </Card>
+            )}
+          </div>
         )}
       </div>
     </div>
