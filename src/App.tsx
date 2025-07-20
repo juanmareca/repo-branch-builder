@@ -34,6 +34,11 @@ const App = () => {
     console.log('App - Loading complete. UserRole is:', userRole);
     setIsLoading(false);
     setIsAuthenticated(true);
+    
+    // Forzar navegación al dashboard de admin
+    if (userRole === 'admin') {
+      window.location.replace('/');
+    }
   };
 
   const handleLogout = () => {
