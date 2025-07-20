@@ -33,7 +33,6 @@ import {
   Settings2,
   Plus,
   Download,
-  FileDown,
   X,
   Edit,
   Trash2,
@@ -740,7 +739,7 @@ const ProjectsManagement = () => {
               variant="outline"
               className="text-purple-600 border-purple-600 hover:bg-purple-50"
             >
-              <FileDown className="h-4 w-4 mr-2" />
+              <Download className="h-4 w-4 mr-2" />
               Cargar Excel
             </Button>
 
@@ -750,7 +749,7 @@ const ProjectsManagement = () => {
               disabled={filteredProjects.length === 0}
               className="text-purple-600 border-purple-600 hover:bg-purple-50"
             >
-              <FileDown className="h-4 w-4 mr-2" />
+              <Download className="h-4 w-4 mr-2" />
               Exportar Excel
             </Button>
             
