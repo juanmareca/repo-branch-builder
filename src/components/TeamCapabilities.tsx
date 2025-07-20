@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Brain, Star, Award, Loader2 } from 'lucide-react';
+import { Brain, Star, Award, Loader2, Users } from 'lucide-react';
 
 interface Capacity {
   id: string;
@@ -87,10 +87,14 @@ const TeamCapabilities: React.FC<TeamCapabilitiesProps> = ({ teamMembers }) => {
     return <Brain className="h-4 w-4" />;
   };
 
-  const groupCapacitiesByCategory = () => {
-    const grouped: { [key: string]: Capacity[] } = {};
+  const groupCapacitiesByPerson = () => {
+    const grouped: { [key: string]: { [category: string]: Capacity[] } } = {};
     
     capacities.forEach(capacity => {
+      if (!grouped[capacity.person_name]) {
+        grouped[capacity.person_name] = {};
+      }
+      
       let category = 'Otras Capacidades';
       
       if (capacity.skill.toLowerCase().includes('módulo sap') || capacity.skill.toLowerCase().includes('sap')) {
@@ -101,13 +105,26 @@ const TeamCapabilities: React.FC<TeamCapabilitiesProps> = ({ teamMembers }) => {
         category = 'Industrias';
       }
       
-      if (!grouped[category]) {
-        grouped[category] = [];
+      if (!grouped[capacity.person_name][category]) {
+        grouped[capacity.person_name][category] = [];
       }
-      grouped[category].push(capacity);
+      grouped[capacity.person_name][category].push(capacity);
     });
     
     return grouped;
+  };
+
+  const sortPersons = (persons: string[]) => {
+    // Buscar el squad lead en la lista de miembros del equipo
+    const squadLead = teamMembers.find(member => 
+      persons.includes(member) && member.includes('SQUAD LEAD') // Asumiendo que viene marcado así
+    ) || teamMembers[0]; // Si no encontramos uno marcado, tomar el primero
+    
+    // Separar squad lead del resto
+    const otherMembers = persons.filter(person => person !== squadLead).sort();
+    
+    // Retornar squad lead primero, luego el resto alfabéticamente
+    return squadLead ? [squadLead, ...otherMembers] : otherMembers;
   };
 
   if (loading) {
@@ -139,64 +156,115 @@ const TeamCapabilities: React.FC<TeamCapabilitiesProps> = ({ teamMembers }) => {
     );
   }
 
-  const groupedCapacities = groupCapacitiesByCategory();
+  const groupedByPerson = groupCapacitiesByPerson();
+  const sortedPersons = sortPersons(Object.keys(groupedByPerson));
 
   return (
-    <div className="space-y-6">
-      {Object.entries(groupedCapacities).map(([category, categoryCapacities]) => (
-        <Card key={category} className="overflow-hidden">
-          <CardHeader className="bg-gradient-to-r from-primary/5 to-primary/10">
-            <CardTitle className="flex items-center gap-2 text-lg">
-              {getSkillIcon(category)}
-              {category}
-            </CardTitle>
-            <CardDescription>
-              {categoryCapacities.length} capacidades registradas
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="p-0">
-            <div className="overflow-x-auto">
-              <div className="grid gap-1 p-4" style={{ 
-                gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-                minWidth: 'fit-content'
-              }}>
-                {categoryCapacities.map((capacity, index) => (
-                  <div
-                    key={capacity.id}
-                    className="p-3 border rounded-lg hover:shadow-sm transition-shadow group"
-                  >
-                    <div className="flex items-start justify-between gap-2 mb-2">
-                      <div className="flex-1 min-w-0">
-                        <h4 className="font-medium text-sm leading-tight group-hover:text-primary transition-colors">
-                          {capacity.skill.replace('Módulo SAP - ', '')}
-                        </h4>
-                        <p className="text-xs text-muted-foreground mt-1 truncate">
-                          {capacity.person_name}
-                        </p>
-                      </div>
-                      <Badge 
-                        variant="outline" 
-                        className={`text-xs px-2 py-1 ${getLevelColor(capacity.level)}`}
-                      >
-                        {capacity.level}
-                      </Badge>
-                    </div>
-                    
-                    {capacity.certification && (
-                      <div className="flex items-center gap-1 mt-2">
-                        <Award className="h-3 w-3 text-amber-500" />
-                        <span className="text-xs text-muted-foreground truncate">
-                          {capacity.certification}
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                ))}
+    <div className="space-y-8">
+      {sortedPersons.map((personName) => {
+        const personCapacities = groupedByPerson[personName];
+        const isSquadLead = personName === sortedPersons[0]; // El primero es el squad lead
+        
+        return (
+          <div key={personName} className="space-y-4">
+            {/* Header de la persona */}
+            <div className={`flex items-center gap-3 p-4 rounded-lg border-l-4 ${
+              isSquadLead 
+                ? 'border-l-blue-500 bg-gradient-to-r from-blue-50 to-blue-100/50 dark:from-blue-950/20 dark:to-blue-900/10' 
+                : 'border-l-green-500 bg-gradient-to-r from-green-50 to-green-100/50 dark:from-green-950/20 dark:to-green-900/10'
+            }`}>
+              <div className={`flex-shrink-0 h-12 w-12 rounded-xl flex items-center justify-center ${
+                isSquadLead 
+                  ? 'bg-blue-100 dark:bg-blue-900/50' 
+                  : 'bg-green-100 dark:bg-green-900/50'
+              }`}>
+                <Users className={`w-6 h-6 ${
+                  isSquadLead 
+                    ? 'text-blue-600 dark:text-blue-400' 
+                    : 'text-green-600 dark:text-green-400'
+                }`} />
+              </div>
+              <div>
+                <h2 className={`text-xl font-bold ${
+                  isSquadLead 
+                    ? 'text-blue-800 dark:text-blue-300' 
+                    : 'text-green-800 dark:text-green-300'
+                }`}>
+                  {personName}
+                  {isSquadLead && <span className="ml-2 text-sm font-normal text-blue-600 dark:text-blue-400">(Squad Lead)</span>}
+                </h2>
+                <p className={`text-sm ${
+                  isSquadLead 
+                    ? 'text-blue-600 dark:text-blue-400' 
+                    : 'text-green-600 dark:text-green-400'
+                }`}>
+                  {Object.values(personCapacities).flat().length} capacidades registradas
+                </p>
               </div>
             </div>
-          </CardContent>
-        </Card>
-      ))}
+
+            {/* Categorías de capacidades para esta persona */}
+            <div className="grid gap-4 ml-4">
+              {['Módulos SAP e Implantaciones', 'Idiomas', 'Industrias', 'Otras Capacidades'].map(category => {
+                const categoryCapacities = personCapacities[category];
+                
+                if (!categoryCapacities || categoryCapacities.length === 0) {
+                  return null;
+                }
+
+                return (
+                  <Card key={category} className="overflow-hidden">
+                    <CardHeader className="bg-gradient-to-r from-muted/50 to-muted/80 py-3">
+                      <CardTitle className="flex items-center gap-2 text-base">
+                        {getSkillIcon(category)}
+                        {category}
+                      </CardTitle>
+                      <CardDescription className="text-xs">
+                        {categoryCapacities.length} capacidades
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="p-4">
+                      <div className="grid gap-2" style={{ 
+                        gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))'
+                      }}>
+                        {categoryCapacities.map((capacity) => (
+                          <div
+                            key={capacity.id}
+                            className="p-3 border rounded-lg hover:shadow-sm transition-shadow group"
+                          >
+                            <div className="flex items-start justify-between gap-2 mb-2">
+                              <div className="flex-1 min-w-0">
+                                <h4 className="font-medium text-sm leading-tight group-hover:text-primary transition-colors">
+                                  {capacity.skill.replace('Módulo SAP - ', '')}
+                                </h4>
+                              </div>
+                              <Badge 
+                                variant="outline" 
+                                className={`text-xs px-2 py-1 ${getLevelColor(capacity.level)}`}
+                              >
+                                {capacity.level}
+                              </Badge>
+                            </div>
+                            
+                            {capacity.certification && (
+                              <div className="flex items-center gap-1 mt-2">
+                                <Award className="h-3 w-3 text-amber-500" />
+                                <span className="text-xs text-muted-foreground truncate">
+                                  {capacity.certification}
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 };
