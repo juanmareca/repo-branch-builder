@@ -73,6 +73,11 @@ const Asignaciones = () => {
   const [percentage, setPercentage] = useState<string>('100');
   const [selectedProject, setSelectedProject] = useState<string>('');
   
+  // Estado del resumen
+  const [summaryStartDate, setSummaryStartDate] = useState<string>('');
+  const [summaryEndDate, setSummaryEndDate] = useState<string>('');
+  const [showSummary, setShowSummary] = useState(false);
+  
   // Datos
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
@@ -330,6 +335,123 @@ const Asignaciones = () => {
   const getSelectedMemberName = () => {
     const member = teamMembers.find(m => m.id === selectedMember);
     return member ? member.nombre : 'Seleccionar miembro';
+  };
+
+  const generateSummary = () => {
+    if (!selectedMember || !summaryStartDate || !summaryEndDate) return null;
+
+    const startSummary = new Date(summaryStartDate);
+    const endSummary = new Date(summaryEndDate);
+    const selectedMemberOffice = teamMembers.find(m => m.id === selectedMember)?.oficina;
+
+    // Obtener todos los días del período
+    const allDays = eachDayOfInterval({ start: startSummary, end: endSummary });
+    const totalDays = allDays.length;
+
+    // Contar días de fin de semana
+    const weekendDays = allDays.filter(day => isWeekend(day)).length;
+    const weekendPercentage = ((weekendDays / totalDays) * 100).toFixed(1);
+
+    // Contar días festivos (que no sean fin de semana)
+    const holidayDays = allDays.filter(day => {
+      if (isWeekend(day)) return false;
+      return holidays.some(holiday => {
+        const holidayDate = new Date(holiday.date);
+        return (
+          holidayDate.getDate() === day.getDate() &&
+          holidayDate.getMonth() === day.getMonth() &&
+          holidayDate.getFullYear() === day.getFullYear() &&
+          (holiday.comunidad_autonoma === selectedMemberOffice || holiday.pais === 'España')
+        );
+      });
+    }).length;
+
+    // Obtener asignaciones del miembro en el período
+    const memberAssignments = assignments.filter(assignment => {
+      if (assignment.person_id !== selectedMember) return false;
+      
+      const assignmentStart = new Date(assignment.start_date);
+      const assignmentEnd = new Date(assignment.end_date);
+      
+      // Verificar si hay superposición con el período de resumen
+      return (startSummary <= assignmentEnd && endSummary >= assignmentStart);
+    });
+
+    // Calcular días por proyecto
+    const projectSummary: { [key: string]: { days: number; percentage: number; name: string } } = {};
+    let totalAssignedPercentage = 0;
+
+    allDays.forEach(day => {
+      let dayTotalPercentage = 0;
+      
+      memberAssignments.forEach(assignment => {
+        const assignmentStart = new Date(assignment.start_date);
+        const assignmentEnd = new Date(assignment.end_date);
+        
+        if (isWithinInterval(day, { start: assignmentStart, end: assignmentEnd })) {
+          const project = projects.find(p => p.id === assignment.project_id);
+          const projectKey = project?.codigo_inicial || assignment.project_id;
+          const projectName = project?.denominacion || 'Proyecto desconocido';
+          
+          if (!projectSummary[projectKey]) {
+            projectSummary[projectKey] = { days: 0, percentage: 0, name: projectName };
+          }
+          
+          // Calcular días efectivos considerando el porcentaje
+          const effectiveDays = assignment.hours_allocated / 100;
+          projectSummary[projectKey].days += effectiveDays;
+          projectSummary[projectKey].percentage = assignment.hours_allocated;
+          
+          dayTotalPercentage += assignment.hours_allocated;
+        }
+      });
+      
+      totalAssignedPercentage += dayTotalPercentage;
+    });
+
+    // Calcular capacidad disponible
+    const workableDays = totalDays - weekendDays - holidayDays;
+    const maxCapacity = workableDays * 100; // 100% por cada día laborable
+    const assignedCapacity = totalAssignedPercentage;
+    const availableCapacity = ((maxCapacity - assignedCapacity) / maxCapacity * 100).toFixed(1);
+
+    // Días sin asignar (días laborables menos días asignados)
+    const totalAssignedDays = Object.values(projectSummary).reduce((sum, project) => sum + project.days, 0);
+    const unassignedDays = Math.max(0, workableDays - totalAssignedDays);
+
+    return {
+      totalDays,
+      weekendDays,
+      weekendPercentage,
+      holidayDays,
+      workableDays,
+      projectSummary,
+      unassignedDays,
+      availableCapacity,
+      memberName: getSelectedMemberName()
+    };
+  };
+
+  const handleGenerateSummary = () => {
+    if (!selectedMember || !summaryStartDate || !summaryEndDate) {
+      toast({
+        title: "Error",
+        description: "Por favor selecciona un miembro y las fechas para el resumen",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (new Date(summaryStartDate) > new Date(summaryEndDate)) {
+      toast({
+        title: "Error",
+        description: "La fecha de inicio debe ser anterior a la fecha de fin",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setShowSummary(true);
   };
 
   return (
@@ -609,6 +731,167 @@ const Asignaciones = () => {
                   </div>
                 </div>
               </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Summary Section */}
+        {selectedMember && (
+          <Card className="mt-8">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <CalendarDays className="h-5 w-5 text-green-600" />
+                Resumen de Asignaciones - {getSelectedMemberName()}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {/* Formulario para fechas del resumen */}
+              <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg">
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+                  <div>
+                    <Label htmlFor="summaryStartDate">Fecha Desde (Resumen)</Label>
+                    <Input
+                      type="date"
+                      value={summaryStartDate}
+                      onChange={(e) => setSummaryStartDate(e.target.value)}
+                      className="bg-white"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="summaryEndDate">Fecha Hasta (Resumen)</Label>
+                    <Input
+                      type="date"
+                      value={summaryEndDate}
+                      onChange={(e) => setSummaryEndDate(e.target.value)}
+                      className="bg-white"
+                    />
+                  </div>
+                  <div className="md:col-span-2">
+                    <Button 
+                      onClick={handleGenerateSummary}
+                      className="w-full bg-green-600 hover:bg-green-700 text-white"
+                    >
+                      <CalendarDays className="h-4 w-4 mr-2" />
+                      Generar Resumen del Período
+                    </Button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Mostrar resumen si está disponible */}
+              {showSummary && (() => {
+                const summary = generateSummary();
+                if (!summary) return null;
+
+                return (
+                  <div className="space-y-6">
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
+                      <h3 className="text-lg font-semibold text-blue-900 mb-4">
+                        📊 Resumen de Asignaciones - {summary.memberName}
+                      </h3>
+                      <p className="text-sm text-blue-800 mb-4">
+                        Período: {format(new Date(summaryStartDate), 'dd/MM/yyyy')} - {format(new Date(summaryEndDate), 'dd/MM/yyyy')}
+                      </p>
+
+                      {/* Estadísticas generales */}
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                        <div className="bg-white p-4 rounded-lg border">
+                          <div className="text-center">
+                            <div className="text-2xl font-bold text-gray-900">{summary.totalDays}</div>
+                            <div className="text-sm text-gray-600">Días naturales</div>
+                          </div>
+                        </div>
+                        <div className="bg-white p-4 rounded-lg border">
+                          <div className="text-center">
+                            <div className="text-2xl font-bold text-yellow-600">
+                              {summary.weekendDays}
+                            </div>
+                            <div className="text-sm text-gray-600">
+                              Fines de semana ({summary.weekendPercentage}%)
+                            </div>
+                          </div>
+                        </div>
+                        <div className="bg-white p-4 rounded-lg border">
+                          <div className="text-center">
+                            <div className="text-2xl font-bold text-pink-600">{summary.holidayDays}</div>
+                            <div className="text-sm text-gray-600">Días festivos</div>
+                          </div>
+                        </div>
+                        <div className="bg-white p-4 rounded-lg border">
+                          <div className="text-center">
+                            <div className="text-2xl font-bold text-green-600">{summary.workableDays}</div>
+                            <div className="text-sm text-gray-600">Días laborables</div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Asignaciones por proyecto */}
+                      <div className="mb-6">
+                        <h4 className="text-md font-semibold text-gray-900 mb-3">
+                          📋 Asignaciones por Proyecto:
+                        </h4>
+                        {Object.keys(summary.projectSummary).length > 0 ? (
+                          <div className="space-y-2">
+                            {Object.entries(summary.projectSummary).map(([projectCode, projectData]) => (
+                              <div key={projectCode} className="bg-white p-3 rounded-lg border flex justify-between items-center">
+                                <div>
+                                  <span className="font-medium text-gray-900">{projectCode}</span>
+                                  <span className="text-sm text-gray-600 ml-2">- {projectData.name}</span>
+                                </div>
+                                <div className="text-right">
+                                  <div className="text-lg font-bold text-blue-600">
+                                    {projectData.days.toFixed(1)} días
+                                  </div>
+                                  <div className="text-sm text-gray-600">
+                                    al {projectData.percentage}%
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <div className="bg-gray-50 p-4 rounded-lg text-center text-gray-600">
+                            No hay asignaciones en este período
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Días sin asignar */}
+                      <div className="mb-6">
+                        <div className="bg-gray-50 p-4 rounded-lg border">
+                          <div className="flex justify-between items-center">
+                            <span className="font-medium text-gray-900">📅 Días sin asignar:</span>
+                            <span className="text-lg font-bold text-orange-600">
+                              {summary.unassignedDays.toFixed(1)} días
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Capacidad disponible */}
+                      <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
+                        <div className="flex items-start gap-2">
+                          <Info className="h-5 w-5 text-orange-600 mt-0.5" />
+                          <div>
+                            <p className="font-medium text-orange-900">
+                              ⚠️ Aviso de Capacidad
+                            </p>
+                            <p className="text-sm text-orange-800 mt-1">
+                              En el período considerado, este recurso tiene un{' '}
+                              <strong>{summary.availableCapacity}%</strong> de capacidad disponible.
+                            </p>
+                            {parseFloat(summary.availableCapacity) < 20 && (
+                              <p className="text-sm text-red-600 mt-2 font-medium">
+                                🚨 Recurso sobrecargado - Considere redistribuir asignaciones
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
             </CardContent>
           </Card>
         )}
