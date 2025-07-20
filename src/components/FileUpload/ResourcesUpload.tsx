@@ -101,7 +101,8 @@ const ResourcesUpload = () => {
       cex: row[5] || '', // CEX
       grupo: row[6] || '', // Grupo
       categoria: row[7] || '', // Categoria
-      oficina: row[8] || '' // Oficina
+      oficina: row[8] || '', // Oficina
+      origen: 'Fichero' // Origen por defecto para archivos
     };
   };
 

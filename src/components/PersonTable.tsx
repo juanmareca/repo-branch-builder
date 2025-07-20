@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
 import { Person } from '../types';
-import { User, Mail, Calendar, MapPin, ChevronUp, ChevronDown, ChevronsUpDown } from 'lucide-react';
+import { User, Mail, Calendar, MapPin, ChevronUp, ChevronDown, ChevronsUpDown, Edit } from 'lucide-react';
 
 interface PersonTableProps {
   persons: Person[];
+  onEditPerson?: (person: Person) => void;
 }
 
-const PersonTable: React.FC<PersonTableProps> = ({ persons }) => {
+const PersonTable: React.FC<PersonTableProps> = ({ persons, onEditPerson }) => {
   const [sortedPersons, setSortedPersons] = useState<Person[]>(persons);
   const [sortField, setSortField] = useState<keyof Person | null>(null);
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
@@ -137,12 +138,20 @@ const PersonTable: React.FC<PersonTableProps> = ({ persons }) => {
                 <span>Oficina</span>
                 {getSortIcon('oficina')}
               </div>
-             </th>
-           </tr>
-         </thead>
+              </th>
+              <th className="px-6 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider bg-muted">
+                Acciones
+              </th>
+            </tr>
+          </thead>
            <tbody className="bg-background divide-y divide-border">
-           {sortedPersons.map((person, index) => (
-             <tr key={person.id || index} className="hover:bg-muted/50 transition-colors duration-150">
+            {sortedPersons.map((person, index) => (
+              <tr 
+                key={person.id || index} 
+                className={`hover:bg-muted/50 transition-colors duration-150 ${
+                  person.origen === 'Administrador' ? 'bg-red-50 dark:bg-red-950/20' : ''
+                }`}
+              >
                <td className="px-3 py-2 whitespace-nowrap text-xs text-muted-foreground font-mono bg-background sticky left-0 z-10 border-r border-border">
                  {index + 1}
                </td>
@@ -184,13 +193,26 @@ const PersonTable: React.FC<PersonTableProps> = ({ persons }) => {
                    {person.categoria}
                  </span>
                </td>
-               <td className="px-6 py-2 whitespace-nowrap text-sm text-foreground">
-                 <div className="flex items-center">
-                   <MapPin className="w-4 h-4 text-muted-foreground mr-2" />
-                   {person.oficina}
-                 </div>
-               </td>
-             </tr>
+                <td className="px-6 py-2 whitespace-nowrap text-sm text-foreground">
+                  <div className="flex items-center">
+                    <MapPin className="w-4 h-4 text-muted-foreground mr-2" />
+                    {person.oficina}
+                  </div>
+                </td>
+                <td className="px-6 py-2 whitespace-nowrap text-sm text-foreground">
+                  <div className="flex items-center space-x-2">
+                    {onEditPerson && (
+                      <button
+                        onClick={() => onEditPerson(person)}
+                        className="p-1 text-muted-foreground hover:text-foreground hover:bg-muted rounded transition-colors"
+                        title="Editar persona"
+                      >
+                        <Edit className="w-4 h-4" />
+                      </button>
+                    )}
+                  </div>
+                </td>
+              </tr>
            ))}
          </tbody>
         </table>

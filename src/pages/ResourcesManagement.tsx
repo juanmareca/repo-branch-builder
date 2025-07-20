@@ -47,6 +47,8 @@ import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
 import ResourcesUpload from '@/components/FileUpload/ResourcesUpload';
+import EditPersonDialog from '@/components/EditPersonDialog';
+import PersonTable from '@/components/PersonTable';
 import * as XLSX from 'xlsx';
 
 interface Person {
@@ -60,6 +62,7 @@ interface Person {
   grupo: string;
   categoria: string;
   oficina: string;
+  origen?: string;
   created_at: string;
   updated_at: string;
 }
@@ -78,6 +81,8 @@ const ResourcesManagement = () => {
   const [filteredResources, setFilteredResources] = useState<Person[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [editingPerson, setEditingPerson] = useState<Person | null>(null);
   
   // Filters
   const [squadFilter, setSquadFilter] = useState<string[]>([]);
@@ -352,6 +357,50 @@ const ResourcesManagement = () => {
     setCategoriaFilter([]);
     setOficinaFilter([]);
     setCexFilter([]);
+  };
+
+  const handleEditPerson = (person: Person) => {
+    setEditingPerson(person);
+    setEditDialogOpen(true);
+  };
+
+  const handleSavePerson = async (updatedPerson: Person) => {
+    try {
+      const { error } = await supabase
+        .from('persons')
+        .update({
+          ...updatedPerson,
+          origen: 'Administrador', // Cambiar origen a Administrador cuando se edita
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', updatedPerson.id);
+
+      if (error) throw error;
+
+      // Actualizar el estado local
+      setResources(prev => 
+        prev.map(person => 
+          person.id === updatedPerson.id 
+            ? { ...updatedPerson, origen: 'Administrador' }
+            : person
+        )
+      );
+
+      toast({
+        title: "Éxito",
+        description: "Persona actualizada correctamente",
+      });
+
+      setEditDialogOpen(false);
+      setEditingPerson(null);
+    } catch (error) {
+      console.error('Error updating person:', error);
+      toast({
+        title: "Error",
+        description: "Error al actualizar la persona",
+        variant: "destructive",
+      });
+    }
   };
 
   const getUniqueValues = (field: keyof Person) => {
@@ -1075,7 +1124,9 @@ const ResourcesManagement = () => {
                     {/* Body */}
                     <tbody>
                       {currentResources.map((resource, index) => (
-                        <tr key={resource.id} className="hover:bg-gray-50 border-b border-gray-100">
+                        <tr key={resource.id} className={`hover:bg-gray-50 border-b border-gray-100 ${
+                          resource.origen === 'Administrador' ? 'bg-red-50 dark:bg-red-950/20' : ''
+                        }`}>
                           {/* Columna índice fija */}
                            <td 
                              className="sticky left-0 z-10 bg-white font-medium text-center border-r border-gray-200 p-3"
@@ -1154,10 +1205,7 @@ const ResourcesManagement = () => {
                                    <Button
                                      variant="ghost"
                                      size="sm"
-                                     onClick={() => {
-                                       // Handle edit
-                                       console.log('Edit resource:', resource.id);
-                                     }}
+                                      onClick={() => handleEditPerson(resource)}
                                      className="h-8 w-8 p-0"
                                    >
                                      <Edit className="h-4 w-4" />
@@ -1200,6 +1248,22 @@ const ResourcesManagement = () => {
             )}
           </CardContent>
         </Card>
+
+        {/* Edit Person Dialog */}
+        <EditPersonDialog
+          person={editingPerson}
+          open={editDialogOpen}
+          onOpenChange={setEditDialogOpen}
+          onSave={handleSavePerson}
+        />
+
+        {/* Person Table Alternative (for reference) */}
+        {false && (
+          <PersonTable 
+            persons={filteredResources} 
+            onEditPerson={handleEditPerson} 
+          />
+        )}
       </div>
     </div>
     </TooltipProvider>

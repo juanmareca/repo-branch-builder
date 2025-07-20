@@ -307,6 +307,7 @@ export type Database = {
           nombre: string
           num_pers: string
           oficina: string
+          origen: string
           squad_lead: string
           updated_at: string | null
         }
@@ -321,6 +322,7 @@ export type Database = {
           nombre?: string
           num_pers?: string
           oficina?: string
+          origen?: string
           squad_lead?: string
           updated_at?: string | null
         }
@@ -335,6 +337,7 @@ export type Database = {
           nombre?: string
           num_pers?: string
           oficina?: string
+          origen?: string
           squad_lead?: string
           updated_at?: string | null
         }

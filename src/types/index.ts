@@ -9,6 +9,7 @@ export interface Person {
   categoria: string;
   oficina: string;
   squad_lead: string;
+  origen?: string;
   created_at?: string;
   updated_at?: string;
 }
