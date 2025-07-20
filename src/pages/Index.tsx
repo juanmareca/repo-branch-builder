@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Users, Loader2, ArrowLeft } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { Person } from '../types';
 
 const Index = ({ userRole, userData }: { userRole?: string; userData?: any }) => {
   const { persons, squadLeads, loading, error } = useSquadData();
@@ -46,9 +47,39 @@ const Index = ({ userRole, userData }: { userRole?: string; userData?: any }) =>
     );
   }
 
-  const filteredPersons = selectedSquadLead === 'all' 
-    ? persons 
-    : persons.filter(person => person.squad_lead === selectedSquadLead);
+  // Función para incluir al squad lead en su propio equipo
+  const getTeamMembers = () => {
+    if (selectedSquadLead === 'all') {
+      return persons;
+    }
+    
+    const teamMembers = persons.filter(person => person.squad_lead === selectedSquadLead);
+    
+    // Si es la vista del squad lead, añadir al propio squad lead al equipo
+    if (isSquadLeadView && userData?.name) {
+      const squadLeadAsPerson: Person = {
+        id: `squad-lead-${userData.name}`,
+        nombre: userData.name,
+        cex: 'SQUAD_LEAD',
+        num_pers: 'SL001',
+        fecha_incorporacion: '',
+        mail_empresa: userData.email || '',
+        grupo: 'Squad Lead',
+        categoria: 'Squad Lead',
+        oficina: '',
+        squad_lead: userData.name,
+        origen: 'Squad Lead',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
+      
+      return [squadLeadAsPerson, ...teamMembers];
+    }
+    
+    return teamMembers;
+  };
+
+  const filteredPersons = getTeamMembers();
 
   return (
     <div className="min-h-screen bg-background">

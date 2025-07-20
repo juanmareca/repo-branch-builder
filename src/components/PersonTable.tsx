@@ -149,7 +149,8 @@ const PersonTable: React.FC<PersonTableProps> = ({ persons, onEditPerson }) => {
               <tr 
                 key={person.id || index} 
                 className={`hover:bg-muted/50 transition-colors duration-150 ${
-                  person.origen === 'Administrador' ? 'bg-red-50 dark:bg-red-950/20' : ''
+                  person.origen === 'Administrador' ? 'bg-red-50 dark:bg-red-950/20' : 
+                  person.origen === 'Squad Lead' ? 'bg-blue-50 dark:bg-blue-950/30' : ''
                 }`}
               >
                <td className="px-3 py-2 whitespace-nowrap text-xs text-muted-foreground font-mono bg-background sticky left-0 z-10 border-r border-border">
