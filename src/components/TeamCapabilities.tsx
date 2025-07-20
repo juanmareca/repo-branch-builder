@@ -89,6 +89,7 @@ const TeamCapabilities: React.FC<TeamCapabilitiesProps> = ({ teamMembers }) => {
       'SAP Ledgers': 'SAP Ledgers S4: Gestión de libros contables en SAP S/4HANA.',
       'SAP Monedas': 'SAP Monedas S4: Gestión de múltiples monedas y tipos de cambio.',
       'CO-PA': 'Controlling - Profitability Analysis: Análisis de rentabilidad por productos, clientes o segmentos.',
+      'CO-PCA': 'CO-PCA: Profit Center Accounting (Contabilidad de Centros de Beneficio). Forma parte del módulo SAP CO (Controlling) y proporciona información sobre la rentabilidad y desempeño económico de distintas áreas organizativas como departamentos, líneas de negocio, ubicaciones geográficas y divisiones estratégicas. Permite asignar ingresos y gastos a distintos centros de beneficio, facilita el análisis de resultados operativos por cada unidad y proporciona una visión descentralizada de la rentabilidad. En S/4HANA se integra dentro del módulo de Contabilidad de Resultados (Universal Journal) con Segment Reporting.',
       'TR-CM': 'Treasury - Cash Management: Gestión de tesorería y flujo de caja.',
       'TR-TRM': 'Treasury and Risk Management: Gestión de riesgos financieros y tesorería.',
       'CO-CCA': 'Controlling - Cost Center Accounting: Contabilidad de centros de coste.',
