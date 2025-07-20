@@ -24,20 +24,6 @@ const App = () => {
   const [userRole, setUserRole] = useState<string>('');
   const [userData, setUserData] = useState<any>(null);
 
-  // Limpiar estado al cargar la aplicación para asegurar que siempre comience desde el splash
-  useEffect(() => {
-    // Limpiar cualquier estado previo
-    setIsAuthenticated(false);
-    setIsLoading(false);
-    setUserRole('');
-    setUserData(null);
-    
-    // Limpiar localStorage si hay configuraciones persistentes
-    localStorage.removeItem('user-session');
-    localStorage.removeItem('user-role');
-    localStorage.removeItem('user-authenticated');
-  }, []);
-
   const handleLogin = (role: string, userData?: any) => {
     console.log('App - handleLogin called with role:', role);
     setUserRole(role);
