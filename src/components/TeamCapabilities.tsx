@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Brain, Star, Award, Loader2, Users, Info, Edit, Save, X } from 'lucide-react';
+import { Brain, Star, Award, Loader2, Users, Info, Edit, Save, X, Building2, Globe, Cog, ArrowRight, CheckCircle, AlertCircle } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useToast } from '@/hooks/use-toast';
 
@@ -144,6 +144,40 @@ const TeamCapabilities: React.FC<TeamCapabilitiesProps> = ({
       default:
         return 'bg-gray-100 text-gray-800 border-gray-200 dark:bg-gray-900/20 dark:text-gray-400';
     }
+  };
+
+  // Función para procesar y estructurar la información de módulos SAP
+  const parseModuleInfo = (moduleName: string, description: string) => {
+    const sections = description.split('. ');
+    
+    // Extraer el nombre y descripción principal
+    const mainDesc = sections[0] || description;
+    const [moduleCode, ...restParts] = mainDesc.split(': ');
+    const mainDefinition = restParts.join(': ');
+    
+    // Buscar secciones específicas
+    const funciones = sections.find(s => s.toLowerCase().includes('funciones') || s.toLowerCase().includes('función'))?.replace(/^[^:]*: ?/, '');
+    const componentes = sections.find(s => s.toLowerCase().includes('componentes') || s.toLowerCase().includes('estructura'))?.replace(/^[^:]*: ?/, '');
+    const transacciones = sections.find(s => s.toLowerCase().includes('transacciones') || s.toLowerCase().includes('transacción'))?.replace(/^[^:]*: ?/, '');
+    const integraciones = sections.find(s => s.toLowerCase().includes('integra') || s.toLowerCase().includes('conecta'))?.replace(/^[^:]*: ?/, '');
+    const s4hana = sections.find(s => s.toLowerCase().includes('s/4hana') || s.toLowerCase().includes('s4hana'))?.replace(/^[^:]*: ?/, '');
+    
+    return {
+      moduleCode: moduleCode.trim(),
+      mainDefinition: mainDefinition.trim(),
+      funciones,
+      componentes,
+      transacciones,
+      integraciones,
+      s4hana,
+      isFinancial: moduleCode.includes('FI-'),
+      isControlling: moduleCode.includes('CO-'),
+      isTreasury: moduleCode.includes('TR-'),
+      isRealEstate: moduleCode.includes('RE-'),
+      isBRIM: moduleCode.includes('BRIM'),
+      isGRC: moduleCode.includes('GRC'),
+      isS4Implementation: moduleCode.includes('S4HANA')
+    };
   };
 
   const getSAPModuleInfo = (moduleName: string): string => {
@@ -493,29 +527,149 @@ const TeamCapabilities: React.FC<TeamCapabilitiesProps> = ({
                                     <h4 className="font-medium text-sm leading-tight group-hover:text-primary transition-colors">
                                       {capacity.skill.replace('Módulo SAP - ', '')}
                                     </h4>
-                                    {isSAPModule(capacity.skill) && (
-                                      <Popover>
-                                        <PopoverTrigger asChild>
-                                          <Button
-                                            variant="ghost"
-                                            size="sm"
-                                            className="h-5 w-5 p-0 hover:bg-primary/10"
-                                          >
-                                            <Info className="h-3 w-3 text-muted-foreground hover:text-primary" />
-                                          </Button>
-                                        </PopoverTrigger>
-                                        <PopoverContent className="w-80 p-3">
-                                          <div className="space-y-2">
-                                            <h4 className="font-semibold text-sm">
-                                              {capacity.skill.replace('Módulo SAP - ', '')}
-                                            </h4>
-                                            <p className="text-xs text-muted-foreground leading-relaxed">
-                                              {getSAPModuleInfo(capacity.skill)}
-                                            </p>
-                                          </div>
-                                        </PopoverContent>
-                                      </Popover>
-                                    )}
+                                     {isSAPModule(capacity.skill) && (
+                                       <Popover>
+                                         <PopoverTrigger asChild>
+                                           <Button
+                                             variant="ghost"
+                                             size="sm"
+                                             className="h-6 w-6 p-0 hover:bg-primary/10 transition-colors"
+                                           >
+                                             <Info className="h-4 w-4 text-muted-foreground hover:text-primary transition-colors" />
+                                           </Button>
+                                         </PopoverTrigger>
+                                         <PopoverContent className="w-[400px] p-0 bg-background border shadow-lg animate-fade-in" sideOffset={8}>
+                                           {(() => {
+                                             const description = getSAPModuleInfo(capacity.skill);
+                                             const moduleInfo = parseModuleInfo(capacity.skill, description);
+                                             
+                                             return (
+                                               <div className="space-y-4 p-5">
+                                                 {/* Header del módulo */}
+                                                 <div className="flex items-start gap-3 pb-3 border-b">
+                                                   <div className={`flex-shrink-0 w-10 h-10 rounded-lg flex items-center justify-center ${
+                                                     moduleInfo.isFinancial ? 'bg-blue-100 dark:bg-blue-900/30' :
+                                                     moduleInfo.isControlling ? 'bg-purple-100 dark:bg-purple-900/30' :
+                                                     moduleInfo.isTreasury ? 'bg-green-100 dark:bg-green-900/30' :
+                                                     moduleInfo.isRealEstate ? 'bg-orange-100 dark:bg-orange-900/30' :
+                                                     moduleInfo.isBRIM ? 'bg-pink-100 dark:bg-pink-900/30' :
+                                                     moduleInfo.isGRC ? 'bg-red-100 dark:bg-red-900/30' :
+                                                     moduleInfo.isS4Implementation ? 'bg-indigo-100 dark:bg-indigo-900/30' :
+                                                     'bg-gray-100 dark:bg-gray-900/30'
+                                                   }`}>
+                                                     {moduleInfo.isFinancial ? <Building2 className="w-5 h-5 text-blue-600 dark:text-blue-400" /> :
+                                                      moduleInfo.isControlling ? <Cog className="w-5 h-5 text-purple-600 dark:text-purple-400" /> :
+                                                      moduleInfo.isTreasury ? <Globe className="w-5 h-5 text-green-600 dark:text-green-400" /> :
+                                                      moduleInfo.isRealEstate ? <Building2 className="w-5 h-5 text-orange-600 dark:text-orange-400" /> :
+                                                      moduleInfo.isBRIM ? <Cog className="w-5 h-5 text-pink-600 dark:text-pink-400" /> :
+                                                      moduleInfo.isGRC ? <AlertCircle className="w-5 h-5 text-red-600 dark:text-red-400" /> :
+                                                      moduleInfo.isS4Implementation ? <ArrowRight className="w-5 h-5 text-indigo-600 dark:text-indigo-400" /> :
+                                                      <Brain className="w-5 h-5 text-gray-600 dark:text-gray-400" />}
+                                                   </div>
+                                                   <div className="flex-1 min-w-0">
+                                                     <h4 className="font-bold text-base text-foreground leading-tight">
+                                                       {moduleInfo.moduleCode}
+                                                     </h4>
+                                                     <p className="text-sm text-muted-foreground mt-1 leading-relaxed">
+                                                       {moduleInfo.mainDefinition}
+                                                     </p>
+                                                   </div>
+                                                 </div>
+
+                                                 {/* Contenido estructurado */}
+                                                 <div className="space-y-4">
+                                                   {moduleInfo.funciones && (
+                                                     <div className="space-y-2">
+                                                       <div className="flex items-center gap-2">
+                                                         <CheckCircle className="w-4 h-4 text-green-600 dark:text-green-400" />
+                                                         <h5 className="font-semibold text-sm text-foreground">Funciones Principales</h5>
+                                                       </div>
+                                                       <p className="text-xs text-muted-foreground leading-relaxed pl-6">
+                                                         {moduleInfo.funciones}
+                                                       </p>
+                                                     </div>
+                                                   )}
+
+                                                   {moduleInfo.componentes && (
+                                                     <div className="space-y-2">
+                                                       <div className="flex items-center gap-2">
+                                                         <Cog className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                                                         <h5 className="font-semibold text-sm text-foreground">Componentes</h5>
+                                                       </div>
+                                                       <p className="text-xs text-muted-foreground leading-relaxed pl-6">
+                                                         {moduleInfo.componentes}
+                                                       </p>
+                                                     </div>
+                                                   )}
+
+                                                   {moduleInfo.transacciones && (
+                                                     <div className="space-y-2">
+                                                       <div className="flex items-center gap-2">
+                                                         <ArrowRight className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+                                                         <h5 className="font-semibold text-sm text-foreground">Transacciones Clave</h5>
+                                                       </div>
+                                                       <p className="text-xs text-muted-foreground leading-relaxed pl-6 font-mono">
+                                                         {moduleInfo.transacciones}
+                                                       </p>
+                                                     </div>
+                                                   )}
+
+                                                   {moduleInfo.integraciones && (
+                                                     <div className="space-y-2">
+                                                       <div className="flex items-center gap-2">
+                                                         <Globe className="w-4 h-4 text-orange-600 dark:text-orange-400" />
+                                                         <h5 className="font-semibold text-sm text-foreground">Integraciones</h5>
+                                                       </div>
+                                                       <p className="text-xs text-muted-foreground leading-relaxed pl-6">
+                                                         {moduleInfo.integraciones}
+                                                       </p>
+                                                     </div>
+                                                   )}
+
+                                                   {moduleInfo.s4hana && (
+                                                     <div className="space-y-2 bg-gradient-to-r from-primary/5 to-primary/10 p-3 rounded-lg border border-primary/20">
+                                                       <div className="flex items-center gap-2">
+                                                         <Star className="w-4 h-4 text-primary" />
+                                                         <h5 className="font-semibold text-sm text-primary">S/4HANA</h5>
+                                                       </div>
+                                                       <p className="text-xs text-muted-foreground leading-relaxed pl-6">
+                                                         {moduleInfo.s4hana}
+                                                       </p>
+                                                     </div>
+                                                   )}
+                                                 </div>
+
+                                                 {/* Badge del tipo de módulo */}
+                                                 <div className="flex justify-end pt-2 border-t">
+                                                   <Badge 
+                                                     variant="secondary" 
+                                                     className={`text-xs px-3 py-1 ${
+                                                       moduleInfo.isFinancial ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' :
+                                                       moduleInfo.isControlling ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400' :
+                                                       moduleInfo.isTreasury ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' :
+                                                       moduleInfo.isRealEstate ? 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400' :
+                                                       moduleInfo.isBRIM ? 'bg-pink-100 text-pink-700 dark:bg-pink-900/30 dark:text-pink-400' :
+                                                       moduleInfo.isGRC ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' :
+                                                       moduleInfo.isS4Implementation ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400' :
+                                                       'bg-gray-100 text-gray-700 dark:bg-gray-900/30 dark:text-gray-400'
+                                                     }`}
+                                                   >
+                                                     {moduleInfo.isFinancial ? 'Financials' :
+                                                      moduleInfo.isControlling ? 'Controlling' :
+                                                      moduleInfo.isTreasury ? 'Treasury' :
+                                                      moduleInfo.isRealEstate ? 'Real Estate' :
+                                                      moduleInfo.isBRIM ? 'BRIM' :
+                                                      moduleInfo.isGRC ? 'GRC' :
+                                                      moduleInfo.isS4Implementation ? 'S/4HANA Implementation' :
+                                                      'SAP Module'}
+                                                   </Badge>
+                                                 </div>
+                                               </div>
+                                             );
+                                           })()}
+                                         </PopoverContent>
+                                       </Popover>
+                                     )}
                                   </div>
                                 </div>
                                 
