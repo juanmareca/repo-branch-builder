@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { format } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -97,6 +97,11 @@ const ResourcesManagement = () => {
   const [showColumns, setShowColumns] = useState(false);
   const [showUpload, setShowUpload] = useState(false);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  
+  // Column resizing
+  const [resizingColumn, setResizingColumn] = useState<string | null>(null);
+  const [startX, setStartX] = useState(0);
+  const [startWidth, setStartWidth] = useState(0);
   
   // Form data
   const [formData, setFormData] = useState({
@@ -383,6 +388,45 @@ const ResourcesManagement = () => {
       )
     );
   };
+
+  // Column resizing functions
+  const handleMouseDown = (e: React.MouseEvent, columnKey: string) => {
+    e.preventDefault();
+    const column = columns.find(col => col.key === columnKey);
+    if (column) {
+      setResizingColumn(columnKey);
+      setStartX(e.clientX);
+      setStartWidth(column.width);
+    }
+  };
+
+  const handleMouseMove = useCallback((e: MouseEvent) => {
+    if (!resizingColumn) return;
+    
+    const diff = e.clientX - startX;
+    const newWidth = Math.max(startWidth + diff, 80); // Mínimo 80px
+    
+    setColumns(prevColumns =>
+      prevColumns.map(col =>
+        col.key === resizingColumn ? { ...col, width: newWidth } : col
+      )
+    );
+  }, [resizingColumn, startX, startWidth]);
+
+  const handleMouseUp = useCallback(() => {
+    setResizingColumn(null);
+  }, []);
+
+  useEffect(() => {
+    if (resizingColumn) {
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+      return () => {
+        document.removeEventListener('mousemove', handleMouseMove);
+        document.removeEventListener('mouseup', handleMouseUp);
+      };
+    }
+  }, [resizingColumn, handleMouseMove, handleMouseUp]);
 
   // Pagination calculations
   const totalPages = Math.ceil(filteredResources.length / itemsPerPage);
@@ -855,20 +899,24 @@ const ResourcesManagement = () => {
                      {columns.filter(col => col.visible).map(column => (
                        <TableHead 
                          key={column.key}
-                         className="cursor-pointer hover:bg-blue-100 bg-blue-50 text-center font-semibold resize-x"
+                         className="relative cursor-pointer hover:bg-blue-100 bg-blue-50 text-center font-semibold border-r border-gray-200"
                          onClick={() => handleSort(column.key)}
                          style={{ 
                            width: column.width,
                            minWidth: column.minWidth,
-                           maxWidth: '400px',
-                           resize: 'horizontal',
-                           overflow: 'hidden'
+                           maxWidth: '400px'
                          }}
                        >
-                         <div className="flex items-center justify-center gap-2">
+                         <div className="flex items-center justify-center gap-2 pr-2">
                            <span>{column.label}</span>
                            {getSortIcon(column.key)}
                          </div>
+                         {/* Resize handle */}
+                         <div
+                           className="absolute right-0 top-0 w-1 h-full cursor-col-resize bg-transparent hover:bg-blue-300 transition-colors"
+                           onMouseDown={(e) => handleMouseDown(e, column.key)}
+                           style={{ userSelect: 'none' }}
+                         />
                        </TableHead>
                      ))}
                      <TableHead className="w-24 bg-blue-50 text-center font-semibold">ACCIONES</TableHead>
