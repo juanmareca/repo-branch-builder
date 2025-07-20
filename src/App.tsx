@@ -14,6 +14,7 @@ import BackupsManagement from "./pages/BackupsManagement";
 import AuditLogs from "./pages/AuditLogs";
 import CapacitiesManagement from "./pages/CapacitiesManagement";
 import ProjectsManagement from "./pages/ProjectsManagement";
+import ResourcesManagement from "./pages/ResourcesManagement";
 
 const queryClient = new QueryClient();
 
@@ -88,6 +89,7 @@ const App = () => {
             <Route path="/backups" element={userRole === 'admin' ? <BackupsManagement /> : <Navigate to="/" replace />} />
             <Route path="/audit-logs" element={userRole === 'admin' ? <AuditLogs /> : <Navigate to="/" replace />} />
             <Route path="/capacities" element={userRole === 'admin' ? <CapacitiesManagement /> : <Navigate to="/" replace />} />
+            <Route path="/resources" element={userRole === 'admin' ? <ResourcesManagement /> : <Navigate to="/" replace />} />
             <Route path="/projects" element={userRole === 'admin' ? <AdminDashboard /> : <Navigate to="/" replace />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
