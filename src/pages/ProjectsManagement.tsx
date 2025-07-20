@@ -1184,14 +1184,15 @@ const ProjectsManagement = () => {
           </div>
         </div>
 
-        {/* Pagination */}
-        <div className="flex items-center justify-between mt-6">
-          <div className="flex items-center gap-2">
+        {/* Pagination Info */}
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-4">
             <span className="text-sm text-muted-foreground">
               Mostrando {startIndex + 1} - {Math.min(endIndex, filteredProjects.length)} de {filteredProjects.length} proyectos
             </span>
+            <span className="text-sm text-muted-foreground">por página</span>
             <Select value={itemsPerPage.toString()} onValueChange={(value) => setItemsPerPage(Number(value))}>
-              <SelectTrigger className="w-20">
+              <SelectTrigger className="w-24">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
