@@ -1,24 +1,64 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { format } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { Slider } from '@/components/ui/slider';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Checkbox } from '@/components/ui/checkbox';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Textarea } from '@/components/ui/textarea';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
 import { 
-  FolderOpen, Search, FileDown, Trash2, Eye, Plus, Filter, X, Settings2, RotateCcw, Edit, 
-  ChevronUp, ChevronDown, ChevronsUpDown, ArrowLeft, Home, LogOut, ChevronLeft, ChevronRight, 
-  ChevronsLeft, ChevronsRight, GripVertical, MoreHorizontal 
+  Table, 
+  TableBody, 
+  TableCell, 
+  TableHead, 
+  TableHeader, 
+  TableRow 
+} from '@/components/ui/table';
+import { 
+  FolderOpen,
+  Search,
+  Filter,
+  Settings2,
+  Plus,
+  Download,
+  FileDown,
+  X,
+  Edit,
+  Trash2,
+  Save,
+  RotateCcw,
+  Home,
+  LogOut,
+  ChevronUp,
+  ChevronDown,
+  ChevronsUpDown,
+  ChevronLeft,
+  ChevronRight,
+  ChevronsLeft,
+  ChevronsRight,
+  Type,
+  CalendarIcon,
+  ArrowLeft,
+  GripVertical,
+  MoreHorizontal
 } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
-import { cn } from '@/lib/utils';
+import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
 import ProjectsUpload from '@/components/FileUpload/ProjectsUpload';
 import * as XLSX from 'xlsx';
 
@@ -51,41 +91,38 @@ const ProjectsManagement = () => {
   const [filteredProjects, setFilteredProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  
+  // Filters
   const [statusFilter, setStatusFilter] = useState<string[]>([]);
   const [tipologiaFilter, setTipologiaFilter] = useState<string[]>([]);
   const [clienteFilter, setClienteFilter] = useState<string[]>([]);
   const [gestorFilter, setGestorFilter] = useState<string[]>([]);
-  const [showUpload, setShowUpload] = useState(false);
-  const [showFilters, setShowFilters] = useState(false);
-  const [showColumns, setShowColumns] = useState(false);
-  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-  const [editingRow, setEditingRow] = useState<string | null>(null);
-  const [sortField, setSortField] = useState<keyof Project | null>(null);
+  
+  // Sorting
+  const [sortField, setSortField] = useState<keyof Project>('denominacion');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
   
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(50);
   
-  // Column management
-  const [columns, setColumns] = useState<ColumnConfig[]>([
-    { key: 'codigo_inicial', label: 'Código', visible: true, width: 150, minWidth: 120, resizable: true },
-    { key: 'denominacion', label: 'Denominación / Descripción', visible: true, width: 300, minWidth: 200, resizable: true },
-    { key: 'cliente', label: 'Cliente / Grupo', visible: true, width: 250, minWidth: 180, resizable: true },
-    { key: 'gestor_proyecto', label: 'Gestor', visible: true, width: 180, minWidth: 150, resizable: true },
-    { key: 'socio_responsable', label: 'Socio Responsable', visible: true, width: 180, minWidth: 150, resizable: true },
-    { key: 'tipologia', label: 'Tipología', visible: true, width: 150, minWidth: 120, resizable: true },
-    { key: 'tipologia_2', label: 'Tipología 2', visible: false, width: 150, minWidth: 120, resizable: true },
-    { key: 'status', label: 'Estado', visible: true, width: 120, minWidth: 100, resizable: true }
-  ]);
+  // UI states
+  const [showFilters, setShowFilters] = useState(false);
+  const [showColumns, setShowColumns] = useState(false);
+  const [showUpload, setShowUpload] = useState(false);
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [isDefaultViewSaved, setIsDefaultViewSaved] = useState(false);
+  const [editingRow, setEditingRow] = useState<string | null>(null);
   
-  const [resizing, setResizing] = useState<{ columnKey: keyof Project; startX: number; startWidth: number } | null>(null);
-  const [draggedColumn, setDraggedColumn] = useState<keyof Project | null>(null);
+  // Font size control
+  const [fontSize, setFontSize] = useState(12);
   
-  const { toast } = useToast();
-  const navigate = useNavigate();
-
-  // Form state for adding new projects
+  // Column resizing
+  const [resizingColumn, setResizingColumn] = useState<string | null>(null);
+  const [startX, setStartX] = useState(0);
+  const [startWidth, setStartWidth] = useState(0);
+  
+  // Form data
   const [formData, setFormData] = useState({
     codigo_inicial: '',
     denominacion: '',
@@ -98,6 +135,39 @@ const ProjectsManagement = () => {
     tipologia_2: '',
     status: 'planning'
   });
+  
+  // Column management with persistence
+  const getInitialColumns = (): ColumnConfig[] => {
+    const savedColumns = localStorage.getItem('projects-columns-config');
+    if (savedColumns) {
+      try {
+        return JSON.parse(savedColumns);
+      } catch (error) {
+        console.error('Error parsing saved columns config:', error);
+      }
+    }
+    // Default configuration
+    return [
+      { key: 'codigo_inicial', label: 'CÓDIGO INICIAL', visible: true, width: 150, minWidth: 120, resizable: true },
+      { key: 'denominacion', label: 'DENOMINACIÓN / DESCRIPCIÓN', visible: true, width: 300, minWidth: 200, resizable: true },
+      { key: 'cliente', label: 'CLIENTE / GRUPO', visible: true, width: 250, minWidth: 180, resizable: true },
+      { key: 'gestor_proyecto', label: 'GESTOR', visible: true, width: 180, minWidth: 150, resizable: true },
+      { key: 'socio_responsable', label: 'SOCIO RESPONSABLE', visible: true, width: 180, minWidth: 150, resizable: true },
+      { key: 'tipologia', label: 'TIPOLOGÍA', visible: true, width: 150, minWidth: 120, resizable: true },
+      { key: 'tipologia_2', label: 'TIPOLOGÍA 2', visible: false, width: 150, minWidth: 120, resizable: true },
+      { key: 'status', label: 'ESTADO', visible: true, width: 120, minWidth: 100, resizable: true }
+    ];
+  };
+
+  const [columns, setColumns] = useState<ColumnConfig[]>(getInitialColumns());
+
+  // Save columns configuration to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem('projects-columns-config', JSON.stringify(columns));
+  }, [columns]);
+
+  const { toast } = useToast();
+  const navigate = useNavigate();
 
   useEffect(() => {
     fetchProjects();
@@ -109,23 +179,22 @@ const ProjectsManagement = () => {
 
   const fetchProjects = async () => {
     try {
+      setLoading(true);
       console.log('🔄 Cargando todos los proyectos...');
       
       const { data, error } = await supabase
         .from('projects')
         .select('*')
-        .limit(50000) // Límite alto para producción
-        .order('created_at', { ascending: false });
+        .order('denominacion', { ascending: true });
 
       if (error) throw error;
       
-      console.log(`✅ Proyectos cargados: ${data?.length || 0}`);
+      console.log('✅ Proyectos cargados:', data?.length);
       setProjects(data || []);
     } catch (error: any) {
-      console.error('Error fetching projects:', error);
       toast({
-        title: "Error",
-        description: "No se pudieron cargar los proyectos.",
+        title: "Error al cargar proyectos",
+        description: error.message,
         variant: "destructive",
       });
     } finally {
@@ -133,10 +202,10 @@ const ProjectsManagement = () => {
     }
   };
 
-  const applyFilters = () => {
+  const applyFilters = useCallback(() => {
     let filtered = [...projects];
 
-    // Filtro de búsqueda
+    // Search filter
     if (searchTerm) {
       filtered = filtered.filter(project =>
         project.denominacion.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -148,94 +217,53 @@ const ProjectsManagement = () => {
       );
     }
 
-    // Filtros por arrays
+    // Status filter
     if (statusFilter.length > 0) {
       filtered = filtered.filter(project => statusFilter.includes(project.status));
     }
 
+    // Tipología filter
     if (tipologiaFilter.length > 0) {
       filtered = filtered.filter(project => tipologiaFilter.includes(project.tipologia));
     }
 
+    // Cliente filter
     if (clienteFilter.length > 0) {
       filtered = filtered.filter(project => clienteFilter.includes(project.cliente));
     }
 
+    // Gestor filter
     if (gestorFilter.length > 0) {
       filtered = filtered.filter(project => gestorFilter.includes(project.gestor_proyecto));
     }
 
-    // Aplicar ordenamiento
+    // Apply sorting
     if (sortField) {
       filtered.sort((a, b) => {
-        let aValue = a[sortField] || '';
-        let bValue = b[sortField] || '';
+        let aValue: any = a[sortField];
+        let bValue: any = b[sortField];
         
-        if (typeof aValue === 'string') {
-          aValue = aValue.toLowerCase();
-          bValue = bValue.toLowerCase();
+        // Convert to string for comparison
+        aValue = String(aValue).toLowerCase();
+        bValue = String(bValue).toLowerCase();
+        
+        if (sortDirection === 'asc') {
+          return aValue < bValue ? -1 : aValue > bValue ? 1 : 0;
+        } else {
+          return aValue > bValue ? -1 : aValue < bValue ? 1 : 0;
         }
-        
-        if (aValue < bValue) return sortDirection === 'asc' ? -1 : 1;
-        if (aValue > bValue) return sortDirection === 'asc' ? 1 : -1;
-        return 0;
       });
     }
 
     setFilteredProjects(filtered);
-    setCurrentPage(1); // Reset to first page when filters change
-  };
-
-  const handleDeleteProject = async (projectId: string) => {
-    try {
-      const { error } = await supabase
-        .from('projects')
-        .delete()
-        .eq('id', projectId);
-
-      if (error) throw error;
-
-      setProjects(projects.filter(p => p.id !== projectId));
-      toast({
-        title: "Proyecto eliminado",
-        description: "El proyecto ha sido eliminado correctamente.",
-      });
-    } catch (error: any) {
-      console.error('Error deleting project:', error);
-      toast({
-        title: "Error",
-        description: "No se pudo eliminar el proyecto.",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleExportExcel = () => {
-    const exportData = filteredProjects.map(project => ({
-      'Código Inicial': project.codigo_inicial,
-      'Denominación': project.denominacion,
-      'Descripción': project.descripcion,
-      'Cliente': project.cliente,
-      'Grupo Cliente': project.grupo_cliente,
-      'Gestor Proyecto': project.gestor_proyecto,
-      'Socio Responsable': project.socio_responsable,
-      'Tipología': project.tipologia,
-      'Tipología 2': project.tipologia_2,
-      'Estado': project.status,
-      'Fecha Creación': new Date(project.created_at).toLocaleDateString()
-    }));
-
-    const ws = XLSX.utils.json_to_sheet(exportData);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'Proyectos');
-    XLSX.writeFile(wb, `proyectos_${new Date().toISOString().split('T')[0]}.xlsx`);
-  };
+    setCurrentPage(1);
+  }, [projects, searchTerm, statusFilter, tipologiaFilter, clienteFilter, gestorFilter, sortField, sortDirection]);
 
   const handleAddProject = async () => {
     if (!formData.codigo_inicial || !formData.denominacion || !formData.cliente) {
       toast({
         title: "Error",
-        description: "Por favor, complete todos los campos obligatorios",
+        description: "Por favor, complete al menos el código, denominación y cliente",
         variant: "destructive",
       });
       return;
@@ -244,18 +272,7 @@ const ProjectsManagement = () => {
     try {
       const { error } = await supabase
         .from('projects')
-        .insert({
-          codigo_inicial: formData.codigo_inicial,
-          denominacion: formData.denominacion,
-          descripcion: formData.descripcion,
-          cliente: formData.cliente,
-          grupo_cliente: formData.grupo_cliente,
-          gestor_proyecto: formData.gestor_proyecto,
-          socio_responsable: formData.socio_responsable,
-          tipologia: formData.tipologia,
-          tipologia_2: formData.tipologia_2,
-          status: formData.status
-        });
+        .insert(formData);
 
       if (error) throw error;
 
@@ -311,6 +328,119 @@ const ProjectsManagement = () => {
     }
   };
 
+  const handleDeleteProject = async (projectId: string) => {
+    try {
+      const { error } = await supabase
+        .from('projects')
+        .delete()
+        .eq('id', projectId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Éxito",
+        description: "Proyecto eliminado correctamente",
+      });
+
+      fetchProjects();
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "No se pudo eliminar el proyecto",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleExportExcel = () => {
+    const exportData = filteredProjects.map((project, index) => ({
+      'ÍNDICE': index + 1,
+      'CÓDIGO INICIAL': project.codigo_inicial,
+      'DENOMINACIÓN': project.denominacion,
+      'DESCRIPCIÓN': project.descripcion,
+      'CLIENTE': project.cliente,
+      'GRUPO CLIENTE': project.grupo_cliente,
+      'GESTOR PROYECTO': project.gestor_proyecto,
+      'SOCIO RESPONSABLE': project.socio_responsable,
+      'TIPOLOGÍA': project.tipologia,
+      'TIPOLOGÍA 2': project.tipologia_2,
+      'ESTADO': project.status,
+      'FECHA CREACIÓN': new Date(project.created_at).toLocaleDateString()
+    }));
+
+    const ws = XLSX.utils.json_to_sheet(exportData);
+    
+    // Aplicar estilos profesionales a las cabeceras
+    const headerRange = XLSX.utils.decode_range(ws['!ref']);
+    
+    // Estilo para las cabeceras
+    for (let col = headerRange.s.c; col <= headerRange.e.c; col++) {
+      const cellAddress = XLSX.utils.encode_cell({ r: 0, c: col });
+      if (!ws[cellAddress]) continue;
+      
+      ws[cellAddress].s = {
+        fill: {
+          patternType: "solid",
+          fgColor: { rgb: "7C3AED" }
+        },
+        font: {
+          color: { rgb: "FFFFFF" },
+          bold: true,
+          sz: 12
+        },
+        alignment: {
+          horizontal: "center",
+          vertical: "center"
+        },
+        border: {
+          top: { style: "thin", color: { rgb: "000000" } },
+          bottom: { style: "thin", color: { rgb: "000000" } },
+          left: { style: "thin", color: { rgb: "000000" } },
+          right: { style: "thin", color: { rgb: "000000" } }
+        }
+      };
+    }
+    
+    // Aplicar bordes a todas las celdas de datos
+    for (let row = headerRange.s.r + 1; row <= headerRange.e.r; row++) {
+      for (let col = headerRange.s.c; col <= headerRange.e.c; col++) {
+        const cellAddress = XLSX.utils.encode_cell({ r: row, c: col });
+        if (!ws[cellAddress]) continue;
+        
+        ws[cellAddress].s = {
+          border: {
+            top: { style: "thin", color: { rgb: "D9D9D9" } },
+            bottom: { style: "thin", color: { rgb: "D9D9D9" } },
+            left: { style: "thin", color: { rgb: "D9D9D9" } },
+            right: { style: "thin", color: { rgb: "D9D9D9" } }
+          }
+        };
+      }
+    }
+    
+    // Ajustar ancho de columnas automáticamente
+    const colWidths = [];
+    const headers = Object.keys(exportData[0] || {});
+    headers.forEach((header, index) => {
+      let maxLength = header.length;
+      exportData.forEach(row => {
+        const cellValue = row[header] ? row[header].toString() : '';
+        maxLength = Math.max(maxLength, cellValue.length);
+      });
+      colWidths.push({ wch: Math.min(maxLength + 2, 50) });
+    });
+    ws['!cols'] = colWidths;
+
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Proyectos');
+    XLSX.writeFile(wb, `proyectos_${new Date().toISOString().split('T')[0]}.xlsx`);
+
+    toast({
+      title: "Éxito",
+      description: "Archivo Excel exportado correctamente",
+    });
+  };
+
   const clearFilters = () => {
     setSearchTerm('');
     setStatusFilter([]);
@@ -319,11 +449,23 @@ const ProjectsManagement = () => {
     setGestorFilter([]);
   };
 
-  const toggleFilter = (filterArray: string[], value: string, setFilter: (arr: string[]) => void) => {
-    if (filterArray.includes(value)) {
-      setFilter(filterArray.filter(item => item !== value));
+  const getUniqueValues = (field: keyof Project) => {
+    return [...new Set(projects.map(project => project[field]).filter(Boolean))].sort();
+  };
+
+  const toggleColumnVisibility = (key: keyof Project) => {
+    setColumns(prevColumns =>
+      prevColumns.map(col =>
+        col.key === key ? { ...col, visible: !col.visible } : col
+      )
+    );
+  };
+
+  const toggleFilter = (currentFilter: string[], value: string, setFilter: React.Dispatch<React.SetStateAction<string[]>>) => {
+    if (currentFilter.includes(value)) {
+      setFilter(currentFilter.filter(item => item !== value));
     } else {
-      setFilter([...filterArray, value]);
+      setFilter([...currentFilter, value]);
     }
   };
 
@@ -337,16 +479,8 @@ const ProjectsManagement = () => {
   };
 
   const getSortIcon = (field: keyof Project) => {
-    if (sortField !== field) {
-      return <ChevronsUpDown className="w-4 h-4 opacity-50" />;
-    }
-    return sortDirection === 'asc' ? 
-      <ChevronUp className="w-4 h-4" /> : 
-      <ChevronDown className="w-4 h-4" />;
-  };
-
-  const getUniqueValues = (field: keyof Project) => {
-    return [...new Set(projects.map(project => project[field]).filter(Boolean))].sort();
+    if (sortField !== field) return <ChevronsUpDown className="h-4 w-4" />;
+    return sortDirection === 'asc' ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />;
   };
 
   const getStatusBadgeColor = (status: string) => {
@@ -359,45 +493,39 @@ const ProjectsManagement = () => {
     }
   };
 
-  // Pagination calculations
-  const totalPages = Math.ceil(filteredProjects.length / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const endIndex = startIndex + itemsPerPage;
-  const currentProjects = filteredProjects.slice(startIndex, endIndex);
-
-  // Column resize handlers
-  const handleMouseDown = useCallback((e: React.MouseEvent, columnKey: keyof Project) => {
+  // Column resizing functions
+  const handleMouseDown = (e: React.MouseEvent, columnKey: string) => {
     e.preventDefault();
+    e.stopPropagation();
     const column = columns.find(col => col.key === columnKey);
-    if (!column) return;
-
-    setResizing({
-      columnKey,
-      startX: e.clientX,
-      startWidth: column.width
-    });
-  }, [columns]);
+    if (column) {
+      setResizingColumn(columnKey);
+      setStartX(e.clientX);
+      setStartWidth(column.width);
+      document.body.style.cursor = 'col-resize';
+    }
+  };
 
   const handleMouseMove = useCallback((e: MouseEvent) => {
-    if (!resizing) return;
-
-    const deltaX = e.clientX - resizing.startX;
-    const newWidth = Math.max(resizing.startWidth + deltaX, 
-      columns.find(col => col.key === resizing.columnKey)?.minWidth || 100);
-
-    setColumns(prev => prev.map(col => 
-      col.key === resizing.columnKey 
-        ? { ...col, width: newWidth }
-        : col
-    ));
-  }, [resizing, columns]);
+    if (!resizingColumn) return;
+    
+    const diff = e.clientX - startX;
+    const newWidth = Math.max(startWidth + diff, 80);
+    
+    setColumns(prevColumns =>
+      prevColumns.map(col =>
+        col.key === resizingColumn ? { ...col, width: newWidth } : col
+      )
+    );
+  }, [resizingColumn, startX, startWidth]);
 
   const handleMouseUp = useCallback(() => {
-    setResizing(null);
+    setResizingColumn(null);
+    document.body.style.cursor = 'default';
   }, []);
 
   useEffect(() => {
-    if (resizing) {
+    if (resizingColumn) {
       document.addEventListener('mousemove', handleMouseMove);
       document.addEventListener('mouseup', handleMouseUp);
       return () => {
@@ -405,66 +533,62 @@ const ProjectsManagement = () => {
         document.removeEventListener('mouseup', handleMouseUp);
       };
     }
-  }, [resizing, handleMouseMove, handleMouseUp]);
+  }, [resizingColumn, handleMouseMove, handleMouseUp]);
 
-  // Column drag and drop handlers
-  const handleDragStart = (e: React.DragEvent, columnKey: keyof Project) => {
-    setDraggedColumn(columnKey);
-    e.dataTransfer.effectAllowed = 'move';
+  // Column reordering function
+  const handleDragEnd = (result: any) => {
+    if (!result.destination) return;
+
+    const sourceIndex = result.source.index;
+    const destinationIndex = result.destination.index;
+
+    if (sourceIndex === destinationIndex) return;
+
+    const visibleColumns = columns.filter(col => col.visible);
+    const hiddenColumns = columns.filter(col => !col.visible);
+    
+    const [reorderedColumn] = visibleColumns.splice(sourceIndex, 1);
+    visibleColumns.splice(destinationIndex, 0, reorderedColumn);
+    
+    setColumns([...visibleColumns, ...hiddenColumns]);
   };
 
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = 'move';
-  };
-
-  const handleDrop = (e: React.DragEvent, targetColumnKey: keyof Project) => {
-    e.preventDefault();
-    if (!draggedColumn || draggedColumn === targetColumnKey) return;
-
-    const draggedIndex = columns.findIndex(col => col.key === draggedColumn);
-    const targetIndex = columns.findIndex(col => col.key === targetColumnKey);
-
-    const newColumns = [...columns];
-    const [draggedCol] = newColumns.splice(draggedIndex, 1);
-    newColumns.splice(targetIndex, 0, draggedCol);
-
-    setColumns(newColumns);
-    setDraggedColumn(null);
-  };
+  // Pagination calculations
+  const totalPages = Math.ceil(filteredProjects.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const currentProjects = filteredProjects.slice(startIndex, endIndex);
 
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin w-8 h-8 border-2 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Cargando proyectos...</p>
+        <div className="flex items-center gap-2">
+          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+          <span className="text-muted-foreground">Cargando proyectos...</span>
         </div>
       </div>
     );
   }
 
   return (
+    <TooltipProvider>
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <div className="border-b bg-card">
-        <div className="container mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <Button variant="ghost" size="sm" onClick={() => navigate('/')}>
-                <ArrowLeft className="h-4 w-4" />
-              </Button>
+      <div className="container mx-auto py-6 px-4 max-w-7xl">
+        {/* Header */}
+        <div className="mb-6">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-4">
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-purple-100 rounded-lg">
-                  <FolderOpen className="h-6 w-6 text-purple-600" />
+                <div className="p-2 bg-purple-600 rounded-lg">
+                  <FolderOpen className="h-6 w-6 text-white" />
                 </div>
                 <div>
-                  <h1 className="text-2xl font-bold text-foreground">Gestión de Proyectos ({filteredProjects.length})</h1>
+                  <h1 className="text-3xl font-bold text-foreground">Gestión de Proyectos ({filteredProjects.length})</h1>
                   <p className="text-muted-foreground">Administra todos los proyectos del sistema</p>
                 </div>
               </div>
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-4">
               <Button 
                 variant="outline" 
                 size="sm"
@@ -488,12 +612,11 @@ const ProjectsManagement = () => {
             </div>
           </div>
         </div>
-      </div>
 
-      <div className="container mx-auto px-6 py-8">
-        {/* Actions Bar */}
-        <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
-          <div className="flex items-center gap-2">
+        {/* Action Buttons */}
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-4">
+            {/* Add Project Dialog */}
             <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
               <DialogTrigger asChild>
                 <Button className="bg-purple-600 hover:bg-purple-700 text-white">
@@ -501,90 +624,112 @@ const ProjectsManagement = () => {
                   Agregar Proyecto
                 </Button>
               </DialogTrigger>
-              <DialogContent className="max-w-2xl">
+              <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
-                  <DialogTitle>Agregar Nuevo Proyecto</DialogTitle>
+                  <DialogTitle className="flex items-center gap-2">
+                    <Plus className="h-5 w-5" />
+                    Agregar Nuevo Proyecto
+                  </DialogTitle>
                 </DialogHeader>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 py-4">
-                  <div>
-                    <Label>Código Inicial *</Label>
+                <div className="grid grid-cols-2 gap-6 py-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="codigo_inicial">Código Inicial *</Label>
                     <Input
+                      id="codigo_inicial"
                       value={formData.codigo_inicial}
-                      onChange={(e) => setFormData(prev => ({ ...prev, codigo_inicial: e.target.value }))}
-                      placeholder="Código del proyecto"
+                      onChange={(e) => setFormData({ ...formData, codigo_inicial: e.target.value })}
+                      placeholder="Ej: PROJ-001"
                     />
                   </div>
-                  <div>
-                    <Label>Denominación *</Label>
+                  <div className="space-y-2">
+                    <Label htmlFor="denominacion">Denominación *</Label>
                     <Input
+                      id="denominacion"
                       value={formData.denominacion}
-                      onChange={(e) => setFormData(prev => ({ ...prev, denominacion: e.target.value }))}
+                      onChange={(e) => setFormData({ ...formData, denominacion: e.target.value })}
                       placeholder="Nombre del proyecto"
                     />
                   </div>
-                  <div className="md:col-span-2">
-                    <Label>Descripción</Label>
+                  <div className="col-span-2 space-y-2">
+                    <Label htmlFor="descripcion">Descripción</Label>
                     <Textarea
+                      id="descripcion"
                       value={formData.descripcion}
-                      onChange={(e) => setFormData(prev => ({ ...prev, descripcion: e.target.value }))}
+                      onChange={(e) => setFormData({ ...formData, descripcion: e.target.value })}
                       placeholder="Descripción del proyecto"
                     />
                   </div>
-                  <div>
-                    <Label>Cliente *</Label>
+                  <div className="space-y-2">
+                    <Label htmlFor="cliente">Cliente *</Label>
                     <Input
+                      id="cliente"
                       value={formData.cliente}
-                      onChange={(e) => setFormData(prev => ({ ...prev, cliente: e.target.value }))}
+                      onChange={(e) => setFormData({ ...formData, cliente: e.target.value })}
                       placeholder="Nombre del cliente"
                     />
                   </div>
-                  <div>
-                    <Label>Grupo Cliente</Label>
+                  <div className="space-y-2">
+                    <Label htmlFor="grupo_cliente">Grupo Cliente</Label>
                     <Input
+                      id="grupo_cliente"
                       value={formData.grupo_cliente}
-                      onChange={(e) => setFormData(prev => ({ ...prev, grupo_cliente: e.target.value }))}
+                      onChange={(e) => setFormData({ ...formData, grupo_cliente: e.target.value })}
                       placeholder="Grupo del cliente"
                     />
                   </div>
-                  <div>
-                    <Label>Gestor Proyecto</Label>
+                  <div className="space-y-2">
+                    <Label htmlFor="gestor_proyecto">Gestor Proyecto</Label>
                     <Input
+                      id="gestor_proyecto"
                       value={formData.gestor_proyecto}
-                      onChange={(e) => setFormData(prev => ({ ...prev, gestor_proyecto: e.target.value }))}
+                      onChange={(e) => setFormData({ ...formData, gestor_proyecto: e.target.value })}
                       placeholder="Gestor del proyecto"
                     />
                   </div>
-                  <div>
-                    <Label>Socio Responsable</Label>
+                  <div className="space-y-2">
+                    <Label htmlFor="socio_responsable">Socio Responsable</Label>
                     <Input
+                      id="socio_responsable"
                       value={formData.socio_responsable}
-                      onChange={(e) => setFormData(prev => ({ ...prev, socio_responsable: e.target.value }))}
+                      onChange={(e) => setFormData({ ...formData, socio_responsable: e.target.value })}
                       placeholder="Socio responsable"
                     />
                   </div>
-                  <div>
-                    <Label>Tipología</Label>
+                  <div className="space-y-2">
+                    <Label htmlFor="tipologia">Tipología</Label>
                     <Input
+                      id="tipologia"
                       value={formData.tipologia}
-                      onChange={(e) => setFormData(prev => ({ ...prev, tipologia: e.target.value }))}
+                      onChange={(e) => setFormData({ ...formData, tipologia: e.target.value })}
                       placeholder="Tipología del proyecto"
                     />
                   </div>
-                  <div>
-                    <Label>Tipología 2</Label>
+                  <div className="space-y-2">
+                    <Label htmlFor="tipologia_2">Tipología 2</Label>
                     <Input
+                      id="tipologia_2"
                       value={formData.tipologia_2}
-                      onChange={(e) => setFormData(prev => ({ ...prev, tipologia_2: e.target.value }))}
+                      onChange={(e) => setFormData({ ...formData, tipologia_2: e.target.value })}
                       placeholder="Tipología secundaria"
                     />
                   </div>
                 </div>
-                <div className="flex justify-end gap-2">
-                  <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
+
+                <div className="flex justify-end gap-4 pt-4 border-t">
+                  <Button
+                    variant="outline"
+                    onClick={() => setIsAddDialogOpen(false)}
+                    className="flex items-center gap-2"
+                  >
+                    <X className="h-4 w-4" />
                     Cancelar
                   </Button>
-                  <Button onClick={handleAddProject}>
-                    Agregar Proyecto
+                  <Button
+                    onClick={handleAddProject}
+                    className="bg-purple-600 hover:bg-purple-700 text-white flex items-center gap-2"
+                  >
+                    <Save className="h-4 w-4" />
+                    Guardar Proyecto
                   </Button>
                 </div>
               </DialogContent>
@@ -608,6 +753,20 @@ const ProjectsManagement = () => {
               <FileDown className="h-4 w-4 mr-2" />
               Exportar Excel
             </Button>
+            
+            {/* Font Size Control */}
+            <div className="flex items-center gap-2">
+              <Type className="h-4 w-4 text-muted-foreground" />
+              <Slider
+                value={[fontSize]}
+                onValueChange={(value) => setFontSize(value[0])}
+                max={20}
+                min={8}
+                step={1}
+                className="w-20"
+              />
+              <span className="text-xs text-muted-foreground w-8">{fontSize}px</span>
+            </div>
           </div>
 
           <div className="flex items-center gap-2">
@@ -641,7 +800,7 @@ const ProjectsManagement = () => {
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
             <Input
-              placeholder="Buscar proyectos..."
+              placeholder="Buscar proyectos por nombre, código, cliente, gestor..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-10"
@@ -662,133 +821,83 @@ const ProjectsManagement = () => {
               </div>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 {/* Estado Filter */}
                 <div>
                   <Label className="text-sm font-medium mb-2 block">Estado</Label>
-                  <div className="space-y-2 max-h-40 overflow-y-auto border rounded-md p-2">
-                    {getUniqueValues('status').map(status => (
+                  <div className="space-y-2 max-h-32 overflow-y-auto">
+                    {getUniqueValues('status').map((status) => (
                       <div key={status} className="flex items-center space-x-2">
-                        <Checkbox 
+                        <Checkbox
                           id={`status-${status}`}
                           checked={statusFilter.includes(status)}
                           onCheckedChange={() => toggleFilter(statusFilter, status, setStatusFilter)}
                         />
-                        <label htmlFor={`status-${status}`} className="text-sm">{status}</label>
+                        <Label htmlFor={`status-${status}`} className="text-sm">
+                          <Badge className={getStatusBadgeColor(status)}>
+                            {status}
+                          </Badge>
+                        </Label>
                       </div>
                     ))}
                   </div>
-                  {statusFilter.length > 0 && (
-                    <div className="mt-2 flex flex-wrap gap-1">
-                      {statusFilter.map(status => (
-                        <Badge key={status} variant="secondary" className="text-xs">
-                          {status}
-                          <button 
-                            onClick={() => toggleFilter(statusFilter, status, setStatusFilter)}
-                            className="ml-1 hover:bg-secondary-foreground/20 rounded-full p-0.5"
-                          >
-                            <X className="h-3 w-3" />
-                          </button>
-                        </Badge>
-                      ))}
-                    </div>
-                  )}
-                </div>
-
-                {/* Cliente Filter */}
-                <div>
-                  <Label className="text-sm font-medium mb-2 block">Cliente</Label>
-                  <div className="space-y-2 max-h-40 overflow-y-auto border rounded-md p-2">
-                    {getUniqueValues('cliente').map(cliente => (
-                      <div key={cliente} className="flex items-center space-x-2">
-                        <Checkbox 
-                          id={`cliente-${cliente}`}
-                          checked={clienteFilter.includes(cliente)}
-                          onCheckedChange={() => toggleFilter(clienteFilter, cliente, setClienteFilter)}
-                        />
-                        <label htmlFor={`cliente-${cliente}`} className="text-sm">{cliente}</label>
-                      </div>
-                    ))}
-                  </div>
-                  {clienteFilter.length > 0 && (
-                    <div className="mt-2 flex flex-wrap gap-1">
-                      {clienteFilter.map(cliente => (
-                        <Badge key={cliente} variant="secondary" className="text-xs bg-blue-100 text-blue-800">
-                          {cliente}
-                          <button 
-                            onClick={() => toggleFilter(clienteFilter, cliente, setClienteFilter)}
-                            className="ml-1 hover:bg-blue-200 rounded-full p-0.5"
-                          >
-                            <X className="h-3 w-3" />
-                          </button>
-                        </Badge>
-                      ))}
-                    </div>
-                  )}
                 </div>
 
                 {/* Tipología Filter */}
                 <div>
                   <Label className="text-sm font-medium mb-2 block">Tipología</Label>
-                  <div className="space-y-2 max-h-40 overflow-y-auto border rounded-md p-2">
-                    {getUniqueValues('tipologia').map(tipologia => (
+                  <div className="space-y-2 max-h-32 overflow-y-auto">
+                    {getUniqueValues('tipologia').map((tipologia) => (
                       <div key={tipologia} className="flex items-center space-x-2">
-                        <Checkbox 
+                        <Checkbox
                           id={`tipologia-${tipologia}`}
                           checked={tipologiaFilter.includes(tipologia)}
                           onCheckedChange={() => toggleFilter(tipologiaFilter, tipologia, setTipologiaFilter)}
                         />
-                        <label htmlFor={`tipologia-${tipologia}`} className="text-sm">{tipologia}</label>
+                        <Label htmlFor={`tipologia-${tipologia}`} className="text-sm">
+                          {tipologia}
+                        </Label>
                       </div>
                     ))}
                   </div>
-                  {tipologiaFilter.length > 0 && (
-                    <div className="mt-2 flex flex-wrap gap-1">
-                      {tipologiaFilter.map(tipologia => (
-                        <Badge key={tipologia} variant="secondary" className="text-xs bg-green-100 text-green-800">
-                          {tipologia}
-                          <button 
-                            onClick={() => toggleFilter(tipologiaFilter, tipologia, setTipologiaFilter)}
-                            className="ml-1 hover:bg-green-200 rounded-full p-0.5"
-                          >
-                            <X className="h-3 w-3" />
-                          </button>
-                        </Badge>
-                      ))}
-                    </div>
-                  )}
+                </div>
+
+                {/* Cliente Filter */}
+                <div>
+                  <Label className="text-sm font-medium mb-2 block">Cliente</Label>
+                  <div className="space-y-2 max-h-32 overflow-y-auto">
+                    {getUniqueValues('cliente').map((cliente) => (
+                      <div key={cliente} className="flex items-center space-x-2">
+                        <Checkbox
+                          id={`cliente-${cliente}`}
+                          checked={clienteFilter.includes(cliente)}
+                          onCheckedChange={() => toggleFilter(clienteFilter, cliente, setClienteFilter)}
+                        />
+                        <Label htmlFor={`cliente-${cliente}`} className="text-sm">
+                          {cliente}
+                        </Label>
+                      </div>
+                    ))}
+                  </div>
                 </div>
 
                 {/* Gestor Filter */}
                 <div>
-                  <Label className="text-sm font-medium mb-2 block">Gestor Proyecto</Label>
-                  <div className="space-y-2 max-h-40 overflow-y-auto border rounded-md p-2">
-                    {getUniqueValues('gestor_proyecto').map(gestor => (
+                  <Label className="text-sm font-medium mb-2 block">Gestor</Label>
+                  <div className="space-y-2 max-h-32 overflow-y-auto">
+                    {getUniqueValues('gestor_proyecto').map((gestor) => (
                       <div key={gestor} className="flex items-center space-x-2">
-                        <Checkbox 
+                        <Checkbox
                           id={`gestor-${gestor}`}
                           checked={gestorFilter.includes(gestor)}
                           onCheckedChange={() => toggleFilter(gestorFilter, gestor, setGestorFilter)}
                         />
-                        <label htmlFor={`gestor-${gestor}`} className="text-sm">{gestor}</label>
+                        <Label htmlFor={`gestor-${gestor}`} className="text-sm">
+                          {gestor}
+                        </Label>
                       </div>
                     ))}
                   </div>
-                  {gestorFilter.length > 0 && (
-                    <div className="mt-2 flex flex-wrap gap-1">
-                      {gestorFilter.map(gestor => (
-                        <Badge key={gestor} variant="secondary" className="text-xs bg-purple-100 text-purple-800">
-                          {gestor}
-                          <button 
-                            onClick={() => toggleFilter(gestorFilter, gestor, setGestorFilter)}
-                            className="ml-1 hover:bg-purple-200 rounded-full p-0.5"
-                          >
-                            <X className="h-3 w-3" />
-                          </button>
-                        </Badge>
-                      ))}
-                    </div>
-                  )}
                 </div>
               </div>
             </CardContent>
@@ -799,31 +908,40 @@ const ProjectsManagement = () => {
         {showColumns && (
           <Card className="mb-6">
             <CardHeader>
-              <CardTitle className="text-lg">Gestión de Columnas</CardTitle>
+              <CardTitle className="text-lg">Configuración de Columnas</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                 {columns.map((column) => (
                   <div key={column.key} className="flex items-center space-x-2">
-                    <Checkbox 
+                    <Checkbox
                       id={`column-${column.key}`}
                       checked={column.visible}
-                      onCheckedChange={(checked) => 
-                        setColumns(prev => prev.map(col => 
-                          col.key === column.key 
-                            ? { ...col, visible: !!checked }
-                            : col
-                        ))
-                      }
+                      onCheckedChange={() => toggleColumnVisibility(column.key)}
                     />
-                    <label htmlFor={`column-${column.key}`} className="text-sm">
+                    <Label htmlFor={`column-${column.key}`} className="text-sm">
                       {column.label}
-                    </label>
+                    </Label>
                   </div>
                 ))}
               </div>
               <div className="mt-4 flex items-center space-x-2">
-                <Checkbox id="save-default" />
+                <Checkbox 
+                  id="save-default"
+                  checked={isDefaultViewSaved}
+                  onCheckedChange={(checked) => {
+                    if (checked) {
+                      localStorage.setItem('projects-columns-config', JSON.stringify(columns));
+                      setIsDefaultViewSaved(true);
+                      toast({
+                        title: "Configuración guardada",
+                        description: "Esta configuración se aplicará por defecto cuando vuelvas a entrar",
+                      });
+                    } else {
+                      setIsDefaultViewSaved(false);
+                    }
+                  }}
+                />
                 <label htmlFor="save-default" className="text-sm text-muted-foreground">
                   Guardar como vista por defecto
                 </label>
@@ -832,7 +950,8 @@ const ProjectsManagement = () => {
                   size="sm" 
                   className="ml-4"
                   onClick={() => {
-                    setColumns(prev => prev.map(col => ({ ...col, visible: true })));
+                    setColumns(getInitialColumns());
+                    setIsDefaultViewSaved(false);
                   }}
                 >
                   Resetear
@@ -842,16 +961,171 @@ const ProjectsManagement = () => {
           </Card>
         )}
 
-        {/* Pagination Controls */}
-        <div className="flex items-center justify-between mb-4">
+        {/* Table */}
+        <div className="bg-card rounded-lg shadow-sm border overflow-hidden">
+          <div className="overflow-x-auto">
+            <DragDropContext onDragEnd={handleDragEnd}>
+              <Table style={{ fontSize: `${fontSize}px` }}>
+                <TableHeader>
+                  <Droppable droppableId="table-headers" direction="horizontal">
+                    {(provided) => (
+                      <TableRow 
+                        className="bg-muted/50"
+                        ref={provided.innerRef}
+                        {...provided.droppableProps}
+                      >
+                        {columns.filter(col => col.visible).map((column, index) => (
+                          <Draggable key={column.key} draggableId={column.key} index={index}>
+                            {(provided, snapshot) => (
+                              <TableHead
+                                ref={provided.innerRef}
+                                {...provided.draggableProps}
+                                {...provided.dragHandleProps}
+                                className={cn(
+                                  "font-semibold text-xs uppercase tracking-wide border-r last:border-r-0 relative select-none",
+                                  snapshot.isDragging && "bg-primary/10"
+                                )}
+                                style={{ 
+                                  width: `${column.width}px`,
+                                  minWidth: `${column.minWidth}px`,
+                                  cursor: 'pointer',
+                                  ...provided.draggableProps.style
+                                }}
+                                onClick={() => handleSort(column.key)}
+                              >
+                                <div className="flex items-center justify-between pr-2">
+                                  <span className="truncate">{column.label}</span>
+                                  <div className="flex items-center gap-1">
+                                    {getSortIcon(column.key)}
+                                    <Tooltip>
+                                      <TooltipTrigger asChild>
+                                        <GripVertical className="h-3 w-3 opacity-50" />
+                                      </TooltipTrigger>
+                                      <TooltipContent>
+                                        <p>Arrastra para reordenar</p>
+                                      </TooltipContent>
+                                    </Tooltip>
+                                  </div>
+                                </div>
+                                {column.resizable && (
+                                  <div
+                                    className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize bg-border hover:bg-primary opacity-0 hover:opacity-100 transition-opacity"
+                                    onMouseDown={(e) => handleMouseDown(e, column.key)}
+                                  />
+                                )}
+                              </TableHead>
+                            )}
+                          </Draggable>
+                        ))}
+                        {provided.placeholder}
+                        <TableHead className="w-16"></TableHead>
+                      </TableRow>
+                    )}
+                  </Droppable>
+                </TableHeader>
+                <TableBody>
+                  {currentProjects.map((project) => (
+                    <TableRow key={project.id} className="hover:bg-muted/30 transition-colors">
+                      {columns.filter(col => col.visible).map((column) => (
+                        <TableCell 
+                          key={column.key} 
+                          className="border-r last:border-r-0 p-2"
+                          style={{ 
+                            width: `${column.width}px`,
+                            minWidth: `${column.minWidth}px`
+                          }}
+                        >
+                          {editingRow === project.id ? (
+                            <Input
+                              defaultValue={project[column.key] || ''}
+                              onBlur={(e) => {
+                                handleUpdateProject(project.id, column.key, e.target.value);
+                                setEditingRow(null);
+                              }}
+                              onKeyPress={(e) => {
+                                if (e.key === 'Enter') {
+                                  handleUpdateProject(project.id, column.key, (e.target as HTMLInputElement).value);
+                                  setEditingRow(null);
+                                }
+                              }}
+                              className="h-8"
+                              autoFocus
+                            />
+                          ) : (
+                            <div
+                              onClick={() => setEditingRow(project.id)}
+                              className="cursor-pointer hover:bg-muted/50 p-1 rounded min-h-[32px] flex items-center"
+                            >
+                              {column.key === 'status' ? (
+                                <Badge className={getStatusBadgeColor(project[column.key])}>
+                                  {project[column.key]}
+                                </Badge>
+                              ) : column.key === 'denominacion' ? (
+                                <div>
+                                  <div className="font-medium text-sm">{project.denominacion}</div>
+                                  {project.descripcion && (
+                                    <div className="text-xs text-muted-foreground truncate">{project.descripcion}</div>
+                                  )}
+                                </div>
+                              ) : column.key === 'cliente' ? (
+                                <div>
+                                  <div className="font-medium text-sm">{project.cliente}</div>
+                                  {project.grupo_cliente && (
+                                    <div className="text-xs text-muted-foreground">{project.grupo_cliente}</div>
+                                  )}
+                                </div>
+                              ) : (
+                                <span className="truncate">{project[column.key] || '-'}</span>
+                              )}
+                            </div>
+                          )}
+                        </TableCell>
+                      ))}
+                      <TableCell className="w-16">
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>¿Eliminar proyecto?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Esta acción no se puede deshacer. Se eliminará permanentemente el proyecto.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                              <AlertDialogAction
+                                onClick={() => handleDeleteProject(project.id)}
+                                className="bg-red-600 hover:bg-red-700"
+                              >
+                                Eliminar
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </DragDropContext>
+          </div>
+        </div>
+
+        {/* Pagination */}
+        <div className="flex items-center justify-between mt-6">
           <div className="flex items-center gap-2">
             <span className="text-sm text-muted-foreground">
               Mostrando {startIndex + 1} - {Math.min(endIndex, filteredProjects.length)} de {filteredProjects.length} proyectos
             </span>
-            <Select 
-              value={itemsPerPage.toString()} 
-              onValueChange={(value) => setItemsPerPage(Number(value))}
-            >
+            <Select value={itemsPerPage.toString()} onValueChange={(value) => setItemsPerPage(Number(value))}>
               <SelectTrigger className="w-20">
                 <SelectValue />
               </SelectTrigger>
@@ -862,9 +1136,8 @@ const ProjectsManagement = () => {
                 <SelectItem value="200">200</SelectItem>
               </SelectContent>
             </Select>
-            <span className="text-sm text-muted-foreground">por página</span>
           </div>
-          
+
           <div className="flex items-center gap-2">
             <Button
               variant="outline"
@@ -882,253 +1155,7 @@ const ProjectsManagement = () => {
             >
               <ChevronLeft className="h-4 w-4" />
             </Button>
-            <span className="text-sm text-muted-foreground px-2">
-              Página {currentPage} de {totalPages}
-            </span>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setCurrentPage(currentPage + 1)}
-              disabled={currentPage === totalPages}
-            >
-              <ChevronRight className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setCurrentPage(totalPages)}
-              disabled={currentPage === totalPages}
-            >
-              <ChevronsRight className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
-
-        {/* Enhanced Table */}
-        <Card>
-          <CardContent className="p-0">
-            <div className="overflow-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-16 py-3 px-4 font-semibold text-xs text-muted-foreground bg-muted/30">
-                      ÍNDICE
-                    </TableHead>
-                    {columns.filter(col => col.visible).map((column) => (
-                      <TableHead 
-                        key={column.key}
-                        className="py-3 px-4 font-semibold text-xs text-muted-foreground bg-muted/30 cursor-pointer hover:bg-muted/50 select-none relative group"
-                        style={{ width: column.width }}
-                        onClick={() => handleSort(column.key)}
-                        draggable
-                        onDragStart={(e) => handleDragStart(e, column.key)}
-                        onDragOver={handleDragOver}
-                        onDrop={(e) => handleDrop(e, column.key)}
-                      >
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <GripVertical className="w-3 h-3 opacity-50 cursor-move" />
-                            <span>{column.label.toUpperCase()}</span>
-                          </div>
-                          {getSortIcon(column.key)}
-                        </div>
-                        {column.resizable && (
-                          <div
-                            className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-primary/20 group-hover:bg-primary/20"
-                            onMouseDown={(e) => handleMouseDown(e, column.key)}
-                          />
-                        )}
-                      </TableHead>
-                    ))}
-                    <TableHead className="w-24 py-3 px-4 font-semibold text-xs text-muted-foreground bg-muted/30">
-                      ACCIONES
-                    </TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {currentProjects.map((project, index) => (
-                    <TableRow key={project.id} className="hover:bg-muted/30 transition-colors">
-                      <TableCell className="font-medium py-4 px-4 text-sm text-center">
-                        {startIndex + index + 1}
-                      </TableCell>
-                      
-                      {/* Código */}
-                      {columns.find(col => col.key === 'codigo_inicial')?.visible && (
-                        <TableCell 
-                          className="py-4 px-4"
-                          style={{ width: columns.find(col => col.key === 'codigo_inicial')?.width }}
-                        >
-                          <div className="font-mono text-sm font-medium text-foreground break-all">
-                            {project.codigo_inicial}
-                          </div>
-                        </TableCell>
-                      )}
-                      
-                      {/* Denominación / Descripción */}
-                      {columns.find(col => col.key === 'denominacion')?.visible && (
-                        <TableCell 
-                          className="py-4 px-4"
-                          style={{ width: columns.find(col => col.key === 'denominacion')?.width }}
-                        >
-                          <div className="space-y-1">
-                            <div className="font-semibold text-foreground text-sm leading-tight">
-                              {project.denominacion}
-                            </div>
-                            {project.descripcion && (
-                              <div className="text-xs text-muted-foreground leading-tight line-clamp-2">
-                                {project.descripcion}
-                              </div>
-                            )}
-                          </div>
-                        </TableCell>
-                      )}
-                      
-                      {/* Cliente / Grupo */}
-                      {columns.find(col => col.key === 'cliente')?.visible && (
-                        <TableCell 
-                          className="py-4 px-4"
-                          style={{ width: columns.find(col => col.key === 'cliente')?.width }}
-                        >
-                          <div className="space-y-1">
-                            <div className="font-medium text-foreground text-sm leading-tight">
-                              {project.cliente}
-                            </div>
-                            {project.grupo_cliente && (
-                              <div className="text-xs text-muted-foreground leading-tight">
-                                {project.grupo_cliente}
-                              </div>
-                            )}
-                          </div>
-                        </TableCell>
-                      )}
-                      
-                      {/* Gestor */}
-                      {columns.find(col => col.key === 'gestor_proyecto')?.visible && (
-                        <TableCell 
-                          className="py-4 px-4 text-sm"
-                          style={{ width: columns.find(col => col.key === 'gestor_proyecto')?.width }}
-                        >
-                          {project.gestor_proyecto}
-                        </TableCell>
-                      )}
-                      
-                      {/* Socio Responsable */}
-                      {columns.find(col => col.key === 'socio_responsable')?.visible && (
-                        <TableCell 
-                          className="py-4 px-4 text-sm"
-                          style={{ width: columns.find(col => col.key === 'socio_responsable')?.width }}
-                        >
-                          {project.socio_responsable}
-                        </TableCell>
-                      )}
-                      
-                      {/* Tipología */}
-                      {columns.find(col => col.key === 'tipologia')?.visible && (
-                        <TableCell 
-                          className="py-4 px-4"
-                          style={{ width: columns.find(col => col.key === 'tipologia')?.width }}
-                        >
-                          <Badge variant="outline" className="text-xs">
-                            {project.tipologia}
-                          </Badge>
-                        </TableCell>
-                      )}
-                      
-                      {/* Tipología 2 */}
-                      {columns.find(col => col.key === 'tipologia_2')?.visible && (
-                        <TableCell 
-                          className="py-4 px-4"
-                          style={{ width: columns.find(col => col.key === 'tipologia_2')?.width }}
-                        >
-                          {project.tipologia_2 && (
-                            <Badge variant="outline" className="text-xs">
-                              {project.tipologia_2}
-                            </Badge>
-                          )}
-                        </TableCell>
-                      )}
-                      
-                      {/* Estado */}
-                      {columns.find(col => col.key === 'status')?.visible && (
-                        <TableCell 
-                          className="py-4 px-4"
-                          style={{ width: columns.find(col => col.key === 'status')?.width }}
-                        >
-                          <Badge className={cn("text-xs", getStatusBadgeColor(project.status))}>
-                            {project.status}
-                          </Badge>
-                        </TableCell>
-                      )}
-                      
-                      {/* Acciones */}
-                      <TableCell className="py-4 px-4">
-                        <div className="flex items-center gap-1">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => setEditingRow(editingRow === project.id ? null : project.id)}
-                            className="h-8 w-8 p-0"
-                          >
-                            <Edit className="h-3 w-3" />
-                          </Button>
-                          <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
-                              >
-                                <Trash2 className="h-3 w-3" />
-                              </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                              <AlertDialogHeader>
-                                <AlertDialogTitle>¿Eliminar proyecto?</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                  Esta acción no se puede deshacer. Se eliminará permanentemente el proyecto "{project.denominacion}".
-                                </AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                <AlertDialogAction 
-                                  onClick={() => handleDeleteProject(project.id)}
-                                  className="bg-red-600 hover:bg-red-700"
-                                >
-                                  Eliminar
-                                </AlertDialogAction>
-                              </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Bottom Pagination */}
-        <div className="flex items-center justify-center mt-6">
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setCurrentPage(1)}
-              disabled={currentPage === 1}
-            >
-              <ChevronsLeft className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setCurrentPage(currentPage - 1)}
-              disabled={currentPage === 1}
-            >
-              <ChevronLeft className="h-4 w-4" />
-            </Button>
-            <span className="text-sm text-muted-foreground px-4">
+            <span className="px-4 py-2 text-sm">
               Página {currentPage} de {totalPages}
             </span>
             <Button
@@ -1151,6 +1178,7 @@ const ProjectsManagement = () => {
         </div>
       </div>
     </div>
+    </TooltipProvider>
   );
 };
 
