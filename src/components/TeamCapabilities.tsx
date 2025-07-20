@@ -149,7 +149,7 @@ const TeamCapabilities: React.FC<TeamCapabilitiesProps> = ({
   const getSAPModuleInfo = (moduleName: string): string => {
     const modules: { [key: string]: string } = {
       'FI-GL': 'Financials - General Ledger: Gestión del libro mayor general, contabilización automática y manual de asientos contables.',
-      'FI-AP': 'Financials - Accounts Payable: Gestión de cuentas por pagar, proveedores y facturación.',
+      'FI-AP': 'FI-AP: Financials - Accounts Payable (Contabilidad Financiera – Cuentas a Pagar). Submódulo SAP para gestión de deudas con proveedores desde recepción de facturas hasta pago y conciliación. Funciones principales: registro de facturas de proveedores, gestión de pagos (automáticos/manuales), anticipos y pagos a cuenta, conciliación bancaria, gestión de retenciones fiscales, reportes de antigüedad de saldos y previsiones de pagos. Se integra con MM (facturas de compras automáticas), FI-BL (ejecución de pagos), CO (asignación de costos). Flujo típico: factura recibida → verificación → pago → conciliación bancaria. Gestión del maestro de proveedor (FK01/FK02/FK03) con datos generales, societarios y de compras.',
       'FI-AR': 'Financials - Accounts Receivable: Gestión de cuentas por cobrar y clientes.',
       'FI-AA': 'Financials - Assets Accounting: Contabilidad de activos fijos, depreciaciones y gestión de bienes.',
       'FI-Taxes': 'Financials - Taxes: Gestión de impuestos, SII y declaraciones fiscales.',
