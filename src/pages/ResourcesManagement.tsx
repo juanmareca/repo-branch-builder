@@ -42,6 +42,7 @@ import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
+import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
 import ResourcesUpload from '@/components/FileUpload/ResourcesUpload';
 import * as XLSX from 'xlsx';
 
@@ -427,6 +428,22 @@ const ResourcesManagement = () => {
       };
     }
   }, [resizingColumn, handleMouseMove, handleMouseUp]);
+
+  // Column reordering function
+  const handleDragEnd = (result: any) => {
+    if (!result.destination) return;
+
+    const sourceIndex = result.source.index;
+    const destinationIndex = result.destination.index;
+
+    if (sourceIndex === destinationIndex) return;
+
+    const newColumns = Array.from(columns);
+    const [reorderedColumn] = newColumns.splice(sourceIndex, 1);
+    newColumns.splice(destinationIndex, 0, reorderedColumn);
+
+    setColumns(newColumns);
+  };
 
   // Pagination calculations
   const totalPages = Math.ceil(filteredResources.length / itemsPerPage);
@@ -892,35 +909,61 @@ const ResourcesManagement = () => {
         <Card>
           <CardContent className="p-0">
             <div className="overflow-x-auto">
-              <Table>
+              <DragDropContext onDragEnd={handleDragEnd}>
+                <Table>
                 <TableHeader>
-                  <TableRow>
-                     <TableHead className="w-16 bg-blue-50 text-center font-semibold">ÍNDICE</TableHead>
-                     {columns.filter(col => col.visible).map(column => (
-                       <TableHead 
-                         key={column.key}
-                         className="relative cursor-pointer hover:bg-blue-100 bg-blue-50 text-center font-semibold border-r border-gray-200"
-                         onClick={() => handleSort(column.key)}
-                         style={{ 
-                           width: column.width,
-                           minWidth: column.minWidth,
-                           maxWidth: '400px'
-                         }}
-                       >
-                         <div className="flex items-center justify-center gap-2 pr-2">
-                           <span>{column.label}</span>
-                           {getSortIcon(column.key)}
-                         </div>
-                         {/* Resize handle */}
-                         <div
-                           className="absolute right-0 top-0 w-1 h-full cursor-col-resize bg-transparent hover:bg-blue-300 transition-colors"
-                           onMouseDown={(e) => handleMouseDown(e, column.key)}
-                           style={{ userSelect: 'none' }}
-                         />
-                       </TableHead>
-                     ))}
-                     <TableHead className="w-24 bg-blue-50 text-center font-semibold">ACCIONES</TableHead>
-                  </TableRow>
+                  <Droppable droppableId="table-headers" direction="horizontal">
+                    {(provided) => (
+                      <TableRow ref={provided.innerRef} {...provided.droppableProps}>
+                        <TableHead className="w-16 bg-blue-50 text-center font-semibold">ÍNDICE</TableHead>
+                        {columns.filter(col => col.visible).map((column, index) => (
+                          <Draggable 
+                            key={column.key} 
+                            draggableId={`header-${column.key}`} 
+                            index={index}
+                          >
+                            {(provided, snapshot) => (
+                              <TableHead 
+                                ref={provided.innerRef}
+                                {...provided.draggableProps}
+                                className={`relative cursor-pointer hover:bg-blue-100 bg-blue-50 text-center font-semibold border-r border-gray-200 ${
+                                  snapshot.isDragging ? 'opacity-50 shadow-lg z-50' : ''
+                                }`}
+                                onClick={() => handleSort(column.key)}
+                                style={{ 
+                                  width: column.width,
+                                  minWidth: column.minWidth,
+                                  maxWidth: '400px',
+                                  ...provided.draggableProps.style
+                                }}
+                              >
+                                <div className="flex items-center justify-center gap-2 pr-2">
+                                  {/* Drag handle */}
+                                  <div 
+                                    {...provided.dragHandleProps}
+                                    className="cursor-move p-1 hover:bg-blue-200 rounded"
+                                    title="Arrastrar para reordenar"
+                                  >
+                                    ⋮⋮
+                                  </div>
+                                  <span>{column.label}</span>
+                                  {getSortIcon(column.key)}
+                                </div>
+                                {/* Resize handle */}
+                                <div
+                                  className="absolute right-0 top-0 w-1 h-full cursor-col-resize bg-transparent hover:bg-blue-300 transition-colors"
+                                  onMouseDown={(e) => handleMouseDown(e, column.key)}
+                                  style={{ userSelect: 'none' }}
+                                />
+                              </TableHead>
+                            )}
+                          </Draggable>
+                        ))}
+                        {provided.placeholder}
+                        <TableHead className="w-24 bg-blue-50 text-center font-semibold">ACCIONES</TableHead>
+                      </TableRow>
+                    )}
+                  </Droppable>
                 </TableHeader>
                 <TableBody>
                   {currentResources.map((resource, index) => (
@@ -995,7 +1038,8 @@ const ResourcesManagement = () => {
                     </TableRow>
                   ))}
                 </TableBody>
-              </Table>
+                </Table>
+              </DragDropContext>
             </div>
 
             {filteredResources.length === 0 && (
