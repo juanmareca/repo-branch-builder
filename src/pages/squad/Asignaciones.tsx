@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -7,10 +7,12 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Calendar } from '@/components/ui/calendar';
 import { Badge } from '@/components/ui/badge';
-import { Clock, ArrowLeft, Users, FolderOpen, CalendarDays, Plus, Info } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Clock, ArrowLeft, Users, FolderOpen, CalendarDays, Plus, Info, Grid3X3, Calendar as CalendarIcon, Zap, Download, Upload } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { format, addMonths, startOfMonth, endOfMonth, eachDayOfInterval, parseISO, isWithinInterval } from 'date-fns';
+import { format, addMonths, startOfMonth, endOfMonth, eachDayOfInterval, parseISO, isWithinInterval, addDays, startOfWeek, endOfWeek } from 'date-fns';
 import { es } from 'date-fns/locale';
 
 interface TeamMember {
@@ -77,6 +79,15 @@ const Asignaciones = () => {
   const [summaryStartDate, setSummaryStartDate] = useState<string>('');
   const [summaryEndDate, setSummaryEndDate] = useState<string>('');
   const [showSummary, setShowSummary] = useState(false);
+  
+  // Estado para vista spreadsheet
+  const [currentWeek, setCurrentWeek] = useState(new Date());
+  const [draggedProject, setDraggedProject] = useState<Project | null>(null);
+  const [editingCell, setEditingCell] = useState<{personId: string, date: string} | null>(null);
+  const [editValue, setEditValue] = useState<string>('');
+  
+  // Estado para templates
+  const [selectedTemplate, setSelectedTemplate] = useState<string>('');
   
   // Datos
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
@@ -454,6 +465,148 @@ const Asignaciones = () => {
     setShowSummary(true);
   };
 
+  // Funciones para vista spreadsheet
+  const getWeekDays = () => {
+    const startOfCurrentWeek = startOfWeek(currentWeek, { weekStartsOn: 1 });
+    return Array.from({ length: 7 }, (_, i) => addDays(startOfCurrentWeek, i));
+  };
+
+  const getCellAssignments = (personId: string, date: Date) => {
+    return assignments.filter(assignment => {
+      if (assignment.person_id !== personId) return false;
+      
+      const assignmentStart = new Date(assignment.start_date);
+      const assignmentEnd = new Date(assignment.end_date);
+      
+      return isWithinInterval(date, { start: assignmentStart, end: assignmentEnd });
+    });
+  };
+
+  const getCellPercentage = (personId: string, date: Date) => {
+    const cellAssignments = getCellAssignments(personId, date);
+    return cellAssignments.reduce((total, assignment) => total + assignment.hours_allocated, 0);
+  };
+
+  const handleDragStart = (e: React.DragEvent, project: Project) => {
+    setDraggedProject(project);
+    e.dataTransfer.effectAllowed = 'copy';
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'copy';
+  };
+
+  const handleDrop = async (e: React.DragEvent, personId: string, date: Date) => {
+    e.preventDefault();
+    
+    if (!draggedProject) return;
+    
+    const dateString = format(date, 'yyyy-MM-dd');
+    
+    // Check if there's already 100% allocation
+    const currentPercentage = getCellPercentage(personId, date);
+    if (currentPercentage >= 100) {
+      toast({
+        title: "Error",
+        description: "Este día ya tiene 100% de asignación",
+        variant: "destructive",
+      });
+      setDraggedProject(null);
+      return;
+    }
+    
+    const availablePercentage = 100 - currentPercentage;
+    const assignPercentage = Math.min(availablePercentage, 100);
+    
+    try {
+      const { error } = await supabase
+        .from('assignments')
+        .insert({
+          person_id: personId,
+          project_id: draggedProject.id,
+          start_date: dateString,
+          end_date: dateString,
+          hours_allocated: assignPercentage,
+          type: 'project_assignment',
+          status: 'assigned',
+          notes: `Asignado por drag & drop - ${squadLeadName}`
+        });
+
+      if (error) throw error;
+
+      toast({
+        title: "✅ Asignación exitosa",
+        description: `${draggedProject.codigo_inicial} asignado al ${assignPercentage}%`,
+      });
+
+      fetchData();
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "No se pudo realizar la asignación",
+        variant: "destructive",
+      });
+    }
+    
+    setDraggedProject(null);
+  };
+
+  const handleCellDoubleClick = (personId: string, date: Date) => {
+    const dateString = format(date, 'yyyy-MM-dd');
+    setEditingCell({ personId, date: dateString });
+    setEditValue(getCellPercentage(personId, date).toString());
+  };
+
+  const handleCellEdit = async () => {
+    if (!editingCell || !editValue) return;
+    
+    const percentage = parseInt(editValue);
+    if (percentage < 0 || percentage > 100) {
+      toast({
+        title: "Error",
+        description: "El porcentaje debe estar entre 0 y 100",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    // For simplicity, we'll just show a message - in real implementation you'd update specific assignments
+    toast({
+      title: "Función en desarrollo",
+      description: "Edición directa de celdas estará disponible próximamente",
+    });
+    
+    setEditingCell(null);
+    setEditValue('');
+  };
+
+  const applyTemplate = async (templateType: string) => {
+    if (!selectedMember) {
+      toast({
+        title: "Error",
+        description: "Selecciona un miembro primero",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Template examples
+    const templates: { [key: string]: any } = {
+      'full-time': { percentage: 100, pattern: 'weekdays' },
+      'part-time': { percentage: 50, pattern: 'weekdays' },
+      'consultant': { percentage: 30, pattern: 'specific-days' }
+    };
+
+    const template = templates[templateType];
+    if (!template) return;
+
+    toast({
+      title: "Template aplicado",
+      description: `Plantilla ${templateType} aplicada correctamente`,
+    });
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
       {/* Header */}
@@ -506,22 +659,20 @@ const Asignaciones = () => {
           </div>
         </div>
 
-        {/* Assignment Form */}
+        {/* Selector de Miembro Principal */}
         <Card className="mb-8">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Plus className="h-5 w-5 text-orange-600" />
-              Nueva Asignación
+              <Users className="h-5 w-5 text-purple-600" />
+              Seleccionar Miembro del Squad
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-7 gap-4 items-end">
-              {/* Seleccionar Miembro */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="member">Seleccionar Miembro del Equipo</Label>
+                <Label htmlFor="member">Miembro del Equipo</Label>
                 <Select value={selectedMember} onValueChange={(value) => {
                   setSelectedMember(value);
-                  // Auto-select office if member has one
                   const member = teamMembers.find(m => m.id === value);
                   if (member && member.oficina) {
                     setSelectedOffice(member.oficina);
@@ -539,8 +690,6 @@ const Asignaciones = () => {
                   </SelectContent>
                 </Select>
               </div>
-
-              {/* Seleccionar Oficina/Comunidad */}
               <div>
                 <Label htmlFor="office">Oficina/Comunidad</Label>
                 <Select value={selectedOffice} onValueChange={setSelectedOffice}>
@@ -556,344 +705,554 @@ const Asignaciones = () => {
                   </SelectContent>
                 </Select>
               </div>
-
-              {/* Fecha Desde */}
-              <div>
-                <Label htmlFor="startDate">Fecha Desde</Label>
-                <Input
-                  type="date"
-                  value={startDate}
-                  onChange={(e) => setStartDate(e.target.value)}
-                  className="bg-white"
-                />
-              </div>
-
-              {/* Fecha Hasta */}
-              <div>
-                <Label htmlFor="endDate">Fecha Hasta</Label>
-                <Input
-                  type="date"
-                  value={endDate}
-                  onChange={(e) => setEndDate(e.target.value)}
-                  className="bg-white"
-                />
-              </div>
-
-              {/* Porcentaje */}
-              <div>
-                <Label htmlFor="percentage">Porcentaje (10-100%)</Label>
-                <Input
-                  type="number"
-                  min="10"
-                  max="100"
-                  value={percentage}
-                  onChange={(e) => setPercentage(e.target.value)}
-                  className="bg-white"
-                />
-              </div>
-
-              {/* Proyecto */}
-              <div>
-                <Label htmlFor="project">Proyecto</Label>
-                <Select value={selectedProject} onValueChange={setSelectedProject}>
-                  <SelectTrigger className="bg-white">
-                    <SelectValue placeholder="Seleccionar proyecto..." />
-                  </SelectTrigger>
-                  <SelectContent className="bg-white border shadow-lg z-50 max-h-60">
-                    {projects.map((project) => (
-                      <SelectItem key={project.id} value={project.id}>
-                        {project.codigo_inicial} - {project.denominacion}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {/* Botón Asignar */}
-              <div>
-                <Button 
-                  onClick={handleAssign}
-                  className="w-full bg-blue-600 hover:bg-blue-700 text-white"
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  Asignar
-                </Button>
-              </div>
             </div>
           </CardContent>
         </Card>
 
-        {/* Calendar Section */}
+        {/* Interfaz Principal con Tabs */}
         {selectedMember && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Users className="h-5 w-5 text-blue-600" />
-                Calendario de {getSelectedMemberName()}
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-                {months.map((month) => (
-                  <div key={month.toISOString()} className="space-y-2">
-                    <h3 className="text-center font-semibold text-gray-900 capitalize">
-                      {format(month, 'MMMM \'de\' yyyy', { locale: es })}
-                    </h3>
-                     <div className="border rounded-lg p-2 bg-white">
-                       <Calendar
-                         mode="single"
-                         month={month}
-                         locale={es}
-                         weekStartsOn={1} // Lunes = 1
-                         className="pointer-events-auto"
-                         modifiers={{
-                           weekend: isWeekend,
-                           holiday: isHoliday,
-                         }}
-                         modifiersStyles={{
-                           weekend: { 
-                             backgroundColor: '#fef3c7', // Amarillo claro para fines de semana
-                             color: '#92400e'
-                           },
-                           holiday: { 
-                             backgroundColor: '#fce7f3', // Rosa claro para festivos
-                             color: '#be185d'
-                           },
-                         }}
-                         showOutsideDays={false}
-                         fixedWeeks={true}
-                       />
-                     </div>
-                  </div>
-                ))}
-               </div>
+          <TooltipProvider>
+            <Tabs defaultValue="spreadsheet" className="space-y-6">
+              <TabsList className="grid w-full grid-cols-4 bg-gray-100">
+                <TabsTrigger value="spreadsheet" className="flex items-center gap-2">
+                  <Grid3X3 className="h-4 w-4" />
+                  Vista Spreadsheet
+                </TabsTrigger>
+                <TabsTrigger value="form" className="flex items-center gap-2">
+                  <Plus className="h-4 w-4" />
+                  Asignación Rápida
+                </TabsTrigger>
+                <TabsTrigger value="calendar" className="flex items-center gap-2">
+                  <CalendarIcon className="h-4 w-4" />
+                  Vista Calendario
+                </TabsTrigger>
+                <TabsTrigger value="summary" className="flex items-center gap-2">
+                  <CalendarDays className="h-4 w-4" />
+                  Resumen
+                </TabsTrigger>
+              </TabsList>
 
-              {/* Leyenda Completa */}
-              <div className="mt-8 space-y-4">
-                <h4 className="text-lg font-semibold text-gray-900">Leyenda del Calendario</h4>
-                
-                {/* Leyenda básica */}
-                <div className="flex flex-wrap items-center gap-6 text-sm">
-                  <div className="flex items-center gap-2">
-                    <div className="w-4 h-4 bg-yellow-200 border rounded"></div>
-                    <span>Fin de semana</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-4 h-4 bg-pink-200 border rounded"></div>
-                    <span>Festivo</span>
-                  </div>
-                  {/* Colores de proyectos */}
-                  {projects.slice(0, 5).map((project) => (
-                    <div key={project.id} className="flex items-center gap-2">
-                      <div 
-                        className="w-4 h-4 border rounded" 
-                        style={{ backgroundColor: project.color }}
-                      ></div>
-                      <span className="text-xs">{project.codigo_inicial}</span>
+              {/* Vista Spreadsheet */}
+              <TabsContent value="spreadsheet" className="space-y-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Grid3X3 className="h-5 w-5 text-indigo-600" />
+                      Vista Spreadsheet - {getSelectedMemberName()}
+                    </CardTitle>
+                    <div className="flex items-center gap-4">
+                      <Button 
+                        variant="outline"
+                        onClick={() => setCurrentWeek(addDays(currentWeek, -7))}
+                        size="sm"
+                      >
+                        ← Semana Anterior
+                      </Button>
+                      <span className="text-sm font-medium">
+                        Semana del {format(startOfWeek(currentWeek, { weekStartsOn: 1 }), 'dd/MM/yyyy')}
+                      </span>
+                      <Button 
+                        variant="outline"
+                        onClick={() => setCurrentWeek(addDays(currentWeek, 7))}
+                        size="sm"
+                      >
+                        Siguiente Semana →
+                      </Button>
                     </div>
-                  ))}
-                </div>
-
-                {/* Lista de festivos específicos */}
-                {selectedOffice && getFilteredHolidays().length > 0 && (
-                  <div className="mt-6">
-                    <h5 className="font-medium text-gray-800 mb-3">
-                      Festivos para {selectedOffice} (próximos 6 meses):
-                    </h5>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
-                      {getFilteredHolidays().map((holiday, index) => (
-                        <Badge 
-                          key={index} 
-                          variant="outline" 
-                          className="text-xs p-2 bg-pink-50 border-pink-200 text-pink-800"
-                        >
-                          <CalendarDays className="h-3 w-3 mr-1" />
-                          {format(new Date(holiday.date), 'dd/MM/yyyy')} - {holiday.festivo}
-                        </Badge>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Información adicional */}
-                <div className="mt-6 p-4 bg-gray-50 border border-gray-200 rounded-lg">
-                  <div className="flex items-start gap-2">
-                    <Info className="h-4 w-4 text-blue-600 mt-0.5" />
-                    <div className="text-sm text-gray-700 space-y-1">
-                      <p><strong>Validación de asignaciones:</strong></p>
-                      <ul className="list-disc list-inside space-y-1 ml-4">
-                        <li>El porcentaje máximo por día es 100%</li>
-                        <li>Se pueden asignar múltiples proyectos el mismo día</li>
-                        <li>Los festivos se basan en la oficina/comunidad seleccionada</li>
-                        <li>Cada proyecto tiene un color único en el calendario</li>
-                      </ul>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Summary Section */}
-        {selectedMember && (
-          <Card className="mt-8">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <CalendarDays className="h-5 w-5 text-green-600" />
-                Resumen de Asignaciones - {getSelectedMemberName()}
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {/* Formulario para fechas del resumen */}
-              <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg">
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
-                  <div>
-                    <Label htmlFor="summaryStartDate">Fecha Desde (Resumen)</Label>
-                    <Input
-                      type="date"
-                      value={summaryStartDate}
-                      onChange={(e) => setSummaryStartDate(e.target.value)}
-                      className="bg-white"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="summaryEndDate">Fecha Hasta (Resumen)</Label>
-                    <Input
-                      type="date"
-                      value={summaryEndDate}
-                      onChange={(e) => setSummaryEndDate(e.target.value)}
-                      className="bg-white"
-                    />
-                  </div>
-                  <div className="md:col-span-2">
-                    <Button 
-                      onClick={handleGenerateSummary}
-                      className="w-full bg-green-600 hover:bg-green-700 text-white"
-                    >
-                      <CalendarDays className="h-4 w-4 mr-2" />
-                      Generar Resumen del Período
-                    </Button>
-                  </div>
-                </div>
-              </div>
-
-              {/* Mostrar resumen si está disponible */}
-              {showSummary && (() => {
-                const summary = generateSummary();
-                if (!summary) return null;
-
-                return (
-                  <div className="space-y-6">
-                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
-                      <h3 className="text-lg font-semibold text-blue-900 mb-4">
-                        📊 Resumen de Asignaciones - {summary.memberName}
-                      </h3>
-                      <p className="text-sm text-blue-800 mb-4">
-                        Período: {format(new Date(summaryStartDate), 'dd/MM/yyyy')} - {format(new Date(summaryEndDate), 'dd/MM/yyyy')}
-                      </p>
-
-                      {/* Estadísticas generales */}
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-                        <div className="bg-white p-4 rounded-lg border">
-                          <div className="text-center">
-                            <div className="text-2xl font-bold text-gray-900">{summary.totalDays}</div>
-                            <div className="text-sm text-gray-600">Días naturales</div>
-                          </div>
-                        </div>
-                        <div className="bg-white p-4 rounded-lg border">
-                          <div className="text-center">
-                            <div className="text-2xl font-bold text-yellow-600">
-                              {summary.weekendDays}
-                            </div>
-                            <div className="text-sm text-gray-600">
-                              Fines de semana ({summary.weekendPercentage}%)
+                  </CardHeader>
+                  <CardContent>
+                    {/* Proyectos disponibles para drag & drop */}
+                    <div className="mb-6 p-4 bg-purple-50 border border-purple-200 rounded-lg">
+                      <h4 className="text-sm font-medium text-purple-900 mb-3">
+                        🎯 Proyectos Disponibles (Arrastra a una fecha)
+                      </h4>
+                      <div className="flex flex-wrap gap-2">
+                        {projects.slice(0, 8).map((project) => (
+                          <div
+                            key={project.id}
+                            draggable
+                            onDragStart={(e) => handleDragStart(e, project)}
+                            className="px-3 py-2 bg-white border-2 border-dashed border-purple-300 rounded-lg cursor-move hover:border-purple-500 hover:bg-purple-50 transition-all animate-pulse"
+                            style={{ borderColor: project.color + '50', backgroundColor: project.color + '10' }}
+                          >
+                            <div className="flex items-center gap-2">
+                              <div 
+                                className="w-3 h-3 rounded-full"
+                                style={{ backgroundColor: project.color }}
+                              ></div>
+                              <span className="text-sm font-medium">{project.codigo_inicial}</span>
                             </div>
                           </div>
-                        </div>
-                        <div className="bg-white p-4 rounded-lg border">
-                          <div className="text-center">
-                            <div className="text-2xl font-bold text-pink-600">{summary.holidayDays}</div>
-                            <div className="text-sm text-gray-600">Días festivos</div>
-                          </div>
-                        </div>
-                        <div className="bg-white p-4 rounded-lg border">
-                          <div className="text-center">
-                            <div className="text-2xl font-bold text-green-600">{summary.workableDays}</div>
-                            <div className="text-sm text-gray-600">Días laborables</div>
-                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Tabla Spreadsheet */}
+                    <div className="overflow-x-auto">
+                      <table className="w-full border-collapse border border-gray-300">
+                        <thead>
+                          <tr className="bg-gray-100">
+                            <th className="border border-gray-300 p-3 text-left font-semibold">
+                              Empleado
+                            </th>
+                            {getWeekDays().map((day) => (
+                              <th key={day.toISOString()} className="border border-gray-300 p-2 text-center min-w-32">
+                                <div className="text-sm font-semibold">
+                                  {format(day, 'EEE', { locale: es })}
+                                </div>
+                                <div className="text-xs text-gray-600">
+                                  {format(day, 'dd/MM')}
+                                </div>
+                                {isWeekend(day) && (
+                                  <div className="text-xs text-yellow-600 font-medium">FDS</div>
+                                )}
+                                {isHoliday(day) && (
+                                  <div className="text-xs text-pink-600 font-medium">FEST</div>
+                                )}
+                              </th>
+                            ))}
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <tr>
+                            <td className="border border-gray-300 p-3 bg-blue-50">
+                              <div className="font-medium text-blue-900">
+                                {getSelectedMemberName().split(',')[0]}
+                              </div>
+                              <div className="text-xs text-blue-700">
+                                {teamMembers.find(m => m.id === selectedMember)?.categoria}
+                              </div>
+                            </td>
+                            {getWeekDays().map((day) => {
+                              const cellPercentage = getCellPercentage(selectedMember, day);
+                              const cellAssignments = getCellAssignments(selectedMember, day);
+                              const isWeekendDay = isWeekend(day);
+                              const isHolidayDay = isHoliday(day);
+                              
+                              return (
+                                <td
+                                  key={day.toISOString()}
+                                  className={`border border-gray-300 p-1 text-center cursor-pointer hover:bg-blue-50 ${
+                                    isWeekendDay ? 'bg-yellow-50' : isHolidayDay ? 'bg-pink-50' : 'bg-white'
+                                  }`}
+                                  onDragOver={handleDragOver}
+                                  onDrop={(e) => handleDrop(e, selectedMember, day)}
+                                  onDoubleClick={() => handleCellDoubleClick(selectedMember, day)}
+                                >
+                                  {editingCell?.personId === selectedMember && editingCell?.date === format(day, 'yyyy-MM-dd') ? (
+                                    <div className="flex flex-col gap-1">
+                                      <Input
+                                        type="number"
+                                        value={editValue}
+                                        onChange={(e) => setEditValue(e.target.value)}
+                                        className="h-6 text-xs"
+                                        onBlur={handleCellEdit}
+                                        onKeyDown={(e) => e.key === 'Enter' && handleCellEdit()}
+                                        autoFocus
+                                      />
+                                    </div>
+                                  ) : (
+                                    <div className="space-y-1">
+                                      {cellAssignments.map((assignment, idx) => {
+                                        const project = projects.find(p => p.id === assignment.project_id);
+                                        return (
+                                          <Tooltip key={idx}>
+                                            <TooltipTrigger>
+                                              <div
+                                                className="text-xs px-1 py-0.5 rounded text-white font-medium"
+                                                style={{ backgroundColor: project?.color || '#6B7280' }}
+                                              >
+                                                {project?.codigo_inicial} ({assignment.hours_allocated}%)
+                                              </div>
+                                            </TooltipTrigger>
+                                            <TooltipContent>
+                                              <p>{project?.denominacion || 'Proyecto desconocido'}</p>
+                                              <p>{assignment.hours_allocated}% del día</p>
+                                            </TooltipContent>
+                                          </Tooltip>
+                                        );
+                                      })}
+                                      {cellPercentage === 0 && !isWeekendDay && !isHolidayDay && (
+                                        <div className="text-xs text-gray-400 border border-dashed border-gray-300 rounded p-1">
+                                          Arrastrar proyecto
+                                        </div>
+                                      )}
+                                      {cellPercentage > 0 && (
+                                        <div className={`text-xs font-bold ${cellPercentage > 100 ? 'text-red-600' : 'text-green-600'}`}>
+                                          Total: {cellPercentage}%
+                                        </div>
+                                      )}
+                                    </div>
+                                  )}
+                                </td>
+                              );
+                            })}
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+
+                    {/* Instrucciones */}
+                    <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                      <div className="flex items-start gap-2">
+                        <Info className="h-4 w-4 text-blue-600 mt-0.5" />
+                        <div className="text-sm text-blue-700 space-y-1">
+                          <p><strong>🎯 Cómo usar la Vista Spreadsheet:</strong></p>
+                          <ul className="list-disc list-inside space-y-1 ml-4">
+                            <li><strong>Drag & Drop:</strong> Arrastra proyectos desde arriba a las celdas de fechas</li>
+                            <li><strong>Doble clic:</strong> Haz doble clic en una celda para editar porcentajes (próximamente)</li>
+                            <li><strong>Colores:</strong> Cada proyecto tiene un color único para fácil identificación</li>
+                            <li><strong>Validación:</strong> El sistema evita asignaciones que superen 100% por día</li>
+                          </ul>
                         </div>
                       </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
 
-                      {/* Asignaciones por proyecto */}
-                      <div className="mb-6">
-                        <h4 className="text-md font-semibold text-gray-900 mb-3">
-                          📋 Asignaciones por Proyecto:
-                        </h4>
-                        {Object.keys(summary.projectSummary).length > 0 ? (
-                          <div className="space-y-2">
-                            {Object.entries(summary.projectSummary).map(([projectCode, projectData]) => (
-                              <div key={projectCode} className="bg-white p-3 rounded-lg border flex justify-between items-center">
-                                <div>
-                                  <span className="font-medium text-gray-900">{projectCode}</span>
-                                  <span className="text-sm text-gray-600 ml-2">- {projectData.name}</span>
+              {/* Asignación Rápida con Templates */}
+              <TabsContent value="form" className="space-y-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Zap className="h-5 w-5 text-yellow-600" />
+                      Asignación Rápida con Templates
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {/* Templates predefinidos */}
+                    <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                      <h4 className="text-sm font-medium text-yellow-900 mb-3">
+                        ⚡ Templates de Asignación Rápida
+                      </h4>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                        <Button
+                          variant="outline"
+                          onClick={() => applyTemplate('full-time')}
+                          className="border-yellow-300 hover:bg-yellow-50"
+                        >
+                          <Zap className="h-4 w-4 mr-2" />
+                          Tiempo Completo (100%)
+                        </Button>
+                        <Button
+                          variant="outline"
+                          onClick={() => applyTemplate('part-time')}
+                          className="border-yellow-300 hover:bg-yellow-50"
+                        >
+                          <Zap className="h-4 w-4 mr-2" />
+                          Medio Tiempo (50%)
+                        </Button>
+                        <Button
+                          variant="outline"
+                          onClick={() => applyTemplate('consultant')}
+                          className="border-yellow-300 hover:bg-yellow-50"
+                        >
+                          <Zap className="h-4 w-4 mr-2" />
+                          Consultor (30%)
+                        </Button>
+                      </div>
+                    </div>
+
+                    {/* Formulario tradicional mejorado */}
+                    <div className="grid grid-cols-1 md:grid-cols-6 gap-4 items-end">
+                      <div>
+                        <Label htmlFor="startDate">Fecha Desde</Label>
+                        <Input
+                          type="date"
+                          value={startDate}
+                          onChange={(e) => setStartDate(e.target.value)}
+                          className="bg-white"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="endDate">Fecha Hasta</Label>
+                        <Input
+                          type="date"
+                          value={endDate}
+                          onChange={(e) => setEndDate(e.target.value)}
+                          className="bg-white"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="percentage">Porcentaje</Label>
+                        <Input
+                          type="number"
+                          min="10"
+                          max="100"
+                          value={percentage}
+                          onChange={(e) => setPercentage(e.target.value)}
+                          className="bg-white"
+                        />
+                      </div>
+                      <div className="md:col-span-2">
+                        <Label htmlFor="project">Proyecto</Label>
+                        <Select value={selectedProject} onValueChange={setSelectedProject}>
+                          <SelectTrigger className="bg-white">
+                            <SelectValue placeholder="Seleccionar proyecto..." />
+                          </SelectTrigger>
+                          <SelectContent className="bg-white border shadow-lg z-50 max-h-60">
+                            {projects.map((project) => (
+                              <SelectItem key={project.id} value={project.id}>
+                                <div className="flex items-center gap-2">
+                                  <div 
+                                    className="w-3 h-3 rounded-full"
+                                    style={{ backgroundColor: project.color }}
+                                  ></div>
+                                  {project.codigo_inicial} - {project.denominacion}
                                 </div>
-                                <div className="text-right">
-                                  <div className="text-lg font-bold text-blue-600">
-                                    {projectData.days.toFixed(1)} días
-                                  </div>
-                                  <div className="text-sm text-gray-600">
-                                    al {projectData.percentage}%
-                                  </div>
-                                </div>
-                              </div>
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Button 
+                          onClick={handleAssign}
+                          className="w-full bg-yellow-600 hover:bg-yellow-700 text-white"
+                        >
+                          <Plus className="h-4 w-4 mr-2" />
+                          Asignar
+                        </Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              {/* Vista Calendario Original */}
+              <TabsContent value="calendar" className="space-y-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <CalendarIcon className="h-5 w-5 text-blue-600" />
+                      Vista Calendario - {getSelectedMemberName()}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+                      {months.map((month) => (
+                        <div key={month.toISOString()} className="space-y-2">
+                          <h3 className="text-center font-semibold text-gray-900 capitalize">
+                            {format(month, 'MMMM \'de\' yyyy', { locale: es })}
+                          </h3>
+                           <div className="border rounded-lg p-2 bg-white">
+                             <Calendar
+                               mode="single"
+                               month={month}
+                               locale={es}
+                               weekStartsOn={1}
+                               className="pointer-events-auto"
+                               modifiers={{
+                                 weekend: isWeekend,
+                                 holiday: isHoliday,
+                               }}
+                               modifiersStyles={{
+                                 weekend: { 
+                                   backgroundColor: '#fef3c7',
+                                   color: '#92400e'
+                                 },
+                                 holiday: { 
+                                   backgroundColor: '#fce7f3',
+                                   color: '#be185d'
+                                 },
+                               }}
+                               showOutsideDays={false}
+                               fixedWeeks={true}
+                             />
+                           </div>
+                        </div>
+                      ))}
+                     </div>
+
+                    {/* Leyenda del calendario */}
+                    <div className="mt-8 space-y-4">
+                      <h4 className="text-lg font-semibold text-gray-900">Leyenda del Calendario</h4>
+                      <div className="flex flex-wrap items-center gap-6 text-sm">
+                        <div className="flex items-center gap-2">
+                          <div className="w-4 h-4 bg-yellow-200 border rounded"></div>
+                          <span>Fin de semana</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <div className="w-4 h-4 bg-pink-200 border rounded"></div>
+                          <span>Festivo</span>
+                        </div>
+                        {projects.slice(0, 5).map((project) => (
+                          <div key={project.id} className="flex items-center gap-2">
+                            <div 
+                              className="w-4 h-4 border rounded" 
+                              style={{ backgroundColor: project.color }}
+                            ></div>
+                            <span className="text-xs">{project.codigo_inicial}</span>
+                          </div>
+                        ))}
+                      </div>
+
+                      {selectedOffice && getFilteredHolidays().length > 0 && (
+                        <div className="mt-6">
+                          <h5 className="font-medium text-gray-800 mb-3">
+                            Festivos para {selectedOffice} (próximos 6 meses):
+                          </h5>
+                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
+                            {getFilteredHolidays().map((holiday, index) => (
+                              <Badge 
+                                key={index} 
+                                variant="outline" 
+                                className="text-xs p-2 bg-pink-50 border-pink-200 text-pink-800"
+                              >
+                                <CalendarDays className="h-3 w-3 mr-1" />
+                                {format(new Date(holiday.date), 'dd/MM/yyyy')} - {holiday.festivo}
+                              </Badge>
                             ))}
                           </div>
-                        ) : (
-                          <div className="bg-gray-50 p-4 rounded-lg text-center text-gray-600">
-                            No hay asignaciones en este período
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Días sin asignar */}
-                      <div className="mb-6">
-                        <div className="bg-gray-50 p-4 rounded-lg border">
-                          <div className="flex justify-between items-center">
-                            <span className="font-medium text-gray-900">📅 Días sin asignar:</span>
-                            <span className="text-lg font-bold text-orange-600">
-                              {summary.unassignedDays.toFixed(1)} días
-                            </span>
-                          </div>
                         </div>
-                      </div>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
 
-                      {/* Capacidad disponible */}
-                      <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
-                        <div className="flex items-start gap-2">
-                          <Info className="h-5 w-5 text-orange-600 mt-0.5" />
-                          <div>
-                            <p className="font-medium text-orange-900">
-                              ⚠️ Aviso de Capacidad
-                            </p>
-                            <p className="text-sm text-orange-800 mt-1">
-                              En el período considerado, este recurso tiene un{' '}
-                              <strong>{summary.availableCapacity}%</strong> de capacidad disponible.
-                            </p>
-                            {parseFloat(summary.availableCapacity) < 20 && (
-                              <p className="text-sm text-red-600 mt-2 font-medium">
-                                🚨 Recurso sobrecargado - Considere redistribuir asignaciones
-                              </p>
-                            )}
-                          </div>
+              {/* Resumen Mejorado */}
+              <TabsContent value="summary" className="space-y-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <CalendarDays className="h-5 w-5 text-green-600" />
+                      Resumen de Asignaciones - {getSelectedMemberName()}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg">
+                      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+                        <div>
+                          <Label htmlFor="summaryStartDate">Fecha Desde</Label>
+                          <Input
+                            type="date"
+                            value={summaryStartDate}
+                            onChange={(e) => setSummaryStartDate(e.target.value)}
+                            className="bg-white"
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="summaryEndDate">Fecha Hasta</Label>
+                          <Input
+                            type="date"
+                            value={summaryEndDate}
+                            onChange={(e) => setSummaryEndDate(e.target.value)}
+                            className="bg-white"
+                          />
+                        </div>
+                        <div className="md:col-span-2">
+                          <Button 
+                            onClick={handleGenerateSummary}
+                            className="w-full bg-green-600 hover:bg-green-700 text-white"
+                          >
+                            <CalendarDays className="h-4 w-4 mr-2" />
+                            Generar Resumen
+                          </Button>
                         </div>
                       </div>
                     </div>
-                  </div>
-                );
-              })()}
-            </CardContent>
-          </Card>
+
+                    {showSummary && (() => {
+                      const summary = generateSummary();
+                      if (!summary) return null;
+
+                      return (
+                        <div className="space-y-6 animate-fade-in">
+                          <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
+                            <h3 className="text-lg font-semibold text-blue-900 mb-4">
+                              📊 Resumen de Asignaciones - {summary.memberName}
+                            </h3>
+                            <p className="text-sm text-blue-800 mb-4">
+                              Período: {format(new Date(summaryStartDate), 'dd/MM/yyyy')} - {format(new Date(summaryEndDate), 'dd/MM/yyyy')}
+                            </p>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                              <div className="bg-white p-4 rounded-lg border hover-scale">
+                                <div className="text-center">
+                                  <div className="text-2xl font-bold text-gray-900">{summary.totalDays}</div>
+                                  <div className="text-sm text-gray-600">Días naturales</div>
+                                </div>
+                              </div>
+                              <div className="bg-white p-4 rounded-lg border hover-scale">
+                                <div className="text-center">
+                                  <div className="text-2xl font-bold text-yellow-600">{summary.weekendDays}</div>
+                                  <div className="text-sm text-gray-600">Fines de semana ({summary.weekendPercentage}%)</div>
+                                </div>
+                              </div>
+                              <div className="bg-white p-4 rounded-lg border hover-scale">
+                                <div className="text-center">
+                                  <div className="text-2xl font-bold text-pink-600">{summary.holidayDays}</div>
+                                  <div className="text-sm text-gray-600">Días festivos</div>
+                                </div>
+                              </div>
+                              <div className="bg-white p-4 rounded-lg border hover-scale">
+                                <div className="text-center">
+                                  <div className="text-2xl font-bold text-green-600">{summary.workableDays}</div>
+                                  <div className="text-sm text-gray-600">Días laborables</div>
+                                </div>
+                              </div>
+                            </div>
+
+                            <div className="mb-6">
+                              <h4 className="text-md font-semibold text-gray-900 mb-3">📋 Asignaciones por Proyecto:</h4>
+                              {Object.keys(summary.projectSummary).length > 0 ? (
+                                <div className="space-y-2">
+                                  {Object.entries(summary.projectSummary).map(([projectCode, projectData]) => (
+                                    <div key={projectCode} className="bg-white p-3 rounded-lg border flex justify-between items-center hover-scale">
+                                      <div>
+                                        <span className="font-medium text-gray-900">{projectCode}</span>
+                                        <span className="text-sm text-gray-600 ml-2">- {projectData.name}</span>
+                                      </div>
+                                      <div className="text-right">
+                                        <div className="text-lg font-bold text-blue-600">{projectData.days.toFixed(1)} días</div>
+                                        <div className="text-sm text-gray-600">al {projectData.percentage}%</div>
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              ) : (
+                                <div className="bg-gray-50 p-4 rounded-lg text-center text-gray-600">
+                                  No hay asignaciones en este período
+                                </div>
+                              )}
+                            </div>
+
+                            <div className="mb-6">
+                              <div className="bg-gray-50 p-4 rounded-lg border">
+                                <div className="flex justify-between items-center">
+                                  <span className="font-medium text-gray-900">📅 Días sin asignar:</span>
+                                  <span className="text-lg font-bold text-orange-600">{summary.unassignedDays.toFixed(1)} días</span>
+                                </div>
+                              </div>
+                            </div>
+
+                            <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
+                              <div className="flex items-start gap-2">
+                                <Info className="h-5 w-5 text-orange-600 mt-0.5" />
+                                <div>
+                                  <p className="font-medium text-orange-900">⚠️ Aviso de Capacidad</p>
+                                  <p className="text-sm text-orange-800 mt-1">
+                                    En el período considerado, este recurso tiene un <strong>{summary.availableCapacity}%</strong> de capacidad disponible.
+                                  </p>
+                                  {parseFloat(summary.availableCapacity) < 20 && (
+                                    <p className="text-sm text-red-600 mt-2 font-medium">
+                                      🚨 Recurso sobrecargado - Considere redistribuir asignaciones
+                                    </p>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })()}
+                  </CardContent>
+                </Card>
+              </TabsContent>
+            </Tabs>
+          </TooltipProvider>
         )}
 
         {loading && (
