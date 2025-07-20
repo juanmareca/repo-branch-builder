@@ -257,7 +257,8 @@ const Index = ({ userRole, userData }: { userRole?: string; userData?: any }) =>
             </CardHeader>
             <CardContent>
               <TeamCapabilities 
-                teamMembers={filteredPersons.map(person => person.nombre)} 
+                teamMembers={filteredPersons.map(person => person.nombre)}
+                currentSquadLeadName={isSquadLeadView && userData?.name ? userData.name : undefined}
               />
             </CardContent>
           </Card>

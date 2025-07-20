@@ -2,9 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Brain, Star, Award, Loader2, Users, Info } from 'lucide-react';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Button } from '@/components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Brain, Star, Award, Loader2, Users, Info, Edit, Save, X } from 'lucide-react';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { useToast } from '@/hooks/use-toast';
 
 interface Capacity {
   id: string;
@@ -18,19 +20,76 @@ interface Capacity {
 
 interface TeamCapabilitiesProps {
   teamMembers: string[];
+  currentSquadLeadName?: string;
 }
 
-const TeamCapabilities: React.FC<TeamCapabilitiesProps> = ({ teamMembers }) => {
+// Lista completa de todas las capacidades disponibles
+const ALL_SKILLS = [
+  'Idiomas - Alemán',
+  'Idiomas - Español', 
+  'Idiomas - Francés',
+  'Idiomas - Inglés',
+  'Idiomas - Portugués',
+  'Implantación SAP - SAP S4 HANA Mix&Match',
+  'Implantación SAP - SAP S4HANA Brownfield',
+  'Implantación SAP - SAP S4HANA Greenfield',
+  'Industrias - Automotion',
+  'Industrias - Manufacturing',
+  'Industrias - Oil & Gas',
+  'Industrias - Pharma',
+  'Industrias - Services',
+  'Industrias - Telecom',
+  'Industrias - Utilities',
+  'Módulo SAP - (CO-CCA) Controlling - Cost Center Accounting',
+  'Módulo SAP - (CO-PA (MA) Controlling – Profitability Analysis (por Margen de Contribución)',
+  'Módulo SAP - (CO-PC) Controlling - Product Costing',
+  'Módulo SAP - (CO-PCA) Controlling - Profit Center Accounting',
+  'Módulo SAP - (FI-AA) Financials - Assets Accounting',
+  'Módulo SAP - (FI-AP) Financials - Accounts Payable',
+  'Módulo SAP - (FI-AR) Financials - Accounts Receivable',
+  'Módulo SAP - (FI-GL) Financials - General Ledger',
+  'Módulo SAP - (FI-Taxes) - SII / DRC',
+  'Módulo SAP - (RE-FX) SAP Flexible Real Estate',
+  'Módulo SAP - (SAP BRIM) Billing and Revenue Innovation Management',
+  'Módulo SAP - (SAP GRC) Governance, Risk and Compliance',
+  'Módulo SAP - (TR-CM) Treasury - Cash Management',
+  'Módulo SAP - (TR-TM) Treasury Management',
+  'Módulo SAP - (TR-TRM) Treasury and Risk Management',
+  'Módulo SAP - SAP. Ledgers S4',
+  'Módulo SAP - SAP. Monedas S4'
+];
+
+const LEVEL_OPTIONS = ['Nulo', 'Básico', 'Medio', 'Alto', 'Experto'];
+
+const TeamCapabilities: React.FC<TeamCapabilitiesProps> = ({ 
+  teamMembers, 
+  currentSquadLeadName 
+}) => {
   const [capacities, setCapacities] = useState<Capacity[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedCapacities, setEditedCapacities] = useState<{[key: string]: string}>({});
+  const [saving, setSaving] = useState(false);
+  const { toast } = useToast();
+
+  // Obtener todos los miembros del equipo incluyendo al squad lead actual
+  const getAllTeamMembers = () => {
+    const allMembers = [...teamMembers];
+    if (currentSquadLeadName && !allMembers.includes(currentSquadLeadName)) {
+      allMembers.unshift(currentSquadLeadName); // Añadir al principio
+    }
+    return allMembers;
+  };
 
   useEffect(() => {
     const fetchCapacities = async () => {
       try {
         setLoading(true);
         
-        if (teamMembers.length === 0) {
+        const allMembers = getAllTeamMembers();
+        
+        if (allMembers.length === 0) {
           setCapacities([]);
           setLoading(false);
           return;
@@ -39,7 +98,7 @@ const TeamCapabilities: React.FC<TeamCapabilitiesProps> = ({ teamMembers }) => {
         const { data, error } = await supabase
           .from('capacities')
           .select('*')
-          .in('person_name', teamMembers)
+          .in('person_name', allMembers)
           .order('person_name')
           .order('skill');
 
@@ -53,27 +112,20 @@ const TeamCapabilities: React.FC<TeamCapabilitiesProps> = ({ teamMembers }) => {
     };
 
     fetchCapacities();
-  }, [teamMembers]);
+  }, [teamMembers, currentSquadLeadName]);
 
   const getLevelColor = (level: string) => {
     switch (level?.toLowerCase()) {
       case 'básico':
         return 'bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900/20 dark:text-blue-400';
-      case 'intermedio':
       case 'medio':
         return 'bg-yellow-100 text-yellow-800 border-yellow-200 dark:bg-yellow-900/20 dark:text-yellow-400';
-      case 'avanzado':
       case 'alto':
         return 'bg-green-100 text-green-800 border-green-200 dark:bg-green-900/20 dark:text-green-400';
       case 'experto':
-      case 'expert':
         return 'bg-purple-100 text-purple-800 border-purple-200 dark:bg-purple-900/20 dark:text-purple-400';
       case 'nulo':
-      case 'no':
         return 'bg-red-100 text-red-800 border-red-200 dark:bg-red-900/20 dark:text-red-400';
-      case 'sí':
-      case 'si':
-        return 'bg-green-100 text-green-800 border-green-200 dark:bg-green-900/20 dark:text-green-400';
       default:
         return 'bg-gray-100 text-gray-800 border-gray-200 dark:bg-gray-900/20 dark:text-gray-400';
     }
@@ -132,44 +184,153 @@ const TeamCapabilities: React.FC<TeamCapabilitiesProps> = ({ teamMembers }) => {
     return <Brain className="h-4 w-4" />;
   };
 
-  const groupCapacitiesByPerson = () => {
-    const grouped: { [key: string]: { [category: string]: Capacity[] } } = {};
-    
-    capacities.forEach(capacity => {
-      if (!grouped[capacity.person_name]) {
-        grouped[capacity.person_name] = {};
-      }
-      
-      let category = 'Otras Capacidades';
-      
-      if (capacity.skill.toLowerCase().includes('módulo sap') || capacity.skill.toLowerCase().includes('sap')) {
-        category = 'Módulos SAP e Implantaciones';
-      } else if (capacity.skill.toLowerCase().includes('idioma')) {
-        category = 'Idiomas';
-      } else if (capacity.skill.toLowerCase().includes('industria') || capacity.skill.toLowerCase().includes('sector')) {
-        category = 'Industrias';
-      }
-      
-      if (!grouped[capacity.person_name][category]) {
-        grouped[capacity.person_name][category] = [];
-      }
-      grouped[capacity.person_name][category].push(capacity);
+  // Función para generar las capacidades completas para cada persona
+  const generateCompleteCapacities = () => {
+    const allMembers = getAllTeamMembers();
+    const completeData: { [personName: string]: { [category: string]: Capacity[] } } = {};
+
+    allMembers.forEach(personName => {
+      completeData[personName] = {
+        'Módulos SAP e Implantaciones': [],
+        'Idiomas': [],
+        'Industrias': [],
+        'Otras Capacidades': []
+      };
+
+      ALL_SKILLS.forEach(skill => {
+        let category = 'Otras Capacidades';
+        
+        if (skill.toLowerCase().includes('módulo sap') || skill.toLowerCase().includes('implantación sap')) {
+          category = 'Módulos SAP e Implantaciones';
+        } else if (skill.toLowerCase().includes('idioma')) {
+          category = 'Idiomas';
+        } else if (skill.toLowerCase().includes('industria')) {
+          category = 'Industrias';
+        }
+
+        // Buscar si ya existe esta capacidad para esta persona
+        const existingCapacity = capacities.find(c => 
+          c.person_name === personName && c.skill === skill
+        );
+
+        if (existingCapacity) {
+          // Usar la capacidad existente
+          completeData[personName][category].push(existingCapacity);
+        } else {
+          // Crear una capacidad "Nulo" por defecto
+          completeData[personName][category].push({
+            id: `${personName}-${skill}`, // ID temporal
+            person_name: personName,
+            skill: skill,
+            level: 'Nulo',
+            certification: '',
+            comments: '',
+            evaluation_date: ''
+          });
+        }
+      });
     });
-    
-    return grouped;
+
+    return completeData;
   };
 
-  const sortPersons = (persons: string[]) => {
-    // Buscar el squad lead en la lista de miembros del equipo
-    const squadLead = teamMembers.find(member => 
-      persons.includes(member) && member.includes('SQUAD LEAD') // Asumiendo que viene marcado así
-    ) || teamMembers[0]; // Si no encontramos uno marcado, tomar el primero
-    
-    // Separar squad lead del resto
-    const otherMembers = persons.filter(person => person !== squadLead).sort();
-    
-    // Retornar squad lead primero, luego el resto alfabéticamente
-    return squadLead ? [squadLead, ...otherMembers] : otherMembers;
+  const handleEditCapacity = (personName: string, skill: string, newLevel: string) => {
+    const key = `${personName}-${skill}`;
+    setEditedCapacities(prev => ({
+      ...prev,
+      [key]: newLevel
+    }));
+  };
+
+  const handleSaveCapacities = async () => {
+    setSaving(true);
+    try {
+      const updates = [];
+      const inserts = [];
+
+      for (const [key, newLevel] of Object.entries(editedCapacities)) {
+        const [personName, skill] = key.split('-', 2);
+        const skill_full = key.replace(`${personName}-`, '');
+        
+        const existingCapacity = capacities.find(c => 
+          c.person_name === personName && c.skill === skill_full
+        );
+
+        if (existingCapacity) {
+          // Actualizar capacidad existente
+          if (existingCapacity.level !== newLevel) {
+            updates.push({
+              id: existingCapacity.id,
+              level: newLevel,
+              evaluation_date: new Date().toISOString().split('T')[0]
+            });
+          }
+        } else {
+          // Insertar nueva capacidad
+          if (newLevel !== 'Nulo') {
+            inserts.push({
+              person_name: personName,
+              skill: skill_full,
+              level: newLevel,
+              evaluation_date: new Date().toISOString().split('T')[0]
+            });
+          }
+        }
+      }
+
+      // Ejecutar actualizaciones
+      if (updates.length > 0) {
+        for (const update of updates) {
+          const { error } = await supabase
+            .from('capacities')
+            .update({ 
+              level: update.level, 
+              evaluation_date: update.evaluation_date 
+            })
+            .eq('id', update.id);
+
+          if (error) throw error;
+        }
+      }
+
+      // Ejecutar inserciones
+      if (inserts.length > 0) {
+        const { error } = await supabase
+          .from('capacities')
+          .insert(inserts);
+
+        if (error) throw error;
+      }
+
+      // Refrescar datos
+      const allMembers = getAllTeamMembers();
+      const { data, error } = await supabase
+        .from('capacities')
+        .select('*')
+        .in('person_name', allMembers)
+        .order('person_name')
+        .order('skill');
+
+      if (error) throw error;
+      setCapacities(data || []);
+      setIsEditing(false);
+      setEditedCapacities({});
+
+      toast({
+        title: "Capacidades actualizadas",
+        description: "Las capacidades del equipo se han actualizado correctamente.",
+      });
+
+    } catch (error) {
+      console.error('Error updating capacities:', error);
+      toast({
+        title: "Error",
+        description: "Error al actualizar las capacidades. Inténtalo de nuevo.",
+        variant: "destructive"
+      });
+    } finally {
+      setSaving(false);
+    }
   };
 
   if (loading) {
@@ -192,78 +353,96 @@ const TeamCapabilities: React.FC<TeamCapabilitiesProps> = ({ teamMembers }) => {
     );
   }
 
-  if (capacities.length === 0) {
-    return (
-      <div className="text-center py-12">
-        <Brain className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-        <p className="text-muted-foreground">No hay capacidades registradas para este equipo</p>
-      </div>
-    );
-  }
-
-  const groupedByPerson = groupCapacitiesByPerson();
-  const sortedPersons = sortPersons(Object.keys(groupedByPerson));
+  const completeCapacities = generateCompleteCapacities();
+  const allMembers = getAllTeamMembers();
 
   return (
-    <div className="space-y-8">
-      {sortedPersons.map((personName) => {
-        const personCapacities = groupedByPerson[personName];
-        
-        // Add safety check to prevent Object.values error
-        if (!personCapacities) {
-          return null;
-        }
-        
-        const isSquadLead = personName === sortedPersons[0]; // El primero es el squad lead
-        
-        return (
-          <div key={personName} className="space-y-4">
-            {/* Header de la persona */}
-            <div className={`flex items-center gap-3 p-4 rounded-lg border-l-4 ${
-              isSquadLead 
-                ? 'border-l-blue-500 bg-gradient-to-r from-blue-50 to-blue-100/50 dark:from-blue-950/20 dark:to-blue-900/10' 
-                : 'border-l-green-500 bg-gradient-to-r from-green-50 to-green-100/50 dark:from-green-950/20 dark:to-green-900/10'
-            }`}>
-              <div className={`flex-shrink-0 h-12 w-12 rounded-xl flex items-center justify-center ${
+    <div className="space-y-6">
+      {/* Botón de actualizar capacidades */}
+      <div className="flex justify-between items-center">
+        <h3 className="text-lg font-semibold">Capacidades del Equipo</h3>
+        <div className="flex gap-2">
+          {isEditing ? (
+            <>
+              <Button 
+                variant="outline" 
+                onClick={() => {
+                  setIsEditing(false);
+                  setEditedCapacities({});
+                }}
+                disabled={saving}
+              >
+                <X className="h-4 w-4 mr-2" />
+                Cancelar
+              </Button>
+              <Button 
+                onClick={handleSaveCapacities}
+                disabled={saving}
+              >
+                {saving ? (
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                ) : (
+                  <Save className="h-4 w-4 mr-2" />
+                )}
+                Guardar Cambios
+              </Button>
+            </>
+          ) : (
+            <Button onClick={() => setIsEditing(true)}>
+              <Edit className="h-4 w-4 mr-2" />
+              Actualizar Capacidades del Equipo
+            </Button>
+          )}
+        </div>
+      </div>
+
+      {/* Lista de miembros del equipo */}
+      <div className="space-y-8">
+        {allMembers.map((personName, index) => {
+          const personCapacities = completeCapacities[personName];
+          const isSquadLead = index === 0 && personName === currentSquadLeadName;
+          
+          return (
+            <div key={personName} className="space-y-4">
+              {/* Header de la persona */}
+              <div className={`flex items-center gap-3 p-4 rounded-lg border-l-4 ${
                 isSquadLead 
-                  ? 'bg-blue-100 dark:bg-blue-900/50' 
-                  : 'bg-green-100 dark:bg-green-900/50'
+                  ? 'border-l-blue-500 bg-gradient-to-r from-blue-50 to-blue-100/50 dark:from-blue-950/20 dark:to-blue-900/10' 
+                  : 'border-l-green-500 bg-gradient-to-r from-green-50 to-green-100/50 dark:from-green-950/20 dark:to-green-900/10'
               }`}>
-                <Users className={`w-6 h-6 ${
+                <div className={`flex-shrink-0 h-12 w-12 rounded-xl flex items-center justify-center ${
                   isSquadLead 
-                    ? 'text-blue-600 dark:text-blue-400' 
-                    : 'text-green-600 dark:text-green-400'
-                }`} />
-              </div>
-              <div>
-                <h2 className={`text-xl font-bold ${
-                  isSquadLead 
-                    ? 'text-blue-800 dark:text-blue-300' 
-                    : 'text-green-800 dark:text-green-300'
+                    ? 'bg-blue-100 dark:bg-blue-900/50' 
+                    : 'bg-green-100 dark:bg-green-900/50'
                 }`}>
-                  {personName}
-                  {isSquadLead && <span className="ml-2 text-sm font-normal text-blue-600 dark:text-blue-400">(Squad Lead)</span>}
-                </h2>
-                <p className={`text-sm ${
-                  isSquadLead 
-                    ? 'text-blue-600 dark:text-blue-400' 
-                    : 'text-green-600 dark:text-green-400'
-                }`}>
-                  {Object.values(personCapacities || {}).flat().length} capacidades registradas
-                </p>
+                  <Users className={`w-6 h-6 ${
+                    isSquadLead 
+                      ? 'text-blue-600 dark:text-blue-400' 
+                      : 'text-green-600 dark:text-green-400'
+                  }`} />
+                </div>
+                <div>
+                  <h2 className={`text-xl font-bold ${
+                    isSquadLead 
+                      ? 'text-blue-800 dark:text-blue-300' 
+                      : 'text-green-800 dark:text-green-300'
+                  }`}>
+                    {personName}
+                    {isSquadLead && <span className="ml-2 text-sm font-normal text-blue-600 dark:text-blue-400">(Squad Lead)</span>}
+                  </h2>
+                  <p className={`text-sm ${
+                    isSquadLead 
+                      ? 'text-blue-600 dark:text-blue-400' 
+                      : 'text-green-600 dark:text-green-400'
+                  }`}>
+                    {ALL_SKILLS.length} capacidades ({Object.values(personCapacities).flat().filter(c => c.level !== 'Nulo').length} registradas)
+                  </p>
+                </div>
               </div>
-            </div>
 
-            {/* Categorías de capacidades para esta persona */}
-            <div className="grid gap-4 ml-4">
-              {['Módulos SAP e Implantaciones', 'Idiomas', 'Industrias', 'Otras Capacidades'].map(category => {
-                const categoryCapacities = personCapacities[category];
-                
-                if (!categoryCapacities || categoryCapacities.length === 0) {
-                  return null;
-                }
-
-                return (
+              {/* Categorías de capacidades para esta persona */}
+              <div className="grid gap-4 ml-4">
+                {Object.entries(personCapacities).map(([category, categoryCapacities]) => (
                   <Card key={category} className="overflow-hidden">
                     <CardHeader className="bg-gradient-to-r from-muted/50 to-muted/80 py-3">
                       <CardTitle className="flex items-center gap-2 text-base">
@@ -276,71 +455,95 @@ const TeamCapabilities: React.FC<TeamCapabilitiesProps> = ({ teamMembers }) => {
                     </CardHeader>
                     <CardContent className="p-4">
                       <div className="grid gap-2" style={{ 
-                        gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))'
+                        gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))'
                       }}>
-                        {categoryCapacities.map((capacity) => (
-                          <div
-                            key={capacity.id}
-                            className="p-3 border rounded-lg hover:shadow-sm transition-shadow group"
-                          >
-                            <div className="flex items-start justify-between gap-2 mb-2">
-                              <div className="flex-1 min-w-0">
-                                <div className="flex items-center gap-2">
-                                  <h4 className="font-medium text-sm leading-tight group-hover:text-primary transition-colors">
-                                    {capacity.skill.replace('Módulo SAP - ', '')}
-                                  </h4>
-                                  {isSAPModule(capacity.skill) && (
-                                    <Popover>
-                                      <PopoverTrigger asChild>
-                                        <Button
-                                          variant="ghost"
-                                          size="sm"
-                                          className="h-5 w-5 p-0 hover:bg-primary/10"
-                                        >
-                                          <Info className="h-3 w-3 text-muted-foreground hover:text-primary" />
-                                        </Button>
-                                      </PopoverTrigger>
-                                      <PopoverContent className="w-80 p-3">
-                                        <div className="space-y-2">
-                                          <h4 className="font-semibold text-sm">
-                                            {capacity.skill.replace('Módulo SAP - ', '')}
-                                          </h4>
-                                          <p className="text-xs text-muted-foreground leading-relaxed">
-                                            {getSAPModuleInfo(capacity.skill)}
-                                          </p>
-                                        </div>
-                                      </PopoverContent>
-                                    </Popover>
-                                  )}
+                        {categoryCapacities.map((capacity) => {
+                          const editKey = `${capacity.person_name}-${capacity.skill}`;
+                          const currentLevel = editedCapacities[editKey] || capacity.level;
+                          
+                          return (
+                            <div
+                              key={editKey}
+                              className="p-3 border rounded-lg hover:shadow-sm transition-shadow group"
+                            >
+                              <div className="flex items-start justify-between gap-2 mb-2">
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center gap-2">
+                                    <h4 className="font-medium text-sm leading-tight group-hover:text-primary transition-colors">
+                                      {capacity.skill.replace('Módulo SAP - ', '')}
+                                    </h4>
+                                    {isSAPModule(capacity.skill) && (
+                                      <Popover>
+                                        <PopoverTrigger asChild>
+                                          <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            className="h-5 w-5 p-0 hover:bg-primary/10"
+                                          >
+                                            <Info className="h-3 w-3 text-muted-foreground hover:text-primary" />
+                                          </Button>
+                                        </PopoverTrigger>
+                                        <PopoverContent className="w-80 p-3">
+                                          <div className="space-y-2">
+                                            <h4 className="font-semibold text-sm">
+                                              {capacity.skill.replace('Módulo SAP - ', '')}
+                                            </h4>
+                                            <p className="text-xs text-muted-foreground leading-relaxed">
+                                              {getSAPModuleInfo(capacity.skill)}
+                                            </p>
+                                          </div>
+                                        </PopoverContent>
+                                      </Popover>
+                                    )}
+                                  </div>
                                 </div>
+                                
+                                {isEditing ? (
+                                  <Select
+                                    value={currentLevel}
+                                    onValueChange={(value) => handleEditCapacity(capacity.person_name, capacity.skill, value)}
+                                  >
+                                    <SelectTrigger className="w-24 h-8">
+                                      <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      {LEVEL_OPTIONS.map(level => (
+                                        <SelectItem key={level} value={level}>
+                                          {level}
+                                        </SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
+                                ) : (
+                                  <Badge 
+                                    variant="outline" 
+                                    className={`text-xs px-2 py-1 ${getLevelColor(currentLevel)}`}
+                                  >
+                                    {currentLevel}
+                                  </Badge>
+                                )}
                               </div>
-                              <Badge 
-                                variant="outline" 
-                                className={`text-xs px-2 py-1 ${getLevelColor(capacity.level)}`}
-                              >
-                                {capacity.level}
-                              </Badge>
+                              
+                              {capacity.certification && (
+                                <div className="flex items-center gap-1 mt-2">
+                                  <Award className="h-3 w-3 text-amber-500" />
+                                  <span className="text-xs text-muted-foreground truncate">
+                                    {capacity.certification}
+                                  </span>
+                                </div>
+                              )}
                             </div>
-                            
-                            {capacity.certification && (
-                              <div className="flex items-center gap-1 mt-2">
-                                <Award className="h-3 w-3 text-amber-500" />
-                                <span className="text-xs text-muted-foreground truncate">
-                                  {capacity.certification}
-                                </span>
-                              </div>
-                            )}
-                          </div>
-                        ))}
+                          );
+                        })}
                       </div>
                     </CardContent>
                   </Card>
-                );
-              })}
+                ))}
+              </div>
             </div>
-          </div>
-        );
-      })}
+          );
+        })}
+      </div>
     </div>
   );
 };
