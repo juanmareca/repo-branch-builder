@@ -304,12 +304,9 @@ export type Database = {
           grupo: string
           id: string
           mail_empresa: string
-          nivel_ingles: string
           nombre: string
           num_pers: string
           oficina: string
-          skill1: string
-          skill2: string
           squad_lead: string
           updated_at: string | null
         }
@@ -321,12 +318,9 @@ export type Database = {
           grupo?: string
           id?: string
           mail_empresa?: string
-          nivel_ingles?: string
           nombre?: string
           num_pers?: string
           oficina?: string
-          skill1?: string
-          skill2?: string
           squad_lead?: string
           updated_at?: string | null
         }
@@ -338,12 +332,9 @@ export type Database = {
           grupo?: string
           id?: string
           mail_empresa?: string
-          nivel_ingles?: string
           nombre?: string
           num_pers?: string
           oficina?: string
-          skill1?: string
-          skill2?: string
           squad_lead?: string
           updated_at?: string | null
         }

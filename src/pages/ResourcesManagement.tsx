@@ -59,9 +59,6 @@ interface Person {
   grupo: string;
   categoria: string;
   oficina: string;
-  skill1: string;
-  skill2: string;
-  nivel_ingles: string;
   created_at: string;
   updated_at: string;
 }
@@ -119,10 +116,7 @@ const ResourcesManagement = () => {
     cex: '',
     grupo: '',
     categoria: '',
-    oficina: '',
-    skill1: '',
-    skill2: '',
-    nivel_ingles: ''
+    oficina: ''
   });
   
   // Column management
@@ -133,10 +127,7 @@ const ResourcesManagement = () => {
     { key: 'mail_empresa', label: 'EMAIL', visible: true, width: 200, minWidth: 150, resizable: true },
     { key: 'cex', label: 'CEX', visible: true, width: 80, minWidth: 60, resizable: true },
     { key: 'grupo', label: 'GRUPO / CATEGORÍA', visible: true, width: 180, minWidth: 140, resizable: true },
-    { key: 'oficina', label: 'OFICINA', visible: true, width: 100, minWidth: 80, resizable: true },
-    { key: 'skill1', label: 'SKILL 1', visible: false, width: 100, minWidth: 80, resizable: true },
-    { key: 'skill2', label: 'SKILL 2', visible: false, width: 100, minWidth: 80, resizable: true },
-    { key: 'nivel_ingles', label: 'NIVEL INGLÉS', visible: false, width: 120, minWidth: 100, resizable: true }
+    { key: 'oficina', label: 'OFICINA', visible: true, width: 100, minWidth: 80, resizable: true }
   ]);
 
   const { toast } = useToast();
@@ -262,10 +253,7 @@ const ResourcesManagement = () => {
         cex: '',
         grupo: '',
         categoria: '',
-        oficina: '',
-        skill1: '',
-        skill2: '',
-        nivel_ingles: ''
+        oficina: ''
       });
       fetchResources();
     } catch (error) {
@@ -336,10 +324,7 @@ const ResourcesManagement = () => {
       'CEX': resource.cex,
       'GRUPO': resource.grupo,
       'CATEGORÍA': resource.categoria,
-      'OFICINA': resource.oficina,
-      'SKILL 1': resource.skill1,
-      'SKILL 2': resource.skill2,
-      'NIVEL INGLÉS': resource.nivel_ingles
+      'OFICINA': resource.oficina
     }));
 
     const ws = XLSX.utils.json_to_sheet(exportData);

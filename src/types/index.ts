@@ -8,9 +8,6 @@ export interface Person {
   grupo: string;
   categoria: string;
   oficina: string;
-  skill1: string;
-  skill2: string;
-  nivel_ingles: string;
   squad_lead: string;
   created_at?: string;
   updated_at?: string;
