@@ -267,14 +267,29 @@ const PersonTable: React.FC<PersonTableProps> = ({ persons, onEditPerson }) => {
                 <td className="px-6 py-2 whitespace-nowrap text-sm text-foreground">
                   <div className="flex items-center">
                     <Calendar className="w-4 h-4 text-muted-foreground mr-2" />
-                    {person.fecha_incorporacion ? 
-                      new Date(person.fecha_incorporacion).toLocaleDateString('es-ES', {
-                        day: '2-digit',
-                        month: '2-digit',
-                        year: 'numeric'
-                      }) : 
-                      person.fecha_incorporacion
-                    }
+                    {(() => {
+                      if (!person.fecha_incorporacion) return '';
+                      
+                      // Si ya está en formato dd/mm/yyyy, mostrarlo tal como está
+                      if (person.fecha_incorporacion.includes('/')) {
+                        return person.fecha_incorporacion;
+                      }
+                      
+                      // Si es un número (fecha serial de Excel), convertirlo
+                      const excelDate = parseInt(person.fecha_incorporacion);
+                      if (!isNaN(excelDate) && excelDate > 0) {
+                        // Excel epoch: 1 de enero de 1900 (pero Excel considera 1900 como año bisiesto incorrectamente)
+                        const excelEpoch = new Date(1900, 0, 1);
+                        const jsDate = new Date(excelEpoch.getTime() + (excelDate - 2) * 24 * 60 * 60 * 1000);
+                        return jsDate.toLocaleDateString('es-ES', {
+                          day: '2-digit',
+                          month: '2-digit',
+                          year: 'numeric'
+                        });
+                      }
+                      
+                      return person.fecha_incorporacion;
+                    })()}
                   </div>
                 </td>
                 <td className="px-6 py-2 whitespace-nowrap text-sm text-foreground">
