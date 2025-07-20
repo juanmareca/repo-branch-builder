@@ -1,4 +1,4 @@
-import { StrictMode } from 'react'
+import React from 'react'
 import { createRoot } from 'react-dom/client'
 import App from './App.tsx'
 import ErrorBoundary from './components/ErrorBoundary'
@@ -13,9 +13,9 @@ if (!rootElement) {
 // Create root and render with error boundary
 const root = createRoot(rootElement)
 root.render(
-  <StrictMode>
+  <React.StrictMode>
     <ErrorBoundary>
       <App />
     </ErrorBoundary>
-  </StrictMode>
+  </React.StrictMode>
 )
