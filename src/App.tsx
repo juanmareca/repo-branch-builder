@@ -3,7 +3,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import SplashScreen from "./pages/SplashScreen";
@@ -79,11 +79,26 @@ const App = () => {
           <Routes>
             <Route path="/" element={userRole === 'admin' ? <AdminDashboard /> : <Index />} />
             <Route path="/admin" element={<AdminDashboard />} />
-            <Route path="/holidays" element={<HolidaysManagement />} />
-            <Route path="/backups" element={<BackupsManagement />} />
-            <Route path="/audit-logs" element={<AuditLogs />} />
-            <Route path="/capacities" element={<CapacitiesManagement />} />
-            <Route path="/projects" element={<ProjectsManagement />} />
+            <Route 
+              path="/holidays" 
+              element={userRole === 'admin' ? <Navigate to="/" replace /> : <HolidaysManagement />} 
+            />
+            <Route 
+              path="/backups" 
+              element={userRole === 'admin' ? <Navigate to="/" replace /> : <BackupsManagement />} 
+            />
+            <Route 
+              path="/audit-logs" 
+              element={userRole === 'admin' ? <Navigate to="/" replace /> : <AuditLogs />} 
+            />
+            <Route 
+              path="/capacities" 
+              element={userRole === 'admin' ? <Navigate to="/" replace /> : <CapacitiesManagement />} 
+            />
+            <Route 
+              path="/projects" 
+              element={userRole === 'admin' ? <Navigate to="/" replace /> : <ProjectsManagement />} 
+            />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
