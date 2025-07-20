@@ -98,53 +98,91 @@ const Index = ({ userRole, userData }: { userRole?: string; userData?: any }) =>
         )}
         
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-foreground mb-2">
-            {isSquadLeadView ? 'Mi Equipo' : 'Gestión de Asignaciones y Capacidades'}
-          </h1>
-          <p className="text-muted-foreground">
-            {isSquadLeadView 
-              ? 'Miembros de tu equipo de trabajo'
-              : 'Sistema de gestión de recursos humanos y asignaciones de proyectos'
-            }
-          </p>
+          <div className="flex items-center gap-3 mb-4">
+            <div className="flex-shrink-0 h-12 w-12 bg-primary/10 rounded-xl flex items-center justify-center">
+              <Users className="w-6 h-6 text-primary" />
+            </div>
+            <div>
+              <h1 className="text-3xl font-bold text-foreground">
+                {isSquadLeadView ? `Mi Equipo - ${userData?.name}` : 'Gestión de Asignaciones y Capacidades'}
+              </h1>
+              <p className="text-muted-foreground">
+                {isSquadLeadView 
+                  ? 'Panel de gestión de tu equipo de trabajo'
+                  : 'Sistema de gestión de recursos humanos y asignaciones de proyectos'
+                }
+              </p>
+            </div>
+          </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
-                {isSquadLeadView ? 'Mi Equipo' : 'Total Personas'}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <Card className="border-l-4 border-l-blue-500 bg-gradient-to-br from-blue-50 to-blue-100/50 dark:from-blue-950/20 dark:to-blue-900/10">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+              <CardTitle className="text-sm font-medium text-blue-700 dark:text-blue-400">
+                {isSquadLeadView ? 'Miembros' : 'Total Personas'}
               </CardTitle>
-              <Users className="h-4 w-4 text-muted-foreground" />
+              <div className="h-8 w-8 bg-blue-100 dark:bg-blue-900/50 rounded-lg flex items-center justify-center">
+                <Users className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+              </div>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">
+              <div className="text-3xl font-bold text-blue-800 dark:text-blue-300">
                 {isSquadLeadView ? filteredPersons.length : persons.length}
               </div>
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Squad Leads</CardTitle>
-              <Users className="h-4 w-4 text-muted-foreground" />
+          <Card className="border-l-4 border-l-green-500 bg-gradient-to-br from-green-50 to-green-100/50 dark:from-green-950/20 dark:to-green-900/10">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+              <CardTitle className="text-sm font-medium text-green-700 dark:text-green-400">
+                {isSquadLeadView ? 'Asignaciones Activas' : 'Squad Leads'}
+              </CardTitle>
+              <div className="h-8 w-8 bg-green-100 dark:bg-green-900/50 rounded-lg flex items-center justify-center">
+                <Users className="h-4 w-4 text-green-600 dark:text-green-400" />
+              </div>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">
-                {isSquadLeadView ? 1 : squadLeads.length}
+              <div className="text-3xl font-bold text-green-800 dark:text-green-300">
+                {isSquadLeadView ? 0 : squadLeads.length}
               </div>
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Filtro Activo</CardTitle>
+          <Card className="border-l-4 border-l-purple-500 bg-gradient-to-br from-purple-50 to-purple-100/50 dark:from-purple-950/20 dark:to-purple-900/10">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+              <CardTitle className="text-sm font-medium text-purple-700 dark:text-purple-400">
+                {isSquadLeadView ? 'Proyectos Completados' : 'Filtro Activo'}
+              </CardTitle>
+              <div className="h-8 w-8 bg-purple-100 dark:bg-purple-900/50 rounded-lg flex items-center justify-center">
+                <Users className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+              </div>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{filteredPersons.length}</div>
-              <p className="text-xs text-muted-foreground">personas mostradas</p>
+              <div className="text-3xl font-bold text-purple-800 dark:text-purple-300">
+                {isSquadLeadView ? 0 : filteredPersons.length}
+              </div>
+              {!isSquadLeadView && (
+                <p className="text-xs text-purple-600 dark:text-purple-400 mt-1">personas mostradas</p>
+              )}
             </CardContent>
           </Card>
+
+          {isSquadLeadView && (
+            <Card className="border-l-4 border-l-orange-500 bg-gradient-to-br from-orange-50 to-orange-100/50 dark:from-orange-950/20 dark:to-orange-900/10">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+                <CardTitle className="text-sm font-medium text-orange-700 dark:text-orange-400">
+                  Capacidades
+                </CardTitle>
+                <div className="h-8 w-8 bg-orange-100 dark:bg-orange-900/50 rounded-lg flex items-center justify-center">
+                  <Users className="h-4 w-4 text-orange-600 dark:text-orange-400" />
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="text-3xl font-bold text-orange-800 dark:text-orange-300">34</div>
+              </CardContent>
+            </Card>
+          )}
         </div>
 
         {/* Filtros - Solo mostrar para admins */}
