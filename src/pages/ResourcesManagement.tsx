@@ -403,6 +403,20 @@ const ResourcesManagement = () => {
     }
   };
 
+  const getAvailableOptions = () => {
+    const uniqueValues = (field: keyof Person) => {
+      return Array.from(new Set(resources.map(r => r[field]).filter(v => v && v.trim() !== ''))).sort();
+    };
+
+    return {
+      cex: uniqueValues('cex'),
+      grupo: uniqueValues('grupo'),
+      categoria: uniqueValues('categoria'),
+      oficina: uniqueValues('oficina'),
+      squadLeads: uniqueValues('squad_lead'),
+    };
+  };
+
   const getUniqueValues = (field: keyof Person) => {
     return [...new Set(resources.map(resource => resource[field]).filter(Boolean))].sort();
   };
@@ -1255,6 +1269,7 @@ const ResourcesManagement = () => {
           open={editDialogOpen}
           onOpenChange={setEditDialogOpen}
           onSave={handleSavePerson}
+          availableOptions={getAvailableOptions()}
         />
 
         {/* Person Table Alternative (for reference) */}
