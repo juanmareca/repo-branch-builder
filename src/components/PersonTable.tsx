@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { Person } from '../types';
-import { User, Mail, Calendar, MapPin, ChevronUp, ChevronDown, ChevronsUpDown, Edit } from 'lucide-react';
+import { User, Mail, Calendar, MapPin, ChevronUp, ChevronDown, ChevronsUpDown } from 'lucide-react';
 
 interface PersonTableProps {
   persons: Person[];
@@ -20,8 +20,7 @@ const PersonTable: React.FC<PersonTableProps> = ({ persons, onEditPerson }) => {
     mail_empresa: 300,
     grupo: 150,
     categoria: 180,
-    oficina: 150,
-    acciones: 100
+    oficina: 150
   });
   const [isResizing, setIsResizing] = useState(false);
   const resizingColumn = useRef<string | null>(null);
@@ -106,144 +105,134 @@ const PersonTable: React.FC<PersonTableProps> = ({ persons, onEditPerson }) => {
   return (
     <div className="bg-background rounded-xl shadow-sm border border-border overflow-hidden w-full max-h-[70vh]">
       <div className="overflow-auto">
-        <table className="w-full divide-y divide-border table-fixed">
+        <table className="w-full divide-y divide-border">
           <thead className="bg-muted sticky top-0 z-10">
-          <tr className="bg-muted border-b border-border">
-            <th 
-              className="px-3 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider bg-muted sticky left-0 z-20 border-r border-border relative group"
-              style={{ width: `${columnWidths.index}px` }}
-            >
-              Índice
-              <div 
-                className="absolute right-0 top-0 w-1 h-full cursor-col-resize bg-transparent hover:bg-primary/50 group-hover:bg-primary/30"
-                onMouseDown={(e) => handleMouseDown(e, 'index')}
-              />
-            </th>
-            <th 
-              className="px-6 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider bg-muted cursor-pointer hover:bg-muted/80 select-none relative group"
-              onClick={() => handleSort('nombre')}
-              style={{ width: `${columnWidths.nombre}px` }}
-            >
-              <div className="flex items-center justify-between">
-                <span>Nombre</span>
-                {getSortIcon('nombre')}
-              </div>
-              <div 
-                className="absolute right-0 top-0 w-1 h-full cursor-col-resize bg-transparent hover:bg-primary/50 group-hover:bg-primary/30"
-                onMouseDown={(e) => handleMouseDown(e, 'nombre')}
-              />
-            </th>
-            <th 
-              className="px-6 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider bg-muted cursor-pointer hover:bg-muted/80 select-none relative group"
-              onClick={() => handleSort('cex')}
-              style={{ width: `${columnWidths.cex}px` }}
-            >
-              <div className="flex items-center justify-between">
-                <span>CEX</span>
-                {getSortIcon('cex')}
-              </div>
-              <div 
-                className="absolute right-0 top-0 w-1 h-full cursor-col-resize bg-transparent hover:bg-primary/50 group-hover:bg-primary/30"
-                onMouseDown={(e) => handleMouseDown(e, 'cex')}
-              />
-            </th>
-            <th 
-              className="px-6 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider bg-muted cursor-pointer hover:bg-muted/80 select-none relative group"
-              onClick={() => handleSort('num_pers')}
-              style={{ width: `${columnWidths.num_pers}px` }}
-            >
-              <div className="flex items-center justify-between">
-                <span>Nº Personal</span>
-                {getSortIcon('num_pers')}
-              </div>
-              <div 
-                className="absolute right-0 top-0 w-1 h-full cursor-col-resize bg-transparent hover:bg-primary/50 group-hover:bg-primary/30"
-                onMouseDown={(e) => handleMouseDown(e, 'num_pers')}
-              />
-            </th>
-            <th 
-              className="px-6 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider bg-muted cursor-pointer hover:bg-muted/80 select-none relative group"
-              onClick={() => handleSort('fecha_incorporacion')}
-              style={{ width: `${columnWidths.fecha_incorporacion}px` }}
-            >
-              <div className="flex items-center justify-between">
-                <span>Fecha de Incorporación</span>
-                {getSortIcon('fecha_incorporacion')}
-              </div>
-              <div 
-                className="absolute right-0 top-0 w-1 h-full cursor-col-resize bg-transparent hover:bg-primary/50 group-hover:bg-primary/30"
-                onMouseDown={(e) => handleMouseDown(e, 'fecha_incorporacion')}
-              />
-            </th>
-            <th 
-              className="px-6 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider bg-muted cursor-pointer hover:bg-muted/80 select-none relative group"
-              onClick={() => handleSort('mail_empresa')}
-              style={{ width: `${columnWidths.mail_empresa}px` }}
-            >
-              <div className="flex items-center justify-between">
-                <span>Email</span>
-                {getSortIcon('mail_empresa')}
-              </div>
-              <div 
-                className="absolute right-0 top-0 w-1 h-full cursor-col-resize bg-transparent hover:bg-primary/50 group-hover:bg-primary/30"
-                onMouseDown={(e) => handleMouseDown(e, 'mail_empresa')}
-              />
-            </th>
-            <th 
-              className="px-6 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider bg-muted cursor-pointer hover:bg-muted/80 select-none relative group"
-              onClick={() => handleSort('grupo')}
-              style={{ width: `${columnWidths.grupo}px` }}
-            >
-              <div className="flex items-center justify-between">
-                <span>Grupo</span>
-                {getSortIcon('grupo')}
-              </div>
-              <div 
-                className="absolute right-0 top-0 w-1 h-full cursor-col-resize bg-transparent hover:bg-primary/50 group-hover:bg-primary/30"
-                onMouseDown={(e) => handleMouseDown(e, 'grupo')}
-              />
-            </th>
-            <th 
-              className="px-6 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider bg-muted cursor-pointer hover:bg-muted/80 select-none relative group"
-              onClick={() => handleSort('categoria')}
-              style={{ width: `${columnWidths.categoria}px` }}
-            >
-              <div className="flex items-center justify-between">
-                <span>Categoría</span>
-                {getSortIcon('categoria')}
-              </div>
-              <div 
-                className="absolute right-0 top-0 w-1 h-full cursor-col-resize bg-transparent hover:bg-primary/50 group-hover:bg-primary/30"
-                onMouseDown={(e) => handleMouseDown(e, 'categoria')}
-              />
-            </th>
-            <th 
-              className="px-6 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider bg-muted cursor-pointer hover:bg-muted/80 select-none relative group"
-              onClick={() => handleSort('oficina')}
-              style={{ width: `${columnWidths.oficina}px` }}
-            >
-              <div className="flex items-center justify-between">
-                <span>Oficina</span>
-                {getSortIcon('oficina')}
-              </div>
-              <div 
-                className="absolute right-0 top-0 w-1 h-full cursor-col-resize bg-transparent hover:bg-primary/50 group-hover:bg-primary/30"
-                onMouseDown={(e) => handleMouseDown(e, 'oficina')}
-              />
-              </th>
+            <tr className="bg-muted border-b border-border">
               <th 
-                className="px-6 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider bg-muted relative group"
-                style={{ width: `${columnWidths.acciones}px` }}
+                className="px-3 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider bg-muted sticky left-0 z-20 border-r border-border relative group"
+                style={{ width: `${columnWidths.index}px` }}
               >
-                Acciones
+                Índice
                 <div 
                   className="absolute right-0 top-0 w-1 h-full cursor-col-resize bg-transparent hover:bg-primary/50 group-hover:bg-primary/30"
-                  onMouseDown={(e) => handleMouseDown(e, 'acciones')}
+                  onMouseDown={(e) => handleMouseDown(e, 'index')}
+                />
+              </th>
+              <th 
+                className="px-6 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider bg-muted cursor-pointer hover:bg-muted/80 select-none relative group"
+                onClick={() => handleSort('nombre')}
+                style={{ width: `${columnWidths.nombre}px` }}
+              >
+                <div className="flex items-center justify-between">
+                  <span>Nombre</span>
+                  {getSortIcon('nombre')}
+                </div>
+                <div 
+                  className="absolute right-0 top-0 w-1 h-full cursor-col-resize bg-transparent hover:bg-primary/50 group-hover:bg-primary/30"
+                  onMouseDown={(e) => handleMouseDown(e, 'nombre')}
+                />
+              </th>
+              <th 
+                className="px-6 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider bg-muted cursor-pointer hover:bg-muted/80 select-none relative group"
+                onClick={() => handleSort('cex')}
+                style={{ width: `${columnWidths.cex}px` }}
+              >
+                <div className="flex items-center justify-between">
+                  <span>CEX</span>
+                  {getSortIcon('cex')}
+                </div>
+                <div 
+                  className="absolute right-0 top-0 w-1 h-full cursor-col-resize bg-transparent hover:bg-primary/50 group-hover:bg-primary/30"
+                  onMouseDown={(e) => handleMouseDown(e, 'cex')}
+                />
+              </th>
+              <th 
+                className="px-6 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider bg-muted cursor-pointer hover:bg-muted/80 select-none relative group"
+                onClick={() => handleSort('num_pers')}
+                style={{ width: `${columnWidths.num_pers}px` }}
+              >
+                <div className="flex items-center justify-between">
+                  <span>Nº Personal</span>
+                  {getSortIcon('num_pers')}
+                </div>
+                <div 
+                  className="absolute right-0 top-0 w-1 h-full cursor-col-resize bg-transparent hover:bg-primary/50 group-hover:bg-primary/30"
+                  onMouseDown={(e) => handleMouseDown(e, 'num_pers')}
+                />
+              </th>
+              <th 
+                className="px-6 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider bg-muted cursor-pointer hover:bg-muted/80 select-none relative group"
+                onClick={() => handleSort('fecha_incorporacion')}
+                style={{ width: `${columnWidths.fecha_incorporacion}px` }}
+              >
+                <div className="flex items-center justify-between">
+                  <span>Fecha de Incorporación</span>
+                  {getSortIcon('fecha_incorporacion')}
+                </div>
+                <div 
+                  className="absolute right-0 top-0 w-1 h-full cursor-col-resize bg-transparent hover:bg-primary/50 group-hover:bg-primary/30"
+                  onMouseDown={(e) => handleMouseDown(e, 'fecha_incorporacion')}
+                />
+              </th>
+              <th 
+                className="px-6 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider bg-muted cursor-pointer hover:bg-muted/80 select-none relative group"
+                onClick={() => handleSort('mail_empresa')}
+                style={{ width: `${columnWidths.mail_empresa}px` }}
+              >
+                <div className="flex items-center justify-between">
+                  <span>Email</span>
+                  {getSortIcon('mail_empresa')}
+                </div>
+                <div 
+                  className="absolute right-0 top-0 w-1 h-full cursor-col-resize bg-transparent hover:bg-primary/50 group-hover:bg-primary/30"
+                  onMouseDown={(e) => handleMouseDown(e, 'mail_empresa')}
+                />
+              </th>
+              <th 
+                className="px-6 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider bg-muted cursor-pointer hover:bg-muted/80 select-none relative group"
+                onClick={() => handleSort('grupo')}
+                style={{ width: `${columnWidths.grupo}px` }}
+              >
+                <div className="flex items-center justify-between">
+                  <span>Grupo</span>
+                  {getSortIcon('grupo')}
+                </div>
+                <div 
+                  className="absolute right-0 top-0 w-1 h-full cursor-col-resize bg-transparent hover:bg-primary/50 group-hover:bg-primary/30"
+                  onMouseDown={(e) => handleMouseDown(e, 'grupo')}
+                />
+              </th>
+              <th 
+                className="px-6 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider bg-muted cursor-pointer hover:bg-muted/80 select-none relative group"
+                onClick={() => handleSort('categoria')}
+                style={{ width: `${columnWidths.categoria}px` }}
+              >
+                <div className="flex items-center justify-between">
+                  <span>Categoría</span>
+                  {getSortIcon('categoria')}
+                </div>
+                <div 
+                  className="absolute right-0 top-0 w-1 h-full cursor-col-resize bg-transparent hover:bg-primary/50 group-hover:bg-primary/30"
+                  onMouseDown={(e) => handleMouseDown(e, 'categoria')}
+                />
+              </th>
+              <th 
+                className="px-6 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider bg-muted cursor-pointer hover:bg-muted/80 select-none relative group"
+                onClick={() => handleSort('oficina')}
+                style={{ width: `${columnWidths.oficina}px` }}
+              >
+                <div className="flex items-center justify-between">
+                  <span>Oficina</span>
+                  {getSortIcon('oficina')}
+                </div>
+                <div 
+                  className="absolute right-0 top-0 w-1 h-full cursor-col-resize bg-transparent hover:bg-primary/50 group-hover:bg-primary/30"
+                  onMouseDown={(e) => handleMouseDown(e, 'oficina')}
                 />
               </th>
             </tr>
           </thead>
-           <tbody className="bg-background divide-y divide-border">
+          <tbody className="bg-background divide-y divide-border">
             {sortedPersons.map((person, index) => (
               <tr 
                 key={person.id || index} 
@@ -252,29 +241,29 @@ const PersonTable: React.FC<PersonTableProps> = ({ persons, onEditPerson }) => {
                   person.origen === 'Squad Lead' ? 'bg-blue-50 dark:bg-blue-950/30' : ''
                 }`}
               >
-               <td 
-                 className="px-3 py-2 whitespace-nowrap text-xs text-muted-foreground font-mono bg-background sticky left-0 z-10 border-r border-border"
-                 style={{ width: `${columnWidths.index}px` }}
-               >
-                 {index + 1}
-               </td>
-               <td className="px-6 py-2 whitespace-nowrap" style={{ width: `${columnWidths.nombre}px` }}>
-                 <div className="flex items-center">
-                   <div className="flex-shrink-0 h-8 w-8 bg-primary/10 rounded-full flex items-center justify-center">
-                     <User className="w-4 h-4 text-primary" />
-                   </div>
-                   <div className="ml-3">
-                     <div className="text-sm font-medium text-foreground">{person.nombre}</div>
-                   </div>
-                 </div>
-               </td>
-               <td className="px-6 py-2 whitespace-nowrap text-sm text-foreground" style={{ width: `${columnWidths.acciones}px` }}>
-                 {person.cex}
-               </td>
-                 <td className="px-6 py-2 whitespace-nowrap text-sm text-foreground" style={{ width: `${columnWidths.oficina}px` }}>
-                 {person.num_pers}
-               </td>
-                <td className="px-6 py-2 whitespace-nowrap text-sm text-foreground" style={{ width: `${columnWidths.categoria}px` }}>
+                <td 
+                  className="px-3 py-2 whitespace-nowrap text-xs text-muted-foreground font-mono bg-background sticky left-0 z-10 border-r border-border"
+                  style={{ width: `${columnWidths.index}px` }}
+                >
+                  {index + 1}
+                </td>
+                <td className="px-6 py-2 whitespace-nowrap" style={{ width: `${columnWidths.nombre}px` }}>
+                  <div className="flex items-center">
+                    <div className="flex-shrink-0 h-8 w-8 bg-primary/10 rounded-full flex items-center justify-center">
+                      <User className="w-4 h-4 text-primary" />
+                    </div>
+                    <div className="ml-3">
+                      <div className="text-sm font-medium text-foreground">{person.nombre}</div>
+                    </div>
+                  </div>
+                </td>
+                <td className="px-6 py-2 whitespace-nowrap text-sm text-foreground" style={{ width: `${columnWidths.cex}px` }}>
+                  {person.cex}
+                </td>
+                <td className="px-6 py-2 whitespace-nowrap text-sm text-foreground" style={{ width: `${columnWidths.num_pers}px` }}>
+                  {person.num_pers}
+                </td>
+                <td className="px-6 py-2 whitespace-nowrap text-sm text-foreground" style={{ width: `${columnWidths.fecha_incorporacion}px` }}>
                   <div className="flex items-center">
                     <Calendar className="w-4 h-4 text-muted-foreground mr-2" />
                     {person.fecha_incorporacion ? 
@@ -287,44 +276,31 @@ const PersonTable: React.FC<PersonTableProps> = ({ persons, onEditPerson }) => {
                     }
                   </div>
                 </td>
-                <td className="px-6 py-2 whitespace-nowrap text-sm text-foreground" style={{ width: `${columnWidths.grupo}px` }}>
-                 <div className="flex items-center">
-                   <Mail className="w-4 h-4 text-muted-foreground mr-2" />
-                   <a href={`mailto:${person.mail_empresa}`} className="text-primary hover:text-primary/80">
-                     {person.mail_empresa}
-                   </a>
-                 </div>
-               </td>
                 <td className="px-6 py-2 whitespace-nowrap text-sm text-foreground" style={{ width: `${columnWidths.mail_empresa}px` }}>
-                 {person.grupo}
-               </td>
-                <td className="px-6 py-2 whitespace-nowrap text-sm text-foreground" style={{ width: `${columnWidths.fecha_incorporacion}px` }}>
-                 <span className="px-2 py-1 text-xs font-medium bg-secondary text-secondary-foreground rounded-full">
-                   {person.categoria}
-                 </span>
-               </td>
-                <td className="px-6 py-2 whitespace-nowrap text-sm text-foreground" style={{ width: `${columnWidths.num_pers}px` }}>
+                  <div className="flex items-center">
+                    <Mail className="w-4 h-4 text-muted-foreground mr-2" />
+                    <a href={`mailto:${person.mail_empresa}`} className="text-primary hover:text-primary/80">
+                      {person.mail_empresa}
+                    </a>
+                  </div>
+                </td>
+                <td className="px-6 py-2 whitespace-nowrap text-sm text-foreground" style={{ width: `${columnWidths.grupo}px` }}>
+                  {person.grupo}
+                </td>
+                <td className="px-6 py-2 whitespace-nowrap text-sm text-foreground" style={{ width: `${columnWidths.categoria}px` }}>
+                  <span className="px-2 py-1 text-xs font-medium bg-secondary text-secondary-foreground rounded-full">
+                    {person.categoria}
+                  </span>
+                </td>
+                <td className="px-6 py-2 whitespace-nowrap text-sm text-foreground" style={{ width: `${columnWidths.oficina}px` }}>
                   <div className="flex items-center">
                     <MapPin className="w-4 h-4 text-muted-foreground mr-2" />
                     {person.oficina}
                   </div>
                 </td>
-                <td className="px-6 py-2 whitespace-nowrap text-sm text-foreground" style={{ width: `${columnWidths.cex}px` }}>
-                  <div className="flex items-center space-x-2">
-                    {onEditPerson && (
-                      <button
-                        onClick={() => onEditPerson(person)}
-                        className="p-1 text-muted-foreground hover:text-foreground hover:bg-muted rounded transition-colors"
-                        title="Editar persona"
-                      >
-                        <Edit className="w-4 h-4" />
-                      </button>
-                    )}
-                  </div>
-                </td>
               </tr>
-           ))}
-         </tbody>
+            ))}
+          </tbody>
         </table>
       </div>
     </div>
