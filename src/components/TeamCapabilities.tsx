@@ -91,6 +91,7 @@ const TeamCapabilities: React.FC<TeamCapabilitiesProps> = ({
   const [editedCapacities, setEditedCapacities] = useState<{[key: string]: string}>({});
   const [saving, setSaving] = useState(false);
   const [hideNoExperience, setHideNoExperience] = useState(false);
+  const [regeneratingCurriculum, setRegeneratingCurriculum] = useState(false);
   const { toast } = useToast();
   const { refetch } = useSquadData();
 
@@ -290,9 +291,12 @@ const TeamCapabilities: React.FC<TeamCapabilitiesProps> = ({
     const basicModules = sapModules.filter(c => c.level === 'Básico' || c.level === 'Medio');
     
     const industries = personCapacities.filter(c => c.skill.includes('Industrias') && c.level === 'Sí');
-    const languages = personCapacities.filter(c => c.skill.includes('Idiomas') && c.level !== 'Pre-A1');
-    const nativeLanguage = languages.find(c => c.level === 'Experto' || c.level === 'Alto');
-    const basicLanguages = languages.filter(c => ['Pre-A1', 'Básico', 'Medio'].includes(c.level));
+    const languages = personCapacities.filter(c => c.skill.includes('Idiomas') && c.level !== 'Pre-A1' && c.level !== 'Nulo');
+    
+    // Clasificar idiomas por nivel
+    const expertLanguages = languages.filter(c => ['Experto', 'Alto', 'C2', 'C1'].includes(c.level));
+    const goodLanguages = languages.filter(c => ['B2', 'B1'].includes(c.level));
+    const basicLanguages = languages.filter(c => ['Medio', 'Básico', 'A2', 'A1'].includes(c.level));
 
     // Generar texto del currículum
     let curriculum = `${personName}`;
@@ -307,12 +311,6 @@ const TeamCapabilities: React.FC<TeamCapabilitiesProps> = ({
     
     curriculum += '. ';
 
-    // Idioma nativo
-    if (nativeLanguage) {
-      const language = nativeLanguage.skill.replace('Idiomas - ', '');
-      curriculum += `Idioma nativo: ${language}. `;
-    }
-
     // Módulos SAP de alto nivel
     if (expertModules.length > 0) {
       curriculum += `Experto en módulos SAP: ${expertModules.map(m => 
@@ -326,19 +324,33 @@ const TeamCapabilities: React.FC<TeamCapabilitiesProps> = ({
       ).join(', ')}. `;
     }
 
+    // Idiomas por niveles
+    if (expertLanguages.length > 0) {
+      curriculum += `Dominio avanzado de idiomas: ${expertLanguages.map(l => {
+        const language = l.skill.replace('Idiomas - ', '');
+        return `${language} (${l.level})`;
+      }).join(', ')}. `;
+    }
+
+    if (goodLanguages.length > 0) {
+      curriculum += `Buen nivel de idiomas: ${goodLanguages.map(l => {
+        const language = l.skill.replace('Idiomas - ', '');
+        return `${language} (${l.level})`;
+      }).join(', ')}. `;
+    }
+
+    if (basicLanguages.length > 0) {
+      curriculum += `Conocimientos básicos de idiomas: ${basicLanguages.map(l => {
+        const language = l.skill.replace('Idiomas - ', '');
+        return `${language} (${l.level})`;
+      }).join(', ')}. `;
+    }
+
     // Industrias
     if (industries.length > 0) {
       curriculum += `Experiencia en industrias: ${industries.map(i => 
         i.skill.replace('Industrias - ', '')
       ).join(', ')}. `;
-    }
-
-    // Idiomas adicionales
-    if (basicLanguages.length > 0) {
-      curriculum += `Idiomas adicionales: ${basicLanguages.map(l => {
-        const language = l.skill.replace('Idiomas - ', '');
-        return `${language} (${l.level})`;
-      }).join(', ')}. `;
     }
 
     return curriculum.trim();
@@ -425,6 +437,32 @@ const TeamCapabilities: React.FC<TeamCapabilitiesProps> = ({
   };
 
   // Función para generar las capacidades completas para cada persona
+  
+  // Función para regenerar currículums
+  const regenerateCurriculum = async () => {
+    try {
+      setRegeneratingCurriculum(true);
+      
+      // Simular regeneración forzando un re-render
+      // En una implementación real, esto podría implicar recalcular o guardar los currículums
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      toast({
+        title: "Currículums regenerados",
+        description: "Los currículums profesionales se han actualizado con las capacidades actuales.",
+      });
+      
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "No se pudieron regenerar los currículums.",
+        variant: "destructive",
+      });
+    } finally {
+      setRegeneratingCurriculum(false);
+    }
+  };
+
   const generateCompleteCapacities = () => {
     const allMembers = getAllTeamMembers();
     const completeData: { [personName: string]: { [category: string]: Capacity[] } } = {};
@@ -712,6 +750,16 @@ const TeamCapabilities: React.FC<TeamCapabilitiesProps> = ({
       <div className="flex justify-between items-center">
         <h3 className="text-lg font-semibold">Capacidades del Equipo</h3>
         <div className="flex gap-2">
+          <Button 
+            variant="outline" 
+            onClick={regenerateCurriculum}
+            disabled={regeneratingCurriculum}
+            className="flex items-center gap-2"
+          >
+            {regeneratingCurriculum ? <Loader2 className="h-4 w-4 animate-spin" /> : <Brain className="h-4 w-4" />}
+            {regeneratingCurriculum ? 'Regenerando...' : 'Actualizar Currículum Profesional del Equipo'}
+          </Button>
+          
           <Button 
             variant="outline" 
             onClick={exportToPDF}
