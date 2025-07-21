@@ -469,19 +469,15 @@ const HolidaysUpload = () => {
           </DialogHeader>
           
           {selectedFile && (
-            <div className="py-4">
-                <div className="flex items-center gap-3 p-4 bg-amber-50 rounded-lg border border-amber-200">
-                  <FileSpreadsheet className="h-8 w-8 text-amber-600" />
-                  <div className="flex-1">
-                    <p className="font-medium text-amber-800">{selectedFile.name}</p>
-                    <p className="text-sm text-amber-600">
-                      Archivo: {formatFileSize(selectedFile.size)} • {fileRecordsCount} registros
-                    </p>
-                    <div className="flex items-center gap-1 mt-1">
-                      <CheckCircle className="h-4 w-4 text-green-600" />
-                      <span className="text-sm text-green-700">Listo para cargar</span>
-                    </div>
-                  </div>
+            <div className="py-4 space-y-4">
+              <div className="flex items-center gap-3 p-4 bg-amber-50 rounded-lg border border-amber-200">
+                <FileSpreadsheet className="h-8 w-8 text-amber-600" />
+                <div className="flex-1">
+                  <p className="font-medium text-amber-800">{selectedFile.name}</p>
+                  <p className="text-sm text-amber-600">
+                    Archivo: {formatFileSize(selectedFile.size)} • {fileRecordsCount} registros
+                  </p>
+                </div>
                 <Button
                   variant="ghost"
                   size="sm"
@@ -555,7 +551,7 @@ const HolidaysUpload = () => {
                       onChange={(e) => setUploadMode(e.target.value as 'replace' | 'add')}
                       className="h-4 w-4 text-amber-600"
                     />
-                    <label htmlFor="mode-replace" className="text-sm text-gray-700">
+                    <label htmlFor="mode-replace" className="text-sm text-gray-700 cursor-pointer">
                       <span className="font-medium">SUSTITUIR:</span> Reemplazar toda la base de festivos por el nuevo archivo
                     </label>
                   </div>
@@ -569,7 +565,7 @@ const HolidaysUpload = () => {
                       onChange={(e) => setUploadMode(e.target.value as 'replace' | 'add')}
                       className="h-4 w-4 text-amber-600"
                     />
-                    <label htmlFor="mode-add" className="text-sm text-gray-700">
+                    <label htmlFor="mode-add" className="text-sm text-gray-700 cursor-pointer">
                       <span className="font-medium">AÑADIR:</span> Añadir los registros del archivo a los existentes
                     </label>
                   </div>
@@ -603,7 +599,7 @@ const HolidaysUpload = () => {
                   onChange={(e) => setPreserveManual(e.target.checked)}
                   className="h-4 w-4 text-amber-600 rounded border-amber-300 focus:ring-amber-500"
                 />
-                <label htmlFor="preserve-manual" className="text-sm text-gray-700">
+                <label htmlFor="preserve-manual" className="text-sm text-gray-700 cursor-pointer">
                   <span className="font-medium">¿Desea mantener los registros del Administrador añadidos manualmente?</span>
                 </label>
               </div>

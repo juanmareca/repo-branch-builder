@@ -38,10 +38,7 @@ const CapacitiesUpload = ({ onUploadComplete }: CapacitiesUploadProps) => {
       const reader = new FileReader();
       reader.onload = (e) => {
         try {
-          console.log('=== INICIANDO PROCESAMIENTO DEL ARCHIVO ===');
           const data = new Uint8Array(e.target?.result as ArrayBuffer);
-          console.log('Archivo leído, tamaño:', data.length, 'bytes');
-          
           const workbook = XLSX.read(data, { 
             type: 'array',
             cellDates: true,
@@ -49,13 +46,10 @@ const CapacitiesUpload = ({ onUploadComplete }: CapacitiesUploadProps) => {
             cellText: false
           });
           
-          console.log('Hojas disponibles:', workbook.SheetNames);
-          
-          // Buscar la hoja correcta (probablemente 'PERSONAL' o similar)
+          // Buscar la hoja correcta
           let targetSheet = null;
           let targetSheetName = '';
           
-          // Priorizar hojas que podrían contener datos de personal/capacidades
           const possibleSheets = ['PERSONAL', 'CAPACIDADES', 'PERSONAS', 'EMPLEADOS', 'STAFF'];
           
           for (const sheetName of possibleSheets) {
@@ -66,16 +60,14 @@ const CapacitiesUpload = ({ onUploadComplete }: CapacitiesUploadProps) => {
             }
           }
           
-          // Si no encuentra hojas específicas, buscar la primera hoja con datos
           if (!targetSheet) {
             for (const sheetName of workbook.SheetNames) {
               const sheet = workbook.Sheets[sheetName];
               const testData = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '', blankrows: false });
               
-              if (testData.length > 1) { // Al menos header + 1 fila de datos
+              if (testData.length > 1) {
                 targetSheetName = sheetName;
                 targetSheet = sheet;
-                console.log(`Encontrada hoja con datos: ${sheetName} (${testData.length} filas)`);
                 break;
               }
             }
@@ -85,10 +77,7 @@ const CapacitiesUpload = ({ onUploadComplete }: CapacitiesUploadProps) => {
             throw new Error('No se encontró ninguna hoja con datos en el archivo Excel');
           }
           
-          console.log('Usando hoja:', targetSheetName);
           const worksheet = targetSheet;
-          
-          // Intentar diferentes métodos de lectura
           const jsonData = XLSX.utils.sheet_to_json(worksheet, { 
             header: 1,
             defval: '',
@@ -96,33 +85,17 @@ const CapacitiesUpload = ({ onUploadComplete }: CapacitiesUploadProps) => {
             range: undefined
           });
           
-          console.log('Total rows in Excel:', jsonData.length);
-          console.log('Primeras 5 filas completas:', jsonData.slice(0, 5));
-          
-          // También intentar con range específico
-          const range = XLSX.utils.decode_range(worksheet['!ref'] || 'A1');
-          console.log('Rango del Excel:', worksheet['!ref'], range);
-          
-          // Filtrado muy simple - solo verificar que no sean filas completamente vacías
           const dataRows = jsonData.slice(1).filter((row: any, index: number) => {
-            console.log(`Evaluando fila ${index + 2}:`, row);
-            
             if (!row || !Array.isArray(row)) {
-              console.log(`Fila ${index + 2} no es array válido`);
               return false;
             }
             
-            // Verificar que tenga al menos ID y nombre en las primeras 2 posiciones
             const hasEmployeeData = row.length >= 2 && 
               row[0] !== null && row[0] !== undefined && String(row[0]).trim() !== '' &&
               row[1] !== null && row[1] !== undefined && String(row[1]).trim() !== '';
             
-            console.log(`Fila ${index + 2} - ID: "${row[0]}", Nombre: "${row[1]}", ¿Válida?: ${hasEmployeeData}`);
             return hasEmployeeData;
           });
-          
-          console.log('Filas válidas encontradas:', dataRows.length);
-          console.log('=== FIN PROCESAMIENTO ARCHIVO ===');
           
           resolve(dataRows.length);
         } catch (error) {
@@ -239,7 +212,6 @@ const CapacitiesUpload = ({ onUploadComplete }: CapacitiesUploadProps) => {
           // Obtener headers (una sola fila de cabecera)
           const skillHeaders = jsonData[0] as any[];
           const dataRows = jsonData.slice(1).filter((row: any) => {
-            // Verificar si la fila tiene al menos ID y nombre
             return row && row.length >= 2 && 
               row[0] && String(row[0]).trim() !== '' && // ID empleado
               row[1] && String(row[1]).trim() !== '';   // Nombre empleado
@@ -474,19 +446,15 @@ const CapacitiesUpload = ({ onUploadComplete }: CapacitiesUploadProps) => {
           </DialogHeader>
           
           {selectedFile && (
-            <div className="py-4">
-                <div className="flex items-center gap-3 p-4 bg-cyan-50 rounded-lg border border-cyan-200">
-                  <FileSpreadsheet className="h-8 w-8 text-cyan-600" />
-                  <div className="flex-1">
-                    <p className="font-medium text-cyan-800">{selectedFile.name}</p>
-                    <p className="text-sm text-cyan-600">
-                      Archivo: {formatFileSize(selectedFile.size)} • {fileRecordsCount} empleados
-                    </p>
-                    <div className="flex items-center gap-1 mt-1">
-                      <CheckCircle className="h-4 w-4 text-green-600" />
-                      <span className="text-sm text-green-700">Listo para cargar</span>
-                    </div>
-                  </div>
+            <div className="py-4 space-y-4">
+              <div className="flex items-center gap-3 p-4 bg-cyan-50 rounded-lg border border-cyan-200">
+                <FileSpreadsheet className="h-8 w-8 text-cyan-600" />
+                <div className="flex-1">
+                  <p className="font-medium text-cyan-800">{selectedFile.name}</p>
+                  <p className="text-sm text-cyan-600">
+                    Archivo: {formatFileSize(selectedFile.size)} • {fileRecordsCount} empleados detectados
+                  </p>
+                </div>
                 <Button
                   variant="ghost"
                   size="sm"
@@ -498,6 +466,13 @@ const CapacitiesUpload = ({ onUploadComplete }: CapacitiesUploadProps) => {
                   <X className="h-4 w-4" />
                 </Button>
               </div>
+              
+              <Alert className="border-yellow-200 bg-yellow-50">
+                <AlertTriangle className="h-4 w-4 text-yellow-600" />
+                <AlertDescription className="text-yellow-800">
+                  <strong>Nota:</strong> Se eliminarán todas las capacidades existentes y se cargarán las nuevas desde el archivo Excel.
+                </AlertDescription>
+              </Alert>
             </div>
           )}
           

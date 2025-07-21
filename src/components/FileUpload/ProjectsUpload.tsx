@@ -11,6 +11,7 @@ import {
   ChevronUp,
   Info,
   CheckCircle,
+  AlertTriangle,
   X,
   FileSpreadsheet
 } from 'lucide-react';
@@ -18,16 +19,25 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import * as XLSX from 'xlsx';
 
+interface ManualRecord {
+  id: string;
+  code: string;
+  name: string;
+}
+
 const ProjectsUpload = () => {
   const [isFormatExpanded, setIsFormatExpanded] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [fileRecordsCount, setFileRecordsCount] = useState<number>(0);
-  const [duplicatesCount, setDuplicatesCount] = useState<number>(0);
-  const [newProjectsCount, setNewProjectsCount] = useState<number>(0);
   const [processingFile, setProcessingFile] = useState(false);
   const [showUploadDialog, setShowUploadDialog] = useState(false);
+  const [showConflictDialog, setShowConflictDialog] = useState(false);
+  const [manualRecords, setManualRecords] = useState<ManualRecord[]>([]);
+  const [preserveManual, setPreserveManual] = useState(true);
   const [uploading, setUploading] = useState(false);
-  const [uploadMode, setUploadMode] = useState<'add-new' | 'replace-all'>('add-new');
+  const [checkingManualRecords, setCheckingManualRecords] = useState(false);
+  const [hasManualRecords, setHasManualRecords] = useState(false);
+  const [uploadMode, setUploadMode] = useState<'replace' | 'add'>('add');
   const { toast } = useToast();
 
   // Función para procesar el archivo Excel y contar registros
@@ -63,25 +73,8 @@ const ProjectsUpload = () => {
       setProcessingFile(true);
       
       try {
-        // Procesar archivo y detectar duplicados
-        const rawData = await processExcelData(file);
-        const dataRows = rawData.slice(1).filter(row => row[0]); // Excluir header y filas vacías
-        const recordsCount = dataRows.length;
-        
-        // Obtener códigos iniciales existentes
-        const { data: existingProjects } = await supabase
-          .from('projects')
-          .select('codigo_inicial');
-        
-        const existingCodes = new Set(existingProjects?.map(p => p.codigo_inicial) || []);
-        
-        // Contar duplicados y proyectos nuevos
-        const duplicates = dataRows.filter(row => existingCodes.has(row[0])).length;
-        const newProjects = recordsCount - duplicates;
-        
+        const recordsCount = await processExcelFile(file);
         setFileRecordsCount(recordsCount);
-        setDuplicatesCount(duplicates);
-        setNewProjectsCount(newProjects);
         setShowUploadDialog(true);
       } catch (error) {
         toast({
@@ -96,138 +89,210 @@ const ProjectsUpload = () => {
     }
   };
 
-  const processExcelData = (file: File): Promise<any[]> => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        try {
-          const data = new Uint8Array(e.target?.result as ArrayBuffer);
-          const workbook = XLSX.read(data, { type: 'array' });
-          const sheetName = workbook.SheetNames[0];
-          const worksheet = workbook.Sheets[sheetName];
-          const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
-          resolve(jsonData);
-        } catch (error) {
-          reject(error);
-        }
-      };
-      reader.onerror = () => reject(new Error('Error reading file'));
-      reader.readAsArrayBuffer(file);
-    });
-  };
+  const checkForManualRecords = async () => {
+    setCheckingManualRecords(true);
+    try {
+      const { data, error } = await supabase
+        .from('projects')
+        .select('*')
+        .eq('origen', 'Administrador');
 
-  const mapExcelToDatabase = (row: any[]): any => {
-    // Mapear las columnas del Excel a los campos de la base de datos
-    return {
-      codigo_inicial: row[0] || '',
-      descripcion: row[1] || '',
-      denominacion: row[2] || '',
-      tipologia: row[3] || '',
-      tipologia_2: row[4] || '',
-      gestor_proyecto: row[5] || '',
-      socio_responsable: row[6] || '',
-      cliente: row[7] || '',
-      grupo_cliente: row[8] || '',
-      origen: 'Fichero' // Establecer origen como 'Fichero' para registros subidos desde Excel
-    };
+      if (error) throw error;
+      
+      const manualProjects = (data || []).map(project => ({
+        id: project.id,
+        code: project.codigo_inicial,
+        name: project.denominacion
+      }));
+      
+      setManualRecords(manualProjects);
+      return manualProjects.length > 0;
+    } catch (error) {
+      console.error('Error checking manual records:', error);
+      return false;
+    } finally {
+      setCheckingManualRecords(false);
+    }
   };
 
   const handleUploadConfirm = async () => {
     setShowUploadDialog(false);
+    
+    try {
+      const { data: allProjects, error } = await supabase
+        .from('projects')
+        .select('*');
+        
+      if (error) throw error;
+      
+      const hasAnyRecords = (allProjects || []).length > 0;
+      
+      if (hasAnyRecords) {
+        const hasManualRecordsResult = await checkForManualRecords();
+        setHasManualRecords(hasManualRecordsResult);
+        setShowConflictDialog(true);
+      } else {
+        processUpload();
+      }
+    } catch (error) {
+      console.error('Error checking existing records:', error);
+      toast({
+        title: "Error",
+        description: "Error al verificar registros existentes",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const processUpload = async () => {
     setUploading(true);
+    setShowConflictDialog(false);
     
     try {
       if (!selectedFile) {
         throw new Error('No se ha seleccionado ningún archivo');
       }
 
-      const rawData = await processExcelData(selectedFile);
-      
-      if (rawData.length < 2) {
-        throw new Error('El archivo debe contener al menos una fila de datos además de la cabecera');
+      // Crear backup
+      const { data: existingProjects, error: fetchError } = await supabase
+        .from('projects')
+        .select('*');
+
+      if (fetchError) {
+        console.error('Error al obtener proyectos para backup:', fetchError);
+        throw new Error('Error al crear backup de los datos existentes');
       }
 
-      // Saltar la primera fila (cabecera) y procesar los datos
-      const dataRows = rawData.slice(1);
-      const projectsToInsert = dataRows
-        .filter(row => row[0]) // Filtrar filas vacías
-        .map(mapExcelToDatabase);
+      const backupData = {
+        table_name: 'projects',
+        file_name: `projects_backup_${new Date().toISOString().split('T')[0]}_${Date.now()}.json`,
+        record_count: existingProjects?.length || 0,
+        file_size: `${Math.round((JSON.stringify(existingProjects).length / 1024))} KB`,
+        created_by: 'System',
+        backup_data: existingProjects
+      };
 
-      if (projectsToInsert.length === 0) {
-        throw new Error('No se encontraron datos válidos para procesar');
-      }
+      const { error: backupError } = await supabase
+        .from('backups')
+        .insert(backupData);
 
-      if (uploadMode === 'replace-all') {
-        // Eliminar todos los proyectos existentes y insertar los nuevos
-        const { error: deleteError } = await supabase
-          .from('projects')
-          .delete()
-          .neq('id', '00000000-0000-0000-0000-000000000000'); // Delete all
-        
-        if (deleteError) {
-          console.error('Error deleting existing projects:', deleteError);
-          throw new Error('Error al eliminar proyectos existentes: ' + deleteError.message);
-        }
-
-        const { data, error: insertError } = await supabase
-          .from('projects')
-          .insert(projectsToInsert)
-          .select();
-
-        if (insertError) {
-          console.error('Error inserting new projects:', insertError);
-          throw new Error('Error al insertar proyectos: ' + insertError.message);
-        }
-
+      if (backupError) {
+        console.error('Error al crear backup:', backupError);
         toast({
-          title: "✅ Proyectos reemplazados exitosamente",
-          description: `Se han reemplazado todos los proyectos. Total: ${data?.length || 0}`,
+          title: "⚠️ Advertencia",
+          description: "No se pudo crear el backup automático, pero se continuará con la carga",
+          variant: "destructive",
         });
-      } else {
-        // Modo añadir solo nuevos: filtrar proyectos que no existen
-        const { data: existingProjects } = await supabase
-          .from('projects')
-          .select('codigo_inicial');
-        
-        const existingCodes = new Set(existingProjects?.map(p => p.codigo_inicial) || []);
-        const newProjectsToInsert = projectsToInsert.filter(project => !existingCodes.has(project.codigo_inicial));
-        
-        if (newProjectsToInsert.length === 0) {
-          toast({
-            title: "ℹ️ No hay proyectos nuevos",
-            description: "Todos los proyectos del archivo ya existen en la base de datos",
-          });
-        } else {
-          const { data, error } = await supabase
+      }
+
+      // Manejar eliminación según la opción seleccionada
+      if (uploadMode === 'replace') {
+        if (preserveManual && hasManualRecords) {
+          const { error: deleteError } = await supabase
             .from('projects')
-            .insert(newProjectsToInsert)
-            .select();
-
-          if (error) {
-            console.error('Error inserting new projects:', error);
-            throw new Error('Error al insertar proyectos: ' + error.message);
+            .delete()
+            .eq('origen', 'Fichero');
+          
+          if (deleteError) {
+            console.error('Error al eliminar registros de archivo:', deleteError);
+            throw new Error('Error al eliminar registros del archivo');
           }
-
-          toast({
-            title: "✅ Proyectos nuevos añadidos",
-            description: `Se han añadido ${data?.length || 0} proyectos nuevos`,
-          });
+        } else {
+          const { error: deleteError } = await supabase
+            .from('projects')
+            .delete()
+            .neq('id', '00000000-0000-0000-0000-000000000000');
+          
+          if (deleteError) {
+            console.error('Error al eliminar todos los registros:', deleteError);
+            throw new Error('Error al eliminar registros existentes');
+          }
         }
       }
 
-      setSelectedFile(null);
-      setUploadMode('add-new');
-
-    } catch (error: any) {
-      console.error('Upload error:', error);
+      // Leer y procesar el archivo Excel
+      const reader = new FileReader();
+      reader.onload = async (e) => {
+        try {
+          const data = new Uint8Array(e.target?.result as ArrayBuffer);
+          const workbook = XLSX.read(data, { type: 'array' });
+          const sheetName = workbook.SheetNames[0];
+          const worksheet = workbook.Sheets[sheetName];
+          const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+          
+          const dataRows = jsonData.slice(1).filter((row: any) => 
+            row && row.length > 0 && row.some((cell: any) => cell !== null && cell !== undefined && cell !== '')
+          );
+          
+          const projectsToInsert = dataRows.map((row: any) => ({
+            codigo_inicial: row[0] || '',
+            descripcion: row[1] || '',
+            denominacion: row[2] || '',
+            tipologia: row[3] || '',
+            tipologia_2: row[4] || '',
+            gestor_proyecto: row[5] || '',
+            socio_responsable: row[6] || '',
+            cliente: row[7] || '',
+            grupo_cliente: row[8] || '',
+            origen: 'Fichero'
+          })).filter(project => project.codigo_inicial);
+          
+          const { error: insertError } = await supabase
+            .from('projects')
+            .insert(projectsToInsert);
+          
+          if (insertError) {
+            console.error('Error inserting projects:', insertError);
+            throw new Error('Error al insertar los proyectos en la base de datos');
+          }
+          
+          setUploading(false);
+          setSelectedFile(null);
+          
+          let additionalMessage = '';
+          if (uploadMode === 'replace') {
+            if (preserveManual && hasManualRecords) {
+              additionalMessage = 'Se sustituyeron los registros del archivo, manteniendo los del Administrador.';
+            } else {
+              additionalMessage = 'Se sustituyeron todos los registros anteriores.';
+            }
+          } else {
+            additionalMessage = 'Se añadieron a los registros existentes.';
+          }
+          
+          toast({
+            title: "✅ Carga completada exitosamente",
+            description: `Se ha creado el backup automáticamente y se han cargado ${projectsToInsert.length} registros.${additionalMessage ? ' ' + additionalMessage : ''}`,
+          });
+          
+        } catch (error) {
+          setUploading(false);
+          console.error('Error processing file:', error);
+          toast({
+            title: "❌ Error en la carga",
+            description: error instanceof Error ? error.message : 'Error al procesar el archivo Excel',
+            variant: "destructive",
+          });
+        }
+      };
       
+      reader.onerror = () => {
+        setUploading(false);
+        toast({
+          title: "❌ Error en la carga",
+          description: 'Error al leer el archivo',
+          variant: "destructive",
+        });
+      };
+      
+      reader.readAsArrayBuffer(selectedFile);
+    } catch (error) {
+      setUploading(false);
       toast({
         title: "❌ Error en la carga",
-        description: error.message || "Ha ocurrido un error al procesar el archivo.",
+        description: error instanceof Error ? error.message : 'Error desconocido al procesar el archivo',
         variant: "destructive",
       });
-    } finally {
-      setUploading(false);
     }
   };
 
@@ -254,7 +319,7 @@ const ProjectsUpload = () => {
           <div className="text-center py-8">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
             <p className="text-purple-800 font-medium">Cargando archivo Excel...</p>
-            <p className="text-purple-600 text-sm mt-2">Procesando datos de proyectos</p>
+            <p className="text-purple-600 text-sm mt-2">Creando backup automático</p>
           </div>
         </CardContent>
       </Card>
@@ -396,14 +461,8 @@ const ProjectsUpload = () => {
                 <div className="flex-1">
                   <p className="font-medium text-purple-800">{selectedFile.name}</p>
                   <p className="text-sm text-purple-600">
-                    Archivo: {formatFileSize(selectedFile.size)} • {fileRecordsCount} registros totales
+                    Archivo: {formatFileSize(selectedFile.size)} • {fileRecordsCount} registros
                   </p>
-                  <div className="text-sm text-purple-600 mt-1">
-                    • Proyectos nuevos: <span className="font-medium text-green-700">{newProjectsCount}</span>
-                  </div>
-                  <div className="text-sm text-purple-600">
-                    • Proyectos duplicados: <span className="font-medium text-orange-700">{duplicatesCount}</span>
-                  </div>
                 </div>
                 <Button
                   variant="ghost"
@@ -416,49 +475,6 @@ const ProjectsUpload = () => {
                   <X className="h-4 w-4" />
                 </Button>
               </div>
-
-              {/* Opciones de carga */}
-              <div className="space-y-3 p-4 bg-gray-50 rounded-lg">
-                <p className="font-medium text-gray-700">Modo de carga:</p>
-                <div className="space-y-2">
-                  <label className="flex items-center space-x-3 cursor-pointer">
-                    <input
-                      type="radio"
-                      name="uploadMode"
-                      value="add-new"
-                      checked={uploadMode === 'add-new'}
-                      onChange={(e) => setUploadMode(e.target.value as 'add-new' | 'replace-all')}
-                      className="text-purple-600"
-                    />
-                    <div>
-                      <span className="text-sm font-medium text-gray-900">
-                        Añadir solo proyectos nuevos
-                      </span>
-                      <p className="text-xs text-gray-600">
-                        Se añadirán {newProjectsCount} proyectos nuevos, ignorando duplicados
-                      </p>
-                    </div>
-                  </label>
-                  <label className="flex items-center space-x-3 cursor-pointer">
-                    <input
-                      type="radio"
-                      name="uploadMode"
-                      value="replace-all"
-                      checked={uploadMode === 'replace-all'}
-                      onChange={(e) => setUploadMode(e.target.value as 'add-new' | 'replace-all')}
-                      className="text-purple-600"
-                    />
-                    <div>
-                      <span className="text-sm font-medium text-gray-900">
-                        Reemplazar toda la base de datos
-                      </span>
-                      <p className="text-xs text-gray-600">
-                        Se eliminarán todos los proyectos existentes y se cargarán {fileRecordsCount} nuevos
-                      </p>
-                    </div>
-                  </label>
-                </div>
-              </div>
             </div>
           )}
           
@@ -469,9 +485,149 @@ const ProjectsUpload = () => {
             <Button 
               className="bg-purple-600 hover:bg-purple-700"
               onClick={handleUploadConfirm}
+              disabled={checkingManualRecords}
             >
               <Upload className="h-4 w-4 mr-2" />
-              Cargar Proyectos
+              {checkingManualRecords ? 'Verificando...' : 'Cargar Proyectos'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog de Conflicto - Registros Existentes */}
+      <Dialog open={showConflictDialog} onOpenChange={setShowConflictDialog}>
+        <DialogContent className="max-w-2xl bg-white">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-purple-800">
+              <AlertTriangle className="h-5 w-5" />
+              Registros Existentes Detectados
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="py-4">
+            <Alert className="border-purple-200 bg-purple-50 mb-4">
+              <AlertTriangle className="h-4 w-4 text-purple-600" />
+              <AlertDescription className="text-purple-800">
+                Ya existen registros de proyectos en la base de datos.
+                {hasManualRecords && (
+                  <span className="font-medium">
+                    {" "}Se detectaron {manualRecords.length} registros del Administrador.
+                  </span>
+                )}
+              </AlertDescription>
+            </Alert>
+
+            <div className="mb-4">
+              <p className="text-sm text-gray-600 mb-4">
+                Tu archivo contiene <strong>{fileRecordsCount}</strong> registros. 
+                ¿Qué quieres hacer con los registros existentes?
+              </p>
+              
+              {/* Opciones de carga */}
+              <div className="bg-gray-50 border rounded-lg p-4 mb-4">
+                <p className="text-sm font-medium text-gray-800 mb-3">Selecciona el modo de carga:</p>
+                <div className="space-y-3">
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="radio"
+                      id="mode-replace"
+                      name="uploadMode"
+                      value="replace"
+                      checked={uploadMode === 'replace'}
+                      onChange={(e) => setUploadMode(e.target.value as 'replace' | 'add')}
+                      className="h-4 w-4 text-purple-600"
+                    />
+                    <label htmlFor="mode-replace" className="text-sm text-gray-700 cursor-pointer">
+                      <span className="font-medium">SUSTITUIR:</span> Reemplazar toda la base de proyectos por el nuevo archivo
+                    </label>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="radio"
+                      id="mode-add"
+                      name="uploadMode"
+                      value="add"
+                      checked={uploadMode === 'add'}
+                      onChange={(e) => setUploadMode(e.target.value as 'replace' | 'add')}
+                      className="h-4 w-4 text-purple-600"
+                    />
+                    <label htmlFor="mode-add" className="text-sm text-gray-700 cursor-pointer">
+                      <span className="font-medium">AÑADIR:</span> Añadir los registros del archivo a los existentes
+                    </label>
+                  </div>
+                </div>
+              </div>
+              
+              {hasManualRecords && (
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <CheckCircle className="h-4 w-4 text-blue-600" />
+                    <span className="text-sm font-medium text-blue-800">
+                      Registros del Administrador encontrados:
+                    </span>
+                  </div>
+                  <div className="text-xs text-blue-700 max-h-32 overflow-y-auto">
+                    {manualRecords.map((record, index) => (
+                      <div key={record.id} className="mb-1">
+                        <strong>{record.code}:</strong> {record.name}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              
+              <div className="flex items-center gap-2 mb-4">
+                <input
+                  type="checkbox"
+                  id="preserve-manual"
+                  checked={preserveManual}
+                  onChange={(e) => setPreserveManual(e.target.checked)}
+                  className="h-4 w-4 text-purple-600 rounded border-purple-300 focus:ring-purple-500"
+                />
+                <label htmlFor="preserve-manual" className="text-sm text-gray-700 cursor-pointer">
+                  <span className="font-medium">¿Desea mantener los registros del Administrador añadidos manualmente?</span>
+                </label>
+              </div>
+              
+              {uploadMode === 'replace' && !preserveManual && (
+                <Alert className="border-red-200 bg-red-50">
+                  <AlertTriangle className="h-4 w-4 text-red-600" />
+                  <AlertDescription className="text-red-800">
+                    <strong>⚠️ Atención:</strong> Se eliminarán TODOS los registros existentes, incluidos los del Administrador.
+                  </AlertDescription>
+                </Alert>
+              )}
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowConflictDialog(false);
+                setSelectedFile(null);
+              }}
+              className="border-gray-300"
+            >
+              <X className="h-4 w-4 mr-2" />
+              Cancelar
+            </Button>
+            <Button
+              onClick={processUpload}
+              disabled={uploading || checkingManualRecords}
+              className="bg-purple-600 hover:bg-purple-700 text-white"
+            >
+              {uploading ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                  Procesando...
+                </>
+              ) : (
+                <>
+                  <CheckCircle className="h-4 w-4 mr-2" />
+                  {uploadMode === 'replace' ? 'Sustituir' : 'Añadir'} Registros
+                </>
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>

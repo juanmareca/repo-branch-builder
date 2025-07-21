@@ -11,6 +11,7 @@ import {
   ChevronUp,
   Info,
   CheckCircle,
+  AlertTriangle,
   X,
   FileSpreadsheet
 } from 'lucide-react';
@@ -18,17 +19,50 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import * as XLSX from 'xlsx';
 
+interface ManualRecord {
+  id: string;
+  name: string;
+  code: string;
+}
+
 const ResourcesUpload = () => {
   const [isFormatExpanded, setIsFormatExpanded] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [fileRecordsCount, setFileRecordsCount] = useState<number>(0);
-  const [duplicatesCount, setDuplicatesCount] = useState<number>(0);
-  const [newResourcesCount, setNewResourcesCount] = useState<number>(0);
   const [processingFile, setProcessingFile] = useState(false);
   const [showUploadDialog, setShowUploadDialog] = useState(false);
+  const [showConflictDialog, setShowConflictDialog] = useState(false);
+  const [manualRecords, setManualRecords] = useState<ManualRecord[]>([]);
+  const [preserveManual, setPreserveManual] = useState(true);
   const [uploading, setUploading] = useState(false);
-  const [uploadMode, setUploadMode] = useState<'add-new' | 'replace-all'>('add-new');
+  const [checkingManualRecords, setCheckingManualRecords] = useState(false);
+  const [hasManualRecords, setHasManualRecords] = useState(false);
+  const [uploadMode, setUploadMode] = useState<'replace' | 'add'>('add');
   const { toast } = useToast();
+
+  const processExcelFile = async (file: File): Promise<number> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const data = new Uint8Array(e.target?.result as ArrayBuffer);
+          const workbook = XLSX.read(data, { type: 'array' });
+          const sheetName = workbook.SheetNames[0];
+          const worksheet = workbook.Sheets[sheetName];
+          const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+          
+          const dataRows = jsonData.filter((row: any) => row && row.length > 0 && row.some((cell: any) => cell !== null && cell !== undefined && cell !== ''));
+          const recordCount = dataRows.length > 0 ? dataRows.length - 1 : 0;
+          
+          resolve(Math.max(0, recordCount));
+        } catch (error) {
+          reject(error);
+        }
+      };
+      reader.onerror = () => reject(new Error('Error reading file'));
+      reader.readAsArrayBuffer(file);
+    });
+  };
 
   const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -37,25 +71,8 @@ const ResourcesUpload = () => {
       setProcessingFile(true);
       
       try {
-        // Procesar archivo y detectar duplicados
-        const rawData = await processExcelData(file);
-        const dataRows = rawData.slice(1).filter(row => row[0]); // Excluir header y filas vacías
-        const recordsCount = dataRows.length;
-        
-        // Obtener códigos de empleado existentes
-        const { data: existingPersons } = await supabase
-          .from('persons')
-          .select('num_pers');
-        
-        const existingCodes = new Set(existingPersons?.map(p => p.num_pers) || []);
-        
-        // Contar duplicados y recursos nuevos
-        const duplicates = dataRows.filter(row => existingCodes.has(String(row[0]))).length;
-        const newResources = recordsCount - duplicates;
-        
+        const recordsCount = await processExcelFile(file);
         setFileRecordsCount(recordsCount);
-        setDuplicatesCount(duplicates);
-        setNewResourcesCount(newResources);
         setShowUploadDialog(true);
       } catch (error) {
         toast({
@@ -70,138 +87,210 @@ const ResourcesUpload = () => {
     }
   };
 
-  const processExcelData = (file: File): Promise<any[]> => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        try {
-          const data = new Uint8Array(e.target?.result as ArrayBuffer);
-          const workbook = XLSX.read(data, { type: 'array' });
-          const sheetName = workbook.SheetNames[0];
-          const worksheet = workbook.Sheets[sheetName];
-          const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
-          resolve(jsonData);
-        } catch (error) {
-          reject(error);
-        }
-      };
-      reader.onerror = () => reject(new Error('Error reading file'));
-      reader.readAsArrayBuffer(file);
-    });
-  };
+  const checkForManualRecords = async () => {
+    setCheckingManualRecords(true);
+    try {
+      const { data, error } = await supabase
+        .from('persons')
+        .select('*')
+        .eq('origen', 'Administrador');
 
-  const mapExcelToDatabase = (row: any[]): any => {
-    // Mapear las columnas del Excel a los campos de la base de datos
-    return {
-      num_pers: String(row[0]) || '', // Código Empleado
-      nombre: row[1] || '', // Nombre
-      fecha_incorporacion: row[2] || '', // Fecha incorporación
-      mail_empresa: row[3] || '', // Mail empresa
-      squad_lead: row[4] || '', // Squad Lead
-      cex: row[5] || '', // CEX
-      grupo: row[6] || '', // Grupo
-      categoria: row[7] || '', // Categoria
-      oficina: row[8] || '', // Oficina
-      origen: 'Fichero' // Origen por defecto para archivos
-    };
+      if (error) throw error;
+      
+      const manualPersons = (data || []).map(person => ({
+        id: person.id,
+        name: person.nombre,
+        code: person.num_pers
+      }));
+      
+      setManualRecords(manualPersons);
+      return manualPersons.length > 0;
+    } catch (error) {
+      console.error('Error checking manual records:', error);
+      return false;
+    } finally {
+      setCheckingManualRecords(false);
+    }
   };
 
   const handleUploadConfirm = async () => {
     setShowUploadDialog(false);
+    
+    try {
+      const { data: allPersons, error } = await supabase
+        .from('persons')
+        .select('*');
+        
+      if (error) throw error;
+      
+      const hasAnyRecords = (allPersons || []).length > 0;
+      
+      if (hasAnyRecords) {
+        const hasManualRecordsResult = await checkForManualRecords();
+        setHasManualRecords(hasManualRecordsResult);
+        setShowConflictDialog(true);
+      } else {
+        processUpload();
+      }
+    } catch (error) {
+      console.error('Error checking existing records:', error);
+      toast({
+        title: "Error",
+        description: "Error al verificar registros existentes",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const processUpload = async () => {
     setUploading(true);
+    setShowConflictDialog(false);
     
     try {
       if (!selectedFile) {
         throw new Error('No se ha seleccionado ningún archivo');
       }
 
-      const rawData = await processExcelData(selectedFile);
-      
-      if (rawData.length < 2) {
-        throw new Error('El archivo debe contener al menos una fila de datos además de la cabecera');
+      // Crear backup
+      const { data: existingPersons, error: fetchError } = await supabase
+        .from('persons')
+        .select('*');
+
+      if (fetchError) {
+        console.error('Error al obtener recursos para backup:', fetchError);
+        throw new Error('Error al crear backup de los datos existentes');
       }
 
-      // Saltar la primera fila (cabecera) y procesar los datos
-      const dataRows = rawData.slice(1);
-      const resourcesToInsert = dataRows
-        .filter(row => row[0]) // Filtrar filas vacías
-        .map(mapExcelToDatabase);
+      const backupData = {
+        table_name: 'persons',
+        file_name: `persons_backup_${new Date().toISOString().split('T')[0]}_${Date.now()}.json`,
+        record_count: existingPersons?.length || 0,
+        file_size: `${Math.round((JSON.stringify(existingPersons).length / 1024))} KB`,
+        created_by: 'System',
+        backup_data: existingPersons
+      };
 
-      if (resourcesToInsert.length === 0) {
-        throw new Error('No se encontraron datos válidos para procesar');
-      }
+      const { error: backupError } = await supabase
+        .from('backups')
+        .insert(backupData);
 
-      if (uploadMode === 'replace-all') {
-        // Eliminar todos los recursos existentes y insertar los nuevos
-        const { error: deleteError } = await supabase
-          .from('persons')
-          .delete()
-          .neq('id', '00000000-0000-0000-0000-000000000000'); // Delete all
-        
-        if (deleteError) {
-          console.error('Error deleting existing resources:', deleteError);
-          throw new Error('Error al eliminar recursos existentes: ' + deleteError.message);
-        }
-
-        const { data, error: insertError } = await supabase
-          .from('persons')
-          .insert(resourcesToInsert)
-          .select();
-
-        if (insertError) {
-          console.error('Error inserting new resources:', insertError);
-          throw new Error('Error al insertar recursos: ' + insertError.message);
-        }
-
+      if (backupError) {
+        console.error('Error al crear backup:', backupError);
         toast({
-          title: "✅ Recursos reemplazados exitosamente",
-          description: `Se han reemplazado todos los recursos. Total: ${data?.length || 0}`,
+          title: "⚠️ Advertencia",
+          description: "No se pudo crear el backup automático, pero se continuará con la carga",
+          variant: "destructive",
         });
-      } else {
-        // Modo añadir solo nuevos: filtrar recursos que no existen
-        const { data: existingPersons } = await supabase
-          .from('persons')
-          .select('num_pers');
-        
-        const existingCodes = new Set(existingPersons?.map(p => p.num_pers) || []);
-        const newResourcesToInsert = resourcesToInsert.filter(resource => !existingCodes.has(resource.num_pers));
-        
-        if (newResourcesToInsert.length === 0) {
-          toast({
-            title: "ℹ️ No hay recursos nuevos",
-            description: "Todos los recursos del archivo ya existen en la base de datos",
-          });
-        } else {
-          const { data, error } = await supabase
+      }
+
+      // Manejar eliminación según la opción seleccionada
+      if (uploadMode === 'replace') {
+        if (preserveManual && hasManualRecords) {
+          const { error: deleteError } = await supabase
             .from('persons')
-            .insert(newResourcesToInsert)
-            .select();
-
-          if (error) {
-            console.error('Error inserting new resources:', error);
-            throw new Error('Error al insertar recursos: ' + error.message);
+            .delete()
+            .eq('origen', 'Fichero');
+          
+          if (deleteError) {
+            console.error('Error al eliminar registros de archivo:', deleteError);
+            throw new Error('Error al eliminar registros del archivo');
           }
-
-          toast({
-            title: "✅ Recursos nuevos añadidos",
-            description: `Se han añadido ${data?.length || 0} recursos nuevos`,
-          });
+        } else {
+          const { error: deleteError } = await supabase
+            .from('persons')
+            .delete()
+            .neq('id', '00000000-0000-0000-0000-000000000000');
+          
+          if (deleteError) {
+            console.error('Error al eliminar todos los registros:', deleteError);
+            throw new Error('Error al eliminar registros existentes');
+          }
         }
       }
 
-      setSelectedFile(null);
-      setUploadMode('add-new');
-
-    } catch (error: any) {
-      console.error('Upload error:', error);
+      // Leer y procesar el archivo Excel
+      const reader = new FileReader();
+      reader.onload = async (e) => {
+        try {
+          const data = new Uint8Array(e.target?.result as ArrayBuffer);
+          const workbook = XLSX.read(data, { type: 'array' });
+          const sheetName = workbook.SheetNames[0];
+          const worksheet = workbook.Sheets[sheetName];
+          const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+          
+          const dataRows = jsonData.slice(1).filter((row: any) => 
+            row && row.length > 0 && row.some((cell: any) => cell !== null && cell !== undefined && cell !== '')
+          );
+          
+          const resourcesToInsert = dataRows.map((row: any) => ({
+            num_pers: String(row[0]) || '',
+            nombre: row[1] || '',
+            fecha_incorporacion: row[2] || '',
+            mail_empresa: row[3] || '',
+            squad_lead: row[4] || '',
+            cex: row[5] || '',
+            grupo: row[6] || '',
+            categoria: row[7] || '',
+            oficina: row[8] || '',
+            origen: 'Fichero'
+          })).filter(resource => resource.num_pers);
+          
+          const { error: insertError } = await supabase
+            .from('persons')
+            .insert(resourcesToInsert);
+          
+          if (insertError) {
+            console.error('Error inserting resources:', insertError);
+            throw new Error('Error al insertar los recursos en la base de datos');
+          }
+          
+          setUploading(false);
+          setSelectedFile(null);
+          
+          let additionalMessage = '';
+          if (uploadMode === 'replace') {
+            if (preserveManual && hasManualRecords) {
+              additionalMessage = 'Se sustituyeron los registros del archivo, manteniendo los del Administrador.';
+            } else {
+              additionalMessage = 'Se sustituyeron todos los registros anteriores.';
+            }
+          } else {
+            additionalMessage = 'Se añadieron a los registros existentes.';
+          }
+          
+          toast({
+            title: "✅ Carga completada exitosamente",
+            description: `Se ha creado el backup automáticamente y se han cargado ${resourcesToInsert.length} registros.${additionalMessage ? ' ' + additionalMessage : ''}`,
+          });
+          
+        } catch (error) {
+          setUploading(false);
+          console.error('Error processing file:', error);
+          toast({
+            title: "❌ Error en la carga",
+            description: error instanceof Error ? error.message : 'Error al procesar el archivo Excel',
+            variant: "destructive",
+          });
+        }
+      };
       
+      reader.onerror = () => {
+        setUploading(false);
+        toast({
+          title: "❌ Error en la carga",
+          description: 'Error al leer el archivo',
+          variant: "destructive",
+        });
+      };
+      
+      reader.readAsArrayBuffer(selectedFile);
+    } catch (error) {
+      setUploading(false);
       toast({
         title: "❌ Error en la carga",
-        description: error.message || "Ha ocurrido un error al procesar el archivo.",
+        description: error instanceof Error ? error.message : 'Error desconocido al procesar el archivo',
         variant: "destructive",
       });
-    } finally {
-      setUploading(false);
     }
   };
 
@@ -228,7 +317,7 @@ const ResourcesUpload = () => {
           <div className="text-center py-8">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
             <p className="text-blue-800 font-medium">Cargando archivo Excel...</p>
-            <p className="text-blue-600 text-sm mt-2">Procesando datos de recursos</p>
+            <p className="text-blue-600 text-sm mt-2">Creando backup automático</p>
           </div>
         </CardContent>
       </Card>
@@ -370,14 +459,8 @@ const ResourcesUpload = () => {
                 <div className="flex-1">
                   <p className="font-medium text-blue-800">{selectedFile.name}</p>
                   <p className="text-sm text-blue-600">
-                    Archivo: {formatFileSize(selectedFile.size)} • {fileRecordsCount} registros totales
+                    Archivo: {formatFileSize(selectedFile.size)} • {fileRecordsCount} registros
                   </p>
-                  <div className="text-sm text-blue-600 mt-1">
-                    • Recursos nuevos: <span className="font-medium text-green-700">{newResourcesCount}</span>
-                  </div>
-                  <div className="text-sm text-blue-600">
-                    • Recursos duplicados: <span className="font-medium text-orange-700">{duplicatesCount}</span>
-                  </div>
                 </div>
                 <Button
                   variant="ghost"
@@ -390,67 +473,159 @@ const ResourcesUpload = () => {
                   <X className="h-4 w-4" />
                 </Button>
               </div>
-
-              {/* Opciones de carga */}
-              <div className="space-y-3 p-4 bg-gray-50 rounded-lg">
-                <p className="font-medium text-gray-700">Modo de carga:</p>
-                <div className="space-y-2">
-                  <label className="flex items-center space-x-3 cursor-pointer">
-                    <input
-                      type="radio"
-                      name="uploadMode"
-                      value="add-new"
-                      checked={uploadMode === 'add-new'}
-                      onChange={(e) => setUploadMode(e.target.value as 'add-new' | 'replace-all')}
-                      className="text-blue-600"
-                    />
-                    <div>
-                      <span className="text-sm font-medium text-gray-900">
-                        Añadir solo recursos nuevos
-                      </span>
-                      <p className="text-xs text-gray-600">
-                        Se añadirán {newResourcesCount} recursos nuevos, ignorando duplicados
-                      </p>
-                    </div>
-                  </label>
-                  <label className="flex items-center space-x-3 cursor-pointer">
-                    <input
-                      type="radio"
-                      name="uploadMode"
-                      value="replace-all"
-                      checked={uploadMode === 'replace-all'}
-                      onChange={(e) => setUploadMode(e.target.value as 'add-new' | 'replace-all')}
-                      className="text-blue-600"
-                    />
-                    <div>
-                      <span className="text-sm font-medium text-gray-900">
-                        Reemplazar todos los recursos
-                      </span>
-                      <p className="text-xs text-gray-600">
-                        Se eliminarán todos los recursos existentes y se cargarán {fileRecordsCount} recursos nuevos
-                      </p>
-                    </div>
-                  </label>
-                </div>
-              </div>
             </div>
           )}
           
-          <DialogFooter className="gap-2">
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowUploadDialog(false)}>
+              Cancelar
+            </Button>
+            <Button 
+              className="bg-blue-600 hover:bg-blue-700"
+              onClick={handleUploadConfirm}
+              disabled={checkingManualRecords}
+            >
+              <Upload className="h-4 w-4 mr-2" />
+              {checkingManualRecords ? 'Verificando...' : 'Cargar Recursos'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog de Conflicto - Registros Existentes */}
+      <Dialog open={showConflictDialog} onOpenChange={setShowConflictDialog}>
+        <DialogContent className="max-w-2xl bg-white">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-blue-800">
+              <AlertTriangle className="h-5 w-5" />
+              Registros Existentes Detectados
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="py-4">
+            <Alert className="border-blue-200 bg-blue-50 mb-4">
+              <AlertTriangle className="h-4 w-4 text-blue-600" />
+              <AlertDescription className="text-blue-800">
+                Ya existen registros de recursos en la base de datos.
+                {hasManualRecords && (
+                  <span className="font-medium">
+                    {" "}Se detectaron {manualRecords.length} registros del Administrador.
+                  </span>
+                )}
+              </AlertDescription>
+            </Alert>
+
+            <div className="mb-4">
+              <p className="text-sm text-gray-600 mb-4">
+                Tu archivo contiene <strong>{fileRecordsCount}</strong> registros. 
+                ¿Qué quieres hacer con los registros existentes?
+              </p>
+              
+              {/* Opciones de carga */}
+              <div className="bg-gray-50 border rounded-lg p-4 mb-4">
+                <p className="text-sm font-medium text-gray-800 mb-3">Selecciona el modo de carga:</p>
+                <div className="space-y-3">
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="radio"
+                      id="mode-replace"
+                      name="uploadMode"
+                      value="replace"
+                      checked={uploadMode === 'replace'}
+                      onChange={(e) => setUploadMode(e.target.value as 'replace' | 'add')}
+                      className="h-4 w-4 text-blue-600"
+                    />
+                    <label htmlFor="mode-replace" className="text-sm text-gray-700 cursor-pointer">
+                      <span className="font-medium">SUSTITUIR:</span> Reemplazar toda la base de recursos por el nuevo archivo
+                    </label>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="radio"
+                      id="mode-add"
+                      name="uploadMode"
+                      value="add"
+                      checked={uploadMode === 'add'}
+                      onChange={(e) => setUploadMode(e.target.value as 'replace' | 'add')}
+                      className="h-4 w-4 text-blue-600"
+                    />
+                    <label htmlFor="mode-add" className="text-sm text-gray-700 cursor-pointer">
+                      <span className="font-medium">AÑADIR:</span> Añadir los registros del archivo a los existentes
+                    </label>
+                  </div>
+                </div>
+              </div>
+              
+              {hasManualRecords && (
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <CheckCircle className="h-4 w-4 text-blue-600" />
+                    <span className="text-sm font-medium text-blue-800">
+                      Registros del Administrador encontrados:
+                    </span>
+                  </div>
+                  <div className="text-xs text-blue-700 max-h-32 overflow-y-auto">
+                    {manualRecords.map((record, index) => (
+                      <div key={record.id} className="mb-1">
+                        <strong>{record.code}:</strong> {record.name}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              
+              <div className="flex items-center gap-2 mb-4">
+                <input
+                  type="checkbox"
+                  id="preserve-manual"
+                  checked={preserveManual}
+                  onChange={(e) => setPreserveManual(e.target.checked)}
+                  className="h-4 w-4 text-blue-600 rounded border-blue-300 focus:ring-blue-500"
+                />
+                <label htmlFor="preserve-manual" className="text-sm text-gray-700 cursor-pointer">
+                  <span className="font-medium">¿Desea mantener los registros del Administrador añadidos manualmente?</span>
+                </label>
+              </div>
+              
+              {uploadMode === 'replace' && !preserveManual && (
+                <Alert className="border-red-200 bg-red-50">
+                  <AlertTriangle className="h-4 w-4 text-red-600" />
+                  <AlertDescription className="text-red-800">
+                    <strong>⚠️ Atención:</strong> Se eliminarán TODOS los registros existentes, incluidos los del Administrador.
+                  </AlertDescription>
+                </Alert>
+              )}
+            </div>
+          </div>
+
+          <DialogFooter>
             <Button
               variant="outline"
               onClick={() => {
+                setShowConflictDialog(false);
                 setSelectedFile(null);
-                setShowUploadDialog(false);
               }}
+              className="border-gray-300"
             >
+              <X className="h-4 w-4 mr-2" />
               Cancelar
             </Button>
             <Button
-              onClick={handleUploadConfirm}
-              className="bg-blue-600 hover:bg-blue-700"
+              onClick={processUpload}
+              disabled={uploading || checkingManualRecords}
+              className="bg-blue-600 hover:bg-blue-700 text-white"
             >
-              Confirmar Carga
+              {uploading ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                  Procesando...
+                </>
+              ) : (
+                <>
+                  <CheckCircle className="h-4 w-4 mr-2" />
+                  {uploadMode === 'replace' ? 'Sustituir' : 'Añadir'} Registros
+                </>
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>
