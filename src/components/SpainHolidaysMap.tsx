@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
+import spainCompleteMap from '../assets/spain-complete-map.png';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Badge } from './ui/badge';
 import { Button } from './ui/button';
@@ -106,6 +107,11 @@ const REGIONS_DATA = {
     code: 'PV', 
     apiCode: 'ES-PV',
     image: '/lovable-uploads/fef2faae-f1af-4150-996e-224409e1b154.png'
+  },
+  'España': { 
+    code: 'ES', 
+    apiCode: 'ES',
+    image: spainCompleteMap
   }
 };
 
@@ -171,9 +177,16 @@ export default function SpainHolidaysMap() {
     });
 
     const national = filtered.filter(holiday => holiday.global || !holiday.counties);
-    const regional = filtered.filter(holiday => 
-      holiday.counties && holiday.counties.includes(regionData.apiCode)
-    );
+    
+    // Si se selecciona "España", mostrar todos los festivos regionales
+    let regional;
+    if (selectedRegion === 'España') {
+      regional = filtered.filter(holiday => holiday.counties && holiday.counties.length > 0);
+    } else {
+      regional = filtered.filter(holiday => 
+        holiday.counties && holiday.counties.includes(regionData.apiCode)
+      );
+    }
 
     return { national, regional };
   }, [holidays, selectedRegion, selectedMonth]);
@@ -505,14 +518,14 @@ export default function SpainHolidaysMap() {
 
                 {/* Festivos Regionales */}
                 <div className="flex flex-col flex-1 min-h-0">
-                  <h4 className="font-semibold text-lg mb-3 flex items-center gap-2 flex-shrink-0">
-                    <Badge variant="outline" className="border-orange-500 text-orange-700">
-                      {selectedRegion}
-                    </Badge>
-                    <span className="text-sm text-muted-foreground">
-                      ({filteredHolidays.regional.length})
-                    </span>
-                  </h4>
+                   <h4 className="font-semibold text-lg mb-3 flex items-center gap-2 flex-shrink-0">
+                     <Badge variant="outline" className="border-orange-500 text-orange-700">
+                       {selectedRegion === 'España' ? 'Todas las Comunidades' : selectedRegion}
+                     </Badge>
+                     <span className="text-sm text-muted-foreground">
+                       ({filteredHolidays.regional.length})
+                     </span>
+                   </h4>
                   <div className="space-y-2 overflow-y-auto flex-1">
                     {filteredHolidays.regional.length > 0 ? (
                        filteredHolidays.regional.map((holiday, index) => {
