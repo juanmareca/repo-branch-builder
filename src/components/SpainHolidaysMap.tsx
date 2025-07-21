@@ -1,24 +1,37 @@
-import React, { useState, useMemo } from 'react';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Label } from '@/components/ui/label';
-import { format } from 'date-fns';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
+import { Badge } from './ui/badge';
+import { Button } from './ui/button';
+import { X, Calendar, MapPin } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 
-interface Holiday {
-  id: string;
-  date: string;
-  festivo: string;
-  pais: string;
-  comunidad_autonoma: string;
-  origen: string;
-  created_at: string;
-}
-
-interface SpainHolidaysMapProps {
-  holidays: Holiday[];
-}
+// Mapeo de comunidades autónomas con códigos reales
+const REGIONS_MAP = {
+  'Andalucía': { code: 'AN', color: '#e74c3c' },
+  'Aragón': { code: 'AR', color: '#3498db' },
+  'Asturias': { code: 'AS', color: '#2ecc71' },
+  'Cantabria': { code: 'CB', color: '#f39c12' },
+  'Ceuta': { code: 'CE', color: '#9b59b6' },
+  'Castilla y León': { code: 'CL', color: '#1abc9c' },
+  'Castilla-La Mancha': { code: 'CM', color: '#e67e22' },
+  'Canarias': { code: 'CN', color: '#34495e' },
+  'Cataluña': { code: 'CT', color: '#f1c40f' },
+  'Extremadura': { code: 'EX', color: '#95a5a6' },
+  'Galicia': { code: 'GA', color: '#16a085' },
+  'Baleares': { code: 'IB', color: '#8e44ad' },
+  'Murcia': { code: 'MC', color: '#d35400' },
+  'Madrid': { code: 'MD', color: '#c0392b' },
+  'Melilla': { code: 'ML', color: '#7f8c8d' },
+  'Navarra': { code: 'NC', color: '#27ae60' },
+  'País Vasco': { code: 'PV', color: '#2980b9' },
+  'La Rioja': { code: 'RI', color: '#e74c3c' },
+  'Comunidad Valenciana': { code: 'VC', color: '#f39c12' }
+};
 
 const MONTHS_CHRONOLOGICAL = [
-  { value: 'all', label: 'Todos' },
+  { value: 'all', label: 'TODOS' },
   { value: '1', label: 'Enero' },
   { value: '2', label: 'Febrero' },
   { value: '3', label: 'Marzo' },
@@ -33,537 +46,499 @@ const MONTHS_CHRONOLOGICAL = [
   { value: '12', label: 'Diciembre' }
 ];
 
-const SpainHolidaysMap: React.FC<SpainHolidaysMapProps> = ({ holidays }) => {
-  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear().toString());
+const YEARS_RANGE = { start: 2025, end: 2035 };
+
+export default function SpainHolidaysMap() {
+  const [selectedYear, setSelectedYear] = useState('2025');
   const [selectedMonth, setSelectedMonth] = useState('all');
-  const [selectedCommunity, setSelectedCommunity] = useState<string | null>(null);
+  const [selectedRegion, setSelectedRegion] = useState<string | null>(null);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const mapContainerRef = useRef<HTMLDivElement>(null);
 
-  // Obtener años únicos de los festivos
-  const availableYears = useMemo(() => {
-    const years = holidays
-      .map(holiday => new Date(holiday.date).getFullYear())
-      .filter(year => !isNaN(year));
-    return [...new Set(years)].sort((a, b) => b - a);
-  }, [holidays]);
+  // Consulta para obtener festivos
+  const { data: holidays, isLoading, error } = useQuery({
+    queryKey: ['holidays', selectedYear],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('holidays')
+        .select('*')
+        .eq('pais', 'España')
+        .gte('date', `${selectedYear}-01-01`)
+        .lte('date', `${selectedYear}-12-31`)
+        .order('date');
+      
+      if (error) throw error;
+      return data || [];
+    }
+  });
 
-  // Filtrar festivos por año, mes y comunidad autónoma (incluyendo NACIONALES)
-  const getHolidaysForCommunity = (community: string) => {
-    const communityHolidays = holidays.filter(holiday => {
+  // Filtrar festivos
+  const filteredNationalHolidays = useMemo(() => {
+    if (!holidays || !selectedRegion) return [];
+    
+    return holidays.filter(holiday => {
       const holidayDate = new Date(holiday.date);
-      const holidayYear = holidayDate.getFullYear();
       const holidayMonth = holidayDate.getMonth() + 1;
       
-      const matchesYear = holidayYear.toString() === selectedYear;
       const matchesMonth = selectedMonth === 'all' || holidayMonth.toString() === selectedMonth;
-      const matchesPais = holiday.pais === 'España';
+      const isNational = holiday.comunidad_autonoma === 'NACIONAL' || holiday.comunidad_autonoma === '';
       
-      // Incluir festivos de la comunidad específica Y los nacionales
-      const matchesCommunity = holiday.comunidad_autonoma === community || 
-                              holiday.comunidad_autonoma === 'NACIONAL';
-      
-      return matchesYear && matchesMonth && matchesPais && matchesCommunity;
-    });
+      return matchesMonth && isNational;
+    }).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+  }, [holidays, selectedMonth, selectedRegion]);
+
+  const filteredRegionalHolidays = useMemo(() => {
+    if (!holidays || !selectedRegion) return [];
     
-    return communityHolidays.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    return holidays.filter(holiday => {
+      const holidayDate = new Date(holiday.date);
+      const holidayMonth = holidayDate.getMonth() + 1;
+      
+      const matchesMonth = selectedMonth === 'all' || holidayMonth.toString() === selectedMonth;
+      const matchesRegion = holiday.comunidad_autonoma === selectedRegion;
+      
+      return matchesMonth && matchesRegion;
+    }).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+  }, [holidays, selectedMonth, selectedRegion]);
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('es-ES', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
   };
 
-  // Mapa de correspondencias entre nombres de comunidades y IDs del SVG
-  const communityMapping: { [key: string]: string } = {
-    'Andalucía': 'andalucia',
-    'Aragón': 'aragon', 
-    'Asturias': 'asturias',
-    'Baleares': 'baleares',
-    'Canarias': 'canarias',
-    'Cantabria': 'cantabria',
-    'Castilla y León': 'castilla-leon',
-    'Castilla-La Mancha': 'castilla-mancha',
-    'Cataluña': 'cataluna',
-    'Comunidad Valenciana': 'valencia',
-    'Extremadura': 'extremadura',
-    'Galicia': 'galicia',
-    'La Rioja': 'rioja',
-    'Madrid': 'madrid',
-    'Murcia': 'murcia',
-    'Navarra': 'navarra',
-    'País Vasco': 'pais-vasco'
+  const handleRegionClick = (regionName: string) => {
+    setSelectedRegion(regionName);
+    setSidebarOpen(true);
   };
+
+  const closeSidebar = () => {
+    setSidebarOpen(false);
+    setSelectedRegion(null);
+  };
+
+  useEffect(() => {
+    const loadSVGMap = async () => {
+      if (!mapContainerRef.current) return;
+      
+      try {
+        const svgContent = createSpainSVG();
+        mapContainerRef.current.innerHTML = svgContent;
+        processSVGRegions();
+      } catch (error) {
+        console.error('Error cargando el mapa:', error);
+      }
+    };
+
+    loadSVGMap();
+  }, []);
+
+  const createSpainSVG = () => {
+    const regions = Object.entries(REGIONS_MAP);
+    const paths = regions.map(([name, config]) => {
+      const coords = getRegionCoordinates(name);
+      
+      return `
+        <path
+          d="${coords}"
+          fill="${config.color}"
+          stroke="#fff"
+          stroke-width="2"
+          opacity="0.8"
+          class="region cursor-pointer transition-all duration-300 hover:opacity-100 hover:stroke-4"
+          data-region="${name}"
+          data-name="${name}"
+        />
+        <text
+          x="${getRegionTextPosition(name).x}"
+          y="${getRegionTextPosition(name).y}"
+          text-anchor="middle"
+          class="text-xs font-bold fill-white pointer-events-none select-none"
+          style="text-shadow: 2px 2px 4px rgba(0,0,0,0.8); font-family: 'Segoe UI', sans-serif;"
+        >
+          ${name.length > 12 ? name.substring(0, 10) + '...' : name}
+        </text>
+      `;
+    }).join('');
+
+    return `
+      <svg width="100%" height="100%" viewBox="0 0 800 600" class="spain-map">
+        <defs>
+          <linearGradient id="seaGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#bfdbfe" />
+            <stop offset="100%" stop-color="#93c5fd" />
+          </linearGradient>
+          <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+            <feDropShadow dx="3" dy="3" stdDeviation="4" flood-opacity="0.3"/>
+          </filter>
+        </defs>
+        
+        <rect width="800" height="600" fill="url(#seaGradient)" />
+        ${paths}
+      </svg>
+    `;
+  };
+
+  const getRegionCoordinates = (regionName: string) => {
+    const coordinates: Record<string, string> = {
+      'Galicia': 'M 50 120 L 140 110 L 160 140 L 150 170 L 120 180 L 80 170 L 60 150 Z',
+      'Asturias': 'M 160 110 L 240 105 L 260 130 L 240 150 L 200 155 L 160 140 Z',
+      'Cantabria': 'M 260 105 L 320 100 L 340 125 L 320 145 L 280 150 L 260 130 Z',
+      'País Vasco': 'M 340 100 L 400 95 L 420 120 L 400 140 L 360 145 L 340 125 Z',
+      'Navarra': 'M 380 145 L 440 140 L 460 170 L 440 195 L 400 200 L 380 175 Z',
+      'La Rioja': 'M 340 175 L 380 170 L 395 195 L 380 215 L 340 220 L 325 195 Z',
+      'Cataluña': 'M 460 140 L 540 130 L 580 180 L 570 250 L 530 280 L 480 270 L 460 220 Z',
+      'Aragón': 'M 400 200 L 480 190 L 520 240 L 500 310 L 450 330 L 400 320 L 380 260 Z',
+      'Castilla y León': 'M 160 180 L 340 170 L 400 200 L 380 260 L 320 300 L 200 310 L 140 280 L 140 220 Z',
+      'Madrid': 'M 320 300 L 380 290 L 400 320 L 380 350 L 320 360 L 300 330 Z',
+      'Castilla-La Mancha': 'M 200 310 L 320 300 L 450 330 L 440 420 L 380 450 L 240 460 L 180 430 L 180 350 Z',
+      'Extremadura': 'M 140 280 L 200 270 L 240 320 L 180 430 L 120 440 L 80 400 L 90 320 Z',
+      'Comunidad Valenciana': 'M 500 310 L 570 280 L 590 350 L 580 420 L 540 450 L 480 440 L 460 370 Z',
+      'Murcia': 'M 460 440 L 540 430 L 560 470 L 540 500 L 480 510 L 440 480 Z',
+      'Andalucía': 'M 80 440 L 240 430 L 380 450 L 480 470 L 460 540 L 380 570 L 200 580 L 60 560 L 50 500 Z',
+      'Canarias': 'M 20 520 L 120 510 L 140 540 L 120 570 L 20 580 Z',
+      'Baleares': 'M 580 350 L 640 340 L 660 370 L 640 400 L 580 410 Z',
+      'Ceuta': 'M 200 580 L 230 575 L 240 590 L 220 600 L 200 595 Z',
+      'Melilla': 'M 250 580 L 280 575 L 290 590 L 270 600 L 250 595 Z'
+    };
+    
+    return coordinates[regionName] || 'M 0 0 L 50 0 L 50 50 L 0 50 Z';
+  };
+
+  const getRegionTextPosition = (regionName: string) => {
+    const positions: Record<string, {x: number, y: number}> = {
+      'Galicia': { x: 105, y: 145 },
+      'Asturias': { x: 200, y: 130 },
+      'Cantabria': { x: 290, y: 125 },
+      'País Vasco': { x: 370, y: 120 },
+      'Navarra': { x: 410, y: 170 },
+      'La Rioja': { x: 360, y: 195 },
+      'Cataluña': { x: 520, y: 200 },
+      'Aragón': { x: 440, y: 255 },
+      'Castilla y León': { x: 270, y: 235 },
+      'Madrid': { x: 350, y: 325 },
+      'Castilla-La Mancha': { x: 320, y: 380 },
+      'Extremadura': { x: 160, y: 360 },
+      'Comunidad Valenciana': { x: 530, y: 375 },
+      'Murcia': { x: 500, y: 470 },
+      'Andalucía': { x: 270, y: 505 },
+      'Canarias': { x: 80, y: 545 },
+      'Baleares': { x: 610, y: 375 },
+      'Ceuta': { x: 220, y: 585 },
+      'Melilla': { x: 270, y: 585 }
+    };
+    
+    return positions[regionName] || { x: 100, y: 100 };
+  };
+
+  const processSVGRegions = () => {
+    if (!mapContainerRef.current) return;
+    
+    const regions = mapContainerRef.current.querySelectorAll('.region');
+    
+    regions.forEach(region => {
+      const regionName = region.getAttribute('data-region');
+      if (!regionName) return;
+      
+      region.addEventListener('click', () => handleRegionClick(regionName));
+      
+      region.addEventListener('mouseenter', () => {
+        region.setAttribute('opacity', '1');
+        region.setAttribute('stroke-width', '4');
+        region.setAttribute('stroke', '#2c3e50');
+      });
+      
+      region.addEventListener('mouseleave', () => {
+        if (selectedRegion !== regionName) {
+          region.setAttribute('opacity', '0.8');
+          region.setAttribute('stroke-width', '2');
+          region.setAttribute('stroke', '#fff');
+        }
+      });
+    });
+
+    // Actualizar región seleccionada
+    if (selectedRegion) {
+      const selectedPath = mapContainerRef.current.querySelector(`path[data-region="${selectedRegion}"]`);
+      if (selectedPath) {
+        selectedPath.setAttribute('opacity', '1');
+        selectedPath.setAttribute('stroke-width', '4');
+        selectedPath.setAttribute('stroke', '#e74c3c');
+      }
+    }
+  };
+
+  useEffect(() => {
+    processSVGRegions();
+  }, [selectedRegion]);
 
   return (
-    <div className="space-y-6">
-      {/* Selectores de año y mes */}
-      <div className="flex items-center gap-6">
-        <div className="flex items-center gap-2">
-          <Label htmlFor="year-select">Año:</Label>
-          <Select value={selectedYear} onValueChange={setSelectedYear}>
-            <SelectTrigger className="w-32" id="year-select">
-              <SelectValue placeholder="Seleccionar año" />
-            </SelectTrigger>
-            <SelectContent>
-              {availableYears.map(year => (
-                <SelectItem key={year} value={year.toString()}>
-                  {year}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+    <div className="min-h-screen bg-gradient-to-br from-blue-500 via-purple-600 to-blue-800 p-4">
+      <div className="max-w-7xl mx-auto">
+        {/* Header con controles */}
+        <div className="bg-white/95 backdrop-blur-lg rounded-2xl p-6 mb-6 shadow-2xl border border-white/20">
+          <h1 className="text-3xl font-bold text-center text-gray-800 mb-6">
+            Mapa Interactivo de España - Festivos
+          </h1>
+          
+          <div className="flex flex-wrap justify-center gap-8">
+            <div className="flex flex-col items-center gap-2">
+              <label className="text-sm font-semibold text-gray-700">Año</label>
+              <Select value={selectedYear} onValueChange={setSelectedYear}>
+                <SelectTrigger className="w-32 bg-white border-2 border-gray-200 hover:border-blue-400 focus:border-blue-500 transition-colors">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="bg-white border-2 shadow-xl z-50">
+                  {Array.from({length: YEARS_RANGE.end - YEARS_RANGE.start + 1}, (_, i) => YEARS_RANGE.start + i).map(year => (
+                    <SelectItem key={year} value={year.toString()}>{year}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="flex flex-col items-center gap-2">
+              <label className="text-sm font-semibold text-gray-700">Mes</label>
+              <Select value={selectedMonth} onValueChange={setSelectedMonth}>
+                <SelectTrigger className="w-40 bg-white border-2 border-gray-200 hover:border-blue-400 focus:border-blue-500 transition-colors">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="bg-white border-2 shadow-xl z-50">
+                  {MONTHS_CHRONOLOGICAL.map(month => (
+                    <SelectItem key={month.value} value={month.value}>{month.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
         </div>
-        
-        <div className="flex items-center gap-2">
-          <Label htmlFor="month-select">Mes:</Label>
-          <Select value={selectedMonth} onValueChange={setSelectedMonth}>
-            <SelectTrigger className="w-40" id="month-select">
-              <SelectValue placeholder="Seleccionar mes" />
-            </SelectTrigger>
-            <SelectContent>
-              {MONTHS_CHRONOLOGICAL.map(month => (
-                <SelectItem key={month.value} value={month.value}>
-                  {month.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+
+        {/* Contenido principal */}
+        <div className="flex gap-6 h-[calc(100vh-220px)]">
+          {/* Mapa */}
+          <div className="flex-1 bg-white/95 backdrop-blur-lg rounded-2xl p-6 shadow-2xl border border-white/20 overflow-hidden">
+            <h3 className="text-xl font-semibold mb-4 text-center text-gray-800">
+              Comunidades Autónomas de España
+            </h3>
+            <div 
+              ref={mapContainerRef}
+              className="w-full h-full flex justify-center items-center"
+            />
+            <p className="text-sm text-gray-600 text-center mt-4">
+              <MapPin className="inline w-4 h-4 mr-1" />
+              Selecciona con el ratón cualquier comunidad del mapa para ver sus festivos
+            </p>
+          </div>
+
+          {/* Sidebar */}
+          <div className={`w-96 bg-white/95 backdrop-blur-lg rounded-2xl shadow-2xl border border-white/20 transition-all duration-300 ${
+            !sidebarOpen ? 'transform translate-x-full opacity-0 pointer-events-none' : ''
+          }`}>
+            {/* Header del sidebar */}
+            <div className="p-6 border-b border-gray-200 flex justify-between items-center">
+              <div>
+                <h2 className="text-xl font-semibold text-gray-800">
+                  {selectedRegion || 'Festivos'}
+                </h2>
+                {selectedRegion && (
+                  <Badge variant="outline" className="mt-1">
+                    <Calendar className="w-3 h-3 mr-1" />
+                    {selectedMonth === 'all' ? selectedYear : `${MONTHS_CHRONOLOGICAL.find(m => m.value === selectedMonth)?.label} ${selectedYear}`}
+                  </Badge>
+                )}
+              </div>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={closeSidebar}
+                className="text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-full p-2"
+              >
+                <X className="w-5 h-5" />
+              </Button>
+            </div>
+            
+            {/* Contenido del sidebar */}
+            <div className="p-6 h-full overflow-y-auto pb-24">
+              {selectedRegion ? (
+                <div className="space-y-6">
+                  {isLoading && (
+                    <div className="text-center py-8">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+                      <p className="text-sm text-gray-500 mt-2">Cargando festivos...</p>
+                    </div>
+                  )}
+                  
+                  {error && (
+                    <div className="text-center py-8">
+                      <p className="text-red-500 text-sm">Error al cargar los festivos</p>
+                    </div>
+                  )}
+                  
+                  {holidays && holidays.length > 0 && (
+                    <>
+                      {/* Festivos Nacionales */}
+                      {filteredNationalHolidays.length > 0 && (
+                        <div>
+                          <h3 className="text-lg font-semibold text-red-600 mb-3 pb-2 border-b-2 border-red-200">
+                            Festivos Nacionales
+                          </h3>
+                          <div className="space-y-2">
+                            {filteredNationalHolidays.map((holiday, index) => (
+                              <div key={index} className="p-3 bg-red-50 border-l-4 border-red-500 rounded-lg text-sm hover:bg-red-100 transition-all hover:transform hover:translate-x-1">
+                                <div className="font-semibold text-gray-900">{formatDate(holiday.date)}</div>
+                                <div className="text-gray-700 mt-1">{holiday.festivo}</div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      
+                      {/* Festivos Regionales */}
+                      {filteredRegionalHolidays.length > 0 && (
+                        <div>
+                          <h3 className="text-lg font-semibold text-blue-600 mb-3 pb-2 border-b-2 border-blue-200">
+                            Festivos de {selectedRegion}
+                          </h3>
+                          <div className="space-y-2">
+                            {filteredRegionalHolidays.map((holiday, index) => (
+                              <div key={index} className="p-3 bg-blue-50 border-l-4 border-blue-500 rounded-lg text-sm hover:bg-blue-100 transition-all hover:transform hover:translate-x-1">
+                                <div className="font-semibold text-gray-900">{formatDate(holiday.date)}</div>
+                                <div className="text-gray-700 mt-1">{holiday.festivo}</div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </>
+                  )}
+                  
+                  {!isLoading && !error && holidays && (filteredNationalHolidays.length === 0 && filteredRegionalHolidays.length === 0) && (
+                    <div className="text-center py-8">
+                      <div className="text-gray-400 mb-4">
+                        <Calendar className="w-16 h-16 mx-auto" />
+                      </div>
+                      <p className="text-gray-500 text-sm italic">
+                        {selectedMonth === 'all' 
+                          ? 'No se encontraron festivos para este año.'
+                          : 'No hay festivos en el mes seleccionado.'}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="h-full flex flex-col items-center justify-center text-center">
+                  <div className="text-gray-400 mb-4">
+                    <MapPin className="w-16 h-16 mx-auto" />
+                  </div>
+                  <h4 className="text-lg font-medium text-gray-700 mb-2">
+                    Selecciona una comunidad autónoma
+                  </h4>
+                  <p className="text-sm text-gray-500">
+                    Haz clic en cualquier región del mapa para ver sus festivos
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       </div>
 
-      <div className="flex gap-6">
-        {/* Mapa SVG de España realista y grande */}
-        <div className="flex-1">
-          <div className="relative">
-            <svg 
-              viewBox="0 0 1200 800" 
-              className="w-full h-[500px] border border-gray-200 rounded-lg bg-gradient-to-br from-blue-100 to-blue-200 shadow-lg"
-              style={{ filter: 'drop-shadow(0 4px 6px rgba(0, 0, 0, 0.1))' }}
+      {/* Sidebar móvil */}
+      <div className={`lg:hidden fixed inset-0 z-50 ${sidebarOpen ? 'block' : 'hidden'}`}>
+        <div 
+          className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+          onClick={closeSidebar}
+        />
+        <div className="absolute top-0 right-0 h-full w-full max-w-md bg-white transform transition-transform duration-300">
+          <div className="p-6 border-b border-gray-200 flex justify-between items-center">
+            <div>
+              <h2 className="text-xl font-semibold text-gray-800">
+                {selectedRegion || 'Festivos'}
+              </h2>
+              {selectedRegion && (
+                <Badge variant="outline" className="mt-1">
+                  <Calendar className="w-3 h-3 mr-1" />
+                  {selectedMonth === 'all' ? selectedYear : `${MONTHS_CHRONOLOGICAL.find(m => m.value === selectedMonth)?.label} ${selectedYear}`}
+                </Badge>
+              )}
+            </div>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={closeSidebar}
+              className="text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-full p-2"
             >
-              {/* Definiciones */}
-              <defs>
-                <linearGradient id="seaGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" stopColor="#bfdbfe" />
-                  <stop offset="100%" stopColor="#93c5fd" />
-                </linearGradient>
-                <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
-                  <feDropShadow dx="3" dy="3" stdDeviation="4" floodOpacity="0.4"/>
-                </filter>
-              </defs>
-              
-              <rect width="1200" height="800" fill="url(#seaGradient)" />
-              
-              {/* Comunidades Autónomas con formas reales */}
-              {Object.entries(communityMapping).map(([community, id]) => {
-                const communityHolidays = getHolidaysForCommunity(community);
-                const hasHolidays = communityHolidays.length > 0;
-                const isSelected = selectedCommunity === community;
-                const baseColor = isSelected ? "#1d4ed8" : (hasHolidays ? "#059669" : "#d1d5db");
-                
-                return (
-                  <g key={community}>
-                    {/* Galicia */}
-                    {id === 'galicia' && (
-                      <>
-                        <path
-                          d="M80 180 Q70 170 65 185 L60 200 Q50 220 65 240 L80 260 Q100 275 125 270 L150 265 Q175 255 185 235 L195 215 Q200 195 185 180 L170 165 Q150 155 125 160 L100 165 Q85 170 80 180 Z"
-                          fill={baseColor}
-                          stroke="#1f2937"
-                          strokeWidth="3"
-                          filter="url(#shadow)"
-                          className="cursor-pointer transition-all duration-300 hover:brightness-110"
-                          onClick={() => setSelectedCommunity(community)}
-                        />
-                        <text x="140" y="215" textAnchor="middle" className="text-sm font-bold fill-white pointer-events-none" style={{ textShadow: '2px 2px 4px rgba(0,0,0,0.8)' }}>
-                          Galicia
-                        </text>
-                      </>
-                    )}
-                    
-                    {/* Asturias */}
-                    {id === 'asturias' && (
-                      <>
-                        <path
-                          d="M220 165 L320 165 Q340 170 335 190 L330 210 Q320 230 300 225 L280 220 Q260 215 240 220 L220 225 Q200 230 195 210 L190 190 Q195 170 220 165 Z"
-                          fill={baseColor}
-                          stroke="#1f2937"
-                          strokeWidth="3"
-                          filter="url(#shadow)"
-                          className="cursor-pointer transition-all duration-300 hover:brightness-110"
-                          onClick={() => setSelectedCommunity(community)}
-                        />
-                        <text x="265" y="200" textAnchor="middle" className="text-sm font-bold fill-white pointer-events-none" style={{ textShadow: '2px 2px 4px rgba(0,0,0,0.8)' }}>
-                          Asturias
-                        </text>
-                      </>
-                    )}
-                    
-                    {/* Cantabria */}
-                    {id === 'cantabria' && (
-                      <>
-                        <path
-                          d="M360 165 L430 165 Q450 170 445 190 L440 210 Q430 230 410 225 L390 220 Q370 215 365 195 L360 175 Q365 170 360 165 Z"
-                          fill={baseColor}
-                          stroke="#1f2937"
-                          strokeWidth="3"
-                          filter="url(#shadow)"
-                          className="cursor-pointer transition-all duration-300 hover:brightness-110"
-                          onClick={() => setSelectedCommunity(community)}
-                        />
-                        <text x="400" y="195" textAnchor="middle" className="text-sm font-bold fill-white pointer-events-none" style={{ textShadow: '2px 2px 4px rgba(0,0,0,0.8)' }}>
-                          Cantabria
-                        </text>
-                      </>
-                    )}
-                    
-                    {/* País Vasco */}
-                    {id === 'pais-vasco' && (
-                      <>
-                        <path
-                          d="M470 165 L540 165 Q560 170 555 190 L550 210 Q540 230 520 225 L500 220 Q480 215 475 195 L470 175 Q475 170 470 165 Z"
-                          fill={baseColor}
-                          stroke="#1f2937"
-                          strokeWidth="3"
-                          filter="url(#shadow)"
-                          className="cursor-pointer transition-all duration-300 hover:brightness-110"
-                          onClick={() => setSelectedCommunity(community)}
-                        />
-                        <text x="510" y="195" textAnchor="middle" className="text-sm font-bold fill-white pointer-events-none" style={{ textShadow: '2px 2px 4px rgba(0,0,0,0.8)' }}>
-                          País Vasco
-                        </text>
-                      </>
-                    )}
-                    
-                    {/* Navarra */}
-                    {id === 'navarra' && (
-                      <>
-                        <path
-                          d="M520 240 L580 240 Q600 245 595 265 L590 285 Q580 305 560 300 L540 295 Q525 290 525 270 L520 250 Q525 245 520 240 Z"
-                          fill={baseColor}
-                          stroke="#1f2937"
-                          strokeWidth="3"
-                          filter="url(#shadow)"
-                          className="cursor-pointer transition-all duration-300 hover:brightness-110"
-                          onClick={() => setSelectedCommunity(community)}
-                        />
-                        <text x="555" y="270" textAnchor="middle" className="text-sm font-bold fill-white pointer-events-none" style={{ textShadow: '2px 2px 4px rgba(0,0,0,0.8)' }}>
-                          Navarra
-                        </text>
-                      </>
-                    )}
-                    
-                    {/* La Rioja */}
-                    {id === 'rioja' && (
-                      <>
-                        <path
-                          d="M470 280 L520 280 Q540 285 535 305 L530 325 Q520 345 500 340 L480 335 Q465 330 465 310 L460 290 Q465 285 470 280 Z"
-                          fill={baseColor}
-                          stroke="#1f2937"
-                          strokeWidth="3"
-                          filter="url(#shadow)"
-                          className="cursor-pointer transition-all duration-300 hover:brightness-110"
-                          onClick={() => setSelectedCommunity(community)}
-                        />
-                        <text x="495" y="315" textAnchor="middle" className="text-sm font-bold fill-white pointer-events-none" style={{ textShadow: '2px 2px 4px rgba(0,0,0,0.8)' }}>
-                          La Rioja
-                        </text>
-                      </>
-                    )}
-                    
-                    {/* Cataluña */}
-                    {id === 'cataluna' && (
-                      <>
-                        <path
-                          d="M620 220 Q660 215 700 235 L740 255 Q780 275 775 315 L770 355 Q765 395 725 400 L685 405 Q645 410 620 390 L600 370 Q580 350 585 310 L590 270 Q595 230 620 220 Z"
-                          fill={baseColor}
-                          stroke="#1f2937"
-                          strokeWidth="3"
-                          filter="url(#shadow)"
-                          className="cursor-pointer transition-all duration-300 hover:brightness-110"
-                          onClick={() => setSelectedCommunity(community)}
-                        />
-                        <text x="680" y="315" textAnchor="middle" className="text-sm font-bold fill-white pointer-events-none" style={{ textShadow: '2px 2px 4px rgba(0,0,0,0.8)' }}>
-                          Cataluña
-                        </text>
-                      </>
-                    )}
-                    
-                    {/* Aragón */}
-                    {id === 'aragon' && (
-                      <>
-                        <path
-                          d="M540 320 Q580 315 620 335 L660 355 Q700 375 695 415 L690 455 Q685 495 645 500 L605 505 Q565 510 540 490 L520 470 Q500 450 505 410 L510 370 Q515 330 540 320 Z"
-                          fill={baseColor}
-                          stroke="#1f2937"
-                          strokeWidth="3"
-                          filter="url(#shadow)"
-                          className="cursor-pointer transition-all duration-300 hover:brightness-110"
-                          onClick={() => setSelectedCommunity(community)}
-                        />
-                        <text x="600" y="415" textAnchor="middle" className="text-sm font-bold fill-white pointer-events-none" style={{ textShadow: '2px 2px 4px rgba(0,0,0,0.8)' }}>
-                          Aragón
-                        </text>
-                      </>
-                    )}
-                    
-                    {/* Castilla y León */}
-                    {id === 'castilla-leon' && (
-                      <>
-                        <path
-                          d="M220 260 Q300 255 380 275 L460 295 Q540 315 535 375 L530 435 Q525 495 445 500 L365 505 Q285 510 220 490 L160 470 Q100 450 105 390 L110 330 Q115 270 220 260 Z"
-                          fill={baseColor}
-                          stroke="#1f2937"
-                          strokeWidth="3"
-                          filter="url(#shadow)"
-                          className="cursor-pointer transition-all duration-300 hover:brightness-110"
-                          onClick={() => setSelectedCommunity(community)}
-                        />
-                        <text x="320" y="380" textAnchor="middle" className="text-sm font-bold fill-white pointer-events-none" style={{ textShadow: '2px 2px 4px rgba(0,0,0,0.8)' }}>
-                          Castilla y León
-                        </text>
-                      </>
-                    )}
-                    
-                    {/* Madrid */}
-                    {id === 'madrid' && (
-                      <>
-                        <ellipse
-                          cx="420"
-                          cy="450"
-                          rx="40"
-                          ry="30"
-                          fill={baseColor}
-                          stroke="#1f2937"
-                          strokeWidth="3"
-                          filter="url(#shadow)"
-                          className="cursor-pointer transition-all duration-300 hover:brightness-110"
-                          onClick={() => setSelectedCommunity(community)}
-                        />
-                        <text x="420" y="455" textAnchor="middle" className="text-sm font-bold fill-white pointer-events-none" style={{ textShadow: '2px 2px 4px rgba(0,0,0,0.8)' }}>
-                          Madrid
-                        </text>
-                      </>
-                    )}
-                    
-                    {/* Castilla-La Mancha */}
-                    {id === 'castilla-mancha' && (
-                      <>
-                        <path
-                          d="M340 510 Q420 505 500 525 L580 545 Q660 565 655 625 L650 685 Q645 745 565 750 L485 755 Q405 760 340 740 L280 720 Q220 700 225 640 L230 580 Q235 520 340 510 Z"
-                          fill={baseColor}
-                          stroke="#1f2937"
-                          strokeWidth="3"
-                          filter="url(#shadow)"
-                          className="cursor-pointer transition-all duration-300 hover:brightness-110"
-                          onClick={() => setSelectedCommunity(community)}
-                        />
-                        <text x="440" y="630" textAnchor="middle" className="text-sm font-bold fill-white pointer-events-none" style={{ textShadow: '2px 2px 4px rgba(0,0,0,0.8)' }}>
-                          Castilla-La Mancha
-                        </text>
-                      </>
-                    )}
-                    
-                    {/* Extremadura */}
-                    {id === 'extremadura' && (
-                      <>
-                        <path
-                          d="M140 510 Q220 505 300 525 L380 545 Q460 565 455 625 L450 685 Q445 745 365 750 L285 755 Q205 760 140 740 L80 720 Q20 700 25 640 L30 580 Q35 520 140 510 Z"
-                          fill={baseColor}
-                          stroke="#1f2937"
-                          strokeWidth="3"
-                          filter="url(#shadow)"
-                          className="cursor-pointer transition-all duration-300 hover:brightness-110"
-                          onClick={() => setSelectedCommunity(community)}
-                        />
-                        <text x="240" y="630" textAnchor="middle" className="text-sm font-bold fill-white pointer-events-none" style={{ textShadow: '2px 2px 4px rgba(0,0,0,0.8)' }}>
-                          Extremadura
-                        </text>
-                      </>
-                    )}
-                    
-                    {/* Comunidad Valenciana */}
-                    {id === 'valencia' && (
-                      <>
-                        <path
-                          d="M680 420 Q720 415 760 435 L800 455 Q840 475 835 535 L830 595 Q825 655 785 660 L745 665 Q705 670 680 650 L660 630 Q640 610 645 550 L650 490 Q655 430 680 420 Z"
-                          fill={baseColor}
-                          stroke="#1f2937"
-                          strokeWidth="3"
-                          filter="url(#shadow)"
-                          className="cursor-pointer transition-all duration-300 hover:brightness-110"
-                          onClick={() => setSelectedCommunity(community)}
-                        />
-                        <text x="740" y="540" textAnchor="middle" className="text-sm font-bold fill-white pointer-events-none" style={{ textShadow: '2px 2px 4px rgba(0,0,0,0.8)' }}>
-                          C. Valenciana
-                        </text>
-                      </>
-                    )}
-                    
-                    {/* Murcia */}
-                    {id === 'murcia' && (
-                      <>
-                        <path
-                          d="M620 680 Q680 675 740 695 L800 715 Q860 735 855 795 L850 855 Q845 915 785 920 L725 925 Q665 930 620 910 L580 890 Q540 870 545 810 L550 750 Q555 690 620 680 Z"
-                          fill={baseColor}
-                          stroke="#1f2937"
-                          strokeWidth="3"
-                          filter="url(#shadow)"
-                          className="cursor-pointer transition-all duration-300 hover:brightness-110"
-                          onClick={() => setSelectedCommunity(community)}
-                        />
-                        <text x="700" y="810" textAnchor="middle" className="text-sm font-bold fill-white pointer-events-none" style={{ textShadow: '2px 2px 4px rgba(0,0,0,0.8)' }}>
-                          Murcia
-                        </text>
-                      </>
-                    )}
-                    
-                    {/* Andalucía */}
-                    {id === 'andalucia' && (
-                      <>
-                        <path
-                          d="M100 760 Q220 755 340 775 L460 795 Q580 815 575 875 L570 935 Q565 995 445 1000 L325 1005 Q205 1010 100 990 L40 970 Q-20 950 -15 890 L-10 830 Q-5 770 100 760 Z"
-                          fill={baseColor}
-                          stroke="#1f2937"
-                          strokeWidth="3"
-                          filter="url(#shadow)"
-                          className="cursor-pointer transition-all duration-300 hover:brightness-110"
-                          onClick={() => setSelectedCommunity(community)}
-                        />
-                        <text x="280" y="880" textAnchor="middle" className="text-lg font-bold fill-white pointer-events-none" style={{ textShadow: '2px 2px 4px rgba(0,0,0,0.8)' }}>
-                          Andalucía
-                        </text>
-                      </>
-                    )}
-                    
-                    {/* Baleares */}
-                    {id === 'baleares' && (
-                      <>
-                        <g>
-                          <ellipse cx="900" cy="450" rx="20" ry="15" fill={baseColor} stroke="#1f2937" strokeWidth="2" filter="url(#shadow)" className="cursor-pointer transition-all duration-300 hover:brightness-110" onClick={() => setSelectedCommunity(community)} />
-                          <ellipse cx="930" cy="470" rx="15" ry="12" fill={baseColor} stroke="#1f2937" strokeWidth="2" filter="url(#shadow)" className="cursor-pointer transition-all duration-300 hover:brightness-110" onClick={() => setSelectedCommunity(community)} />
-                          <ellipse cx="960" cy="460" rx="12" ry="10" fill={baseColor} stroke="#1f2937" strokeWidth="2" filter="url(#shadow)" className="cursor-pointer transition-all duration-300 hover:brightness-110" onClick={() => setSelectedCommunity(community)} />
-                          <text x="930" y="510" textAnchor="middle" className="text-sm font-bold fill-gray-700 pointer-events-none">
-                            Baleares
-                          </text>
-                        </g>
-                      </>
-                    )}
-                    
-                    {/* Canarias */}
-                    {id === 'canarias' && (
-                      <>
-                        <rect x="80" y="650" width="300" height="120" fill="none" stroke="#1f2937" strokeWidth="3" rx="8" />
-                        <text x="90" y="675" className="text-sm font-bold fill-gray-700">Islas Canarias</text>
-                        <g>
-                          <ellipse cx="120" cy="720" rx="12" ry="10" fill={baseColor} stroke="#1f2937" strokeWidth="2" filter="url(#shadow)" className="cursor-pointer transition-all duration-300 hover:brightness-110" onClick={() => setSelectedCommunity(community)} />
-                          <ellipse cx="150" cy="710" rx="15" ry="12" fill={baseColor} stroke="#1f2937" strokeWidth="2" filter="url(#shadow)" className="cursor-pointer transition-all duration-300 hover:brightness-110" onClick={() => setSelectedCommunity(community)} />
-                          <ellipse cx="180" cy="730" rx="18" ry="15" fill={baseColor} stroke="#1f2937" strokeWidth="2" filter="url(#shadow)" className="cursor-pointer transition-all duration-300 hover:brightness-110" onClick={() => setSelectedCommunity(community)} />
-                          <ellipse cx="210" cy="715" rx="14" ry="11" fill={baseColor} stroke="#1f2937" strokeWidth="2" filter="url(#shadow)" className="cursor-pointer transition-all duration-300 hover:brightness-110" onClick={() => setSelectedCommunity(community)} />
-                          <ellipse cx="240" cy="725" rx="16" ry="13" fill={baseColor} stroke="#1f2937" strokeWidth="2" filter="url(#shadow)" className="cursor-pointer transition-all duration-300 hover:brightness-110" onClick={() => setSelectedCommunity(community)} />
-                          <ellipse cx="270" cy="705" rx="10" ry="8" fill={baseColor} stroke="#1f2937" strokeWidth="2" filter="url(#shadow)" className="cursor-pointer transition-all duration-300 hover:brightness-110" onClick={() => setSelectedCommunity(community)} />
-                          <ellipse cx="300" cy="720" rx="12" ry="10" fill={baseColor} stroke="#1f2937" strokeWidth="2" filter="url(#shadow)" className="cursor-pointer transition-all duration-300 hover:brightness-110" onClick={() => setSelectedCommunity(community)} />
-                        </g>
-                      </>
-                    )}
-                  </g>
-                );
-              })}
-              
-              {/* Ceuta y Melilla */}
-              <circle cx="300" cy="1000" r="6" fill="#6b7280" stroke="#1f2937" strokeWidth="2" />
-              <text x="315" y="1005" className="text-xs fill-gray-700">Ceuta</text>
-              <circle cx="380" cy="1000" r="6" fill="#6b7280" stroke="#1f2937" strokeWidth="2" />
-              <text x="395" y="1005" className="text-xs fill-gray-700">Melilla</text>
-            </svg>
+              <X className="w-5 h-5" />
+            </Button>
           </div>
           
-          {/* Leyenda mejorada */}
-          <div className="flex items-center gap-6 mt-4 p-3 bg-white rounded-lg border shadow-sm">
-            <div className="flex items-center gap-2">
-              <div className="w-4 h-4 bg-blue-600 border border-gray-700 rounded"></div>
-              <span className="text-sm font-medium">Seleccionada</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-4 h-4 bg-green-600 border border-gray-700 rounded"></div>
-              <span className="text-sm font-medium">Con festivos</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-4 h-4 bg-gray-300 border border-gray-700 rounded"></div>
-              <span className="text-sm font-medium">Sin festivos</span>
-            </div>
-            <div className="text-xs text-gray-500 ml-auto">
-              * Haz click en una comunidad para ver sus festivos
-            </div>
-          </div>
-        </div>
-
-        {/* Panel de información mejorado y más grande */}
-        <div className="w-96">
-          {selectedCommunity ? (
-            <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-lg h-[500px] flex flex-col">
-              <h3 className="font-semibold text-lg mb-3 text-blue-600 border-b pb-2">
-                {selectedCommunity}
-              </h3>
-              <p className="text-sm text-gray-600 mb-3">
-                Festivos en {selectedMonth === 'all' ? selectedYear : `${MONTHS_CHRONOLOGICAL.find(m => m.value === selectedMonth)?.label} ${selectedYear}`}:
-              </p>
-              
-              {(() => {
-                const communityHolidays = getHolidaysForCommunity(selectedCommunity);
+          <div className="p-6 h-full overflow-y-auto pb-24">
+            {/* Mismo contenido que el sidebar de escritorio */}
+            {selectedRegion ? (
+              <div className="space-y-6">
+                {/* Contenido de festivos igual que arriba */}
+                {isLoading && (
+                  <div className="text-center py-8">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+                    <p className="text-sm text-gray-500 mt-2">Cargando festivos...</p>
+                  </div>
+                )}
                 
-                if (communityHolidays.length === 0) {
-                  return (
-                    <p className="text-gray-500 italic">
-                      No hay festivos registrados para esta comunidad en {selectedMonth === 'all' ? selectedYear : `${MONTHS_CHRONOLOGICAL.find(m => m.value === selectedMonth)?.label} ${selectedYear}`}
-                    </p>
-                  );
-                }
-                
-                return (
-                  <div className="flex-1 overflow-y-auto space-y-1">
-                    {communityHolidays.map((holiday, index) => (
-                      <div 
-                        key={holiday.id} 
-                        className={`flex items-center justify-between p-2 rounded border-l-4 text-sm ${
-                          holiday.comunidad_autonoma === 'NACIONAL' 
-                            ? 'bg-red-50 border-red-500' 
-                            : 'bg-blue-50 border-blue-500'
-                        }`}
-                      >
-                        <div className="flex-1 min-w-0">
-                          <div className={`font-medium truncate ${
-                            holiday.comunidad_autonoma === 'NACIONAL' ? 'text-red-800' : 'text-blue-800'
-                          }`}>
-                            {holiday.festivo}
-                            {holiday.comunidad_autonoma === 'NACIONAL' && (
-                              <span className="ml-1 text-xs bg-red-100 text-red-700 px-1 rounded">
-                                NAC
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                        <div className={`text-xs font-mono ml-2 ${
-                          holiday.comunidad_autonoma === 'NACIONAL' ? 'text-red-600' : 'text-blue-600'
-                        }`}>
-                          {format(new Date(holiday.date), 'dd/MM')}
+                {holidays && holidays.length > 0 && (
+                  <>
+                    {filteredNationalHolidays.length > 0 && (
+                      <div>
+                        <h3 className="text-lg font-semibold text-red-600 mb-3 pb-2 border-b-2 border-red-200">
+                          Festivos Nacionales
+                        </h3>
+                        <div className="space-y-2">
+                          {filteredNationalHolidays.map((holiday, index) => (
+                            <div key={index} className="p-3 bg-red-50 border-l-4 border-red-500 rounded-lg text-sm hover:bg-red-100 transition-all">
+                              <div className="font-semibold text-gray-900">{formatDate(holiday.date)}</div>
+                              <div className="text-gray-700 mt-1">{holiday.festivo}</div>
+                            </div>
+                          ))}
                         </div>
                       </div>
-                    ))}
-                  </div>
-                );
-              })()}
-            </div>
-          ) : (
-            <div className="bg-gradient-to-br from-gray-50 to-gray-100 border border-gray-200 rounded-lg p-6 h-[500px] flex items-center justify-center">
-              <div className="text-center">
-                <div className="text-6xl mb-4">🗺️</div>
-                <p className="text-gray-600 font-medium mb-2">
+                    )}
+                    
+                    {filteredRegionalHolidays.length > 0 && (
+                      <div>
+                        <h3 className="text-lg font-semibold text-blue-600 mb-3 pb-2 border-b-2 border-blue-200">
+                          Festivos de {selectedRegion}
+                        </h3>
+                        <div className="space-y-2">
+                          {filteredRegionalHolidays.map((holiday, index) => (
+                            <div key={index} className="p-3 bg-blue-50 border-l-4 border-blue-500 rounded-lg text-sm hover:bg-blue-100 transition-all">
+                              <div className="font-semibold text-gray-900">{formatDate(holiday.date)}</div>
+                              <div className="text-gray-700 mt-1">{holiday.festivo}</div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+            ) : (
+              <div className="h-full flex flex-col items-center justify-center text-center">
+                <div className="text-gray-400 mb-4">
+                  <MapPin className="w-16 h-16 mx-auto" />
+                </div>
+                <h4 className="text-lg font-medium text-gray-700 mb-2">
                   Selecciona una comunidad autónoma
-                </p>
+                </h4>
                 <p className="text-sm text-gray-500">
-                  Selecciona con el ratón cualquier comunidad del mapa para ver sus festivos en {selectedMonth === 'all' ? selectedYear : `${MONTHS_CHRONOLOGICAL.find(m => m.value === selectedMonth)?.label} ${selectedYear}`}
+                  Haz clic en cualquier región del mapa para ver sus festivos
                 </p>
               </div>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       </div>
     </div>
   );
-};
-
-export default SpainHolidaysMap;
+}

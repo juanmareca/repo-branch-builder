@@ -1231,7 +1231,7 @@ const HolidaysManagement = () => {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <SpainHolidaysMap holidays={holidays} />
+              <SpainHolidaysMap />
             </CardContent>
           </Card>
 
