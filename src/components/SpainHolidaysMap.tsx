@@ -165,10 +165,10 @@ export default function SpainHolidaysMap() {
 
   // Filtrar festivos por región y mes
   const filteredHolidays = useMemo(() => {
-    if (!holidays || !selectedRegion) return { national: [], regional: [] };
+    if (!holidays || !selectedRegion) return { national: [], regional: [], groupedRegional: new Map() };
 
     const regionData = REGIONS_DATA[selectedRegion as keyof typeof REGIONS_DATA];
-    if (!regionData) return { national: [], regional: [] };
+    if (!regionData) return { national: [], regional: [], groupedRegional: new Map() };
 
     const filtered = holidays.filter(holiday => {
       const holidayDate = new Date(holiday.date);
@@ -189,7 +189,33 @@ export default function SpainHolidaysMap() {
       );
     }
 
-    return { national, regional };
+    // Agrupar festivos regionales por fecha cuando es España
+    const groupedRegional = new Map();
+    if (selectedRegion === 'España') {
+      regional.forEach(holiday => {
+        const dateKey = holiday.date;
+        if (!groupedRegional.has(dateKey)) {
+          groupedRegional.set(dateKey, {
+            ...holiday,
+            regions: []
+          });
+        }
+        
+        // Obtener nombres de regiones para este festivo
+        if (holiday.counties) {
+          holiday.counties.forEach(county => {
+            const regionName = Object.keys(REGIONS_DATA).find(
+              key => REGIONS_DATA[key as keyof typeof REGIONS_DATA].apiCode === county
+            );
+            if (regionName && !groupedRegional.get(dateKey).regions.includes(regionName)) {
+              groupedRegional.get(dateKey).regions.push(regionName);
+            }
+          });
+        }
+      });
+    }
+
+    return { national, regional, groupedRegional };
   }, [holidays, selectedRegion, selectedMonth]);
 
   const formatDate = (dateString: string) => {
@@ -221,17 +247,47 @@ export default function SpainHolidaysMap() {
       return;
     }
 
-    const allHolidays = [
-      ...filteredHolidays.national.map(h => ({ ...h, tipo: 'Nacional' })),
-      ...filteredHolidays.regional.map(h => ({ ...h, tipo: 'Regional' }))
-    ];
+    let csvData: any[] = [];
 
-    const csvData = allHolidays.map(holiday => ({
-      'Fecha': formatDate(holiday.date),
-      'Festivo': holiday.localName,
-      'Tipo': holiday.tipo,
+    // Agregar festivos nacionales
+    const nationalData = filteredHolidays.national.map(h => ({
+      'Fecha': formatDate(h.date),
+      'Festivo': h.localName,
+      'Tipo': 'Nacional',
       'Región': selectedRegion
     }));
+
+    // Agregar festivos regionales
+    let regionalData: any[] = [];
+    if (selectedRegion === 'España') {
+      // Para España, crear un registro por cada combinación festivo-región
+      filteredHolidays.regional.forEach(holiday => {
+        if (holiday.counties) {
+          holiday.counties.forEach(county => {
+            const regionName = Object.keys(REGIONS_DATA).find(
+              key => REGIONS_DATA[key as keyof typeof REGIONS_DATA].apiCode === county
+            );
+            if (regionName) {
+              regionalData.push({
+                'Fecha': formatDate(holiday.date),
+                'Festivo': holiday.localName,
+                'Tipo': 'Regional',
+                'Región': regionName
+              });
+            }
+          });
+        }
+      });
+    } else {
+      regionalData = filteredHolidays.regional.map(h => ({
+        'Fecha': formatDate(h.date),
+        'Festivo': h.localName,
+        'Tipo': 'Regional',
+        'Región': selectedRegion
+      }));
+    }
+
+    csvData = [...nationalData, ...regionalData];
 
     const ws = XLSX.utils.json_to_sheet(csvData);
     const wb = XLSX.utils.book_new();
@@ -279,14 +335,32 @@ export default function SpainHolidaysMap() {
     // Festivos regionales
     if (filteredHolidays.regional.length > 0) {
       doc.setFontSize(14);
-      doc.text(`Festivos de ${selectedRegion}:`, 20, yPosition);
+      const regionTitle = selectedRegion === 'España' ? 'Festivos Regionales:' : `Festivos de ${selectedRegion}:`;
+      doc.text(regionTitle, 20, yPosition);
       yPosition += 10;
       
       doc.setFontSize(10);
-      filteredHolidays.regional.forEach(holiday => {
-        doc.text(`• ${formatDate(holiday.date)} - ${holiday.localName}`, 25, yPosition);
-        yPosition += 8;
-      });
+      if (selectedRegion === 'España') {
+        // Para España, mostrar por región
+        filteredHolidays.regional.forEach(holiday => {
+          if (holiday.counties) {
+            holiday.counties.forEach(county => {
+              const regionName = Object.keys(REGIONS_DATA).find(
+                key => REGIONS_DATA[key as keyof typeof REGIONS_DATA].apiCode === county
+              );
+              if (regionName) {
+                doc.text(`• ${formatDate(holiday.date)} - ${holiday.localName} (${regionName})`, 25, yPosition);
+                yPosition += 8;
+              }
+            });
+          }
+        });
+      } else {
+        filteredHolidays.regional.forEach(holiday => {
+          doc.text(`• ${formatDate(holiday.date)} - ${holiday.localName}`, 25, yPosition);
+          yPosition += 8;
+        });
+      }
     }
     
     doc.save(`festivos_${selectedRegion}_${selectedYear}.pdf`);
@@ -485,9 +559,9 @@ export default function SpainHolidaysMap() {
                   </Badge>
                 </div>
               </CardHeader>
-              <CardContent className="flex-1 flex flex-col gap-4 overflow-hidden">
+              <CardContent className="flex-1 flex flex-col overflow-hidden">
                 {/* Festivos Nacionales */}
-                <div className="flex flex-col flex-1 min-h-0">
+                <div className="flex flex-col min-h-0 mb-2">
                   <h4 className="font-semibold text-lg mb-3 flex items-center gap-2 flex-shrink-0">
                     <Badge variant="default" className="bg-blue-500">
                       Nacional
@@ -496,7 +570,7 @@ export default function SpainHolidaysMap() {
                       ({filteredHolidays.national.length})
                     </span>
                   </h4>
-                   <div className="space-y-2 overflow-y-auto flex-1">
+                   <div className="space-y-2 overflow-y-auto max-h-32">
                     {filteredHolidays.national.length > 0 ? (
                        filteredHolidays.national.map((holiday, index) => {
                          const formattedHoliday = formatHolidayOneLine(holiday);
@@ -524,26 +598,57 @@ export default function SpainHolidaysMap() {
                        {selectedRegion === 'España' ? 'Todas las Comunidades' : selectedRegion}
                      </Badge>
                      <span className="text-sm text-muted-foreground">
-                       ({filteredHolidays.regional.length})
+                       ({selectedRegion === 'España' ? filteredHolidays.groupedRegional.size : filteredHolidays.regional.length})
                      </span>
                    </h4>
                   <div className="space-y-2 overflow-y-auto flex-1">
-                    {filteredHolidays.regional.length > 0 ? (
-                       filteredHolidays.regional.map((holiday, index) => {
-                         const formattedHoliday = formatHolidayOneLine(holiday);
-                         return (
-                          <div key={index} className="p-2 bg-orange-50 border-orange-200 border rounded-lg">
-                            <div className="text-orange-900 text-sm">
-                              <span className="font-medium">{formattedHoliday.name}</span>
-                              <span className="font-normal text-xs"> - {formattedHoliday.date}</span>
-                            </div>
-                          </div>
-                        );
-                       })
+                    {selectedRegion === 'España' ? (
+                      // Mostrar festivos agrupados por fecha para España
+                      filteredHolidays.groupedRegional.size > 0 ? (
+                        Array.from(filteredHolidays.groupedRegional.values())
+                          .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+                          .map((holiday, index) => {
+                            const formattedHoliday = formatHolidayOneLine(holiday);
+                            return (
+                              <div key={index} className="p-3 bg-orange-50 border-orange-200 border rounded-lg">
+                                <div className="text-orange-900">
+                                  <div className="font-medium text-sm mb-1">{formattedHoliday.name}</div>
+                                  <div className="font-normal text-xs mb-2">{formattedHoliday.date}</div>
+                                  <div className="flex flex-wrap gap-1">
+                                    {holiday.regions.map((region: string, regionIndex: number) => (
+                                      <Badge key={regionIndex} variant="secondary" className="text-xs">
+                                        {region}
+                                      </Badge>
+                                    ))}
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          })
+                      ) : (
+                        <p className="text-sm text-muted-foreground italic">
+                          No hay festivos regionales para este período
+                        </p>
+                      )
                     ) : (
-                      <p className="text-sm text-muted-foreground italic">
-                        No hay festivos regionales para este período
-                      </p>
+                      // Mostrar festivos normales para regiones específicas
+                      filteredHolidays.regional.length > 0 ? (
+                         filteredHolidays.regional.map((holiday, index) => {
+                           const formattedHoliday = formatHolidayOneLine(holiday);
+                           return (
+                            <div key={index} className="p-2 bg-orange-50 border-orange-200 border rounded-lg">
+                              <div className="text-orange-900 text-sm">
+                                <span className="font-medium">{formattedHoliday.name}</span>
+                                <span className="font-normal text-xs"> - {formattedHoliday.date}</span>
+                              </div>
+                            </div>
+                          );
+                         })
+                      ) : (
+                        <p className="text-sm text-muted-foreground italic">
+                          No hay festivos regionales para este período
+                        </p>
+                      )
                     )}
                   </div>
                 </div>
