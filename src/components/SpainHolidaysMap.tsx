@@ -401,7 +401,7 @@ export default function SpainHolidaysMap() {
         </CardContent>
       </Card>
 
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 h-[600px]">
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 min-h-[500px]">
         {/* Mapa de España */}
         <div className="xl:col-span-1 h-full">
           <Card className="h-full flex flex-col">
