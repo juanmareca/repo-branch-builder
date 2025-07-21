@@ -12,6 +12,7 @@ import AdminDashboard from "./pages/AdminDashboard";
 import SquadLeadDashboard from "./pages/SquadLeadDashboard";
 import SquadAssignments from "./pages/SquadAssignments";
 import HolidaysManagement from "./pages/HolidaysManagement";
+import SquadLeadHolidaysManagement from "./pages/SquadLeadHolidaysManagement";
 import BackupsManagement from "./pages/BackupsManagement";
 import AuditLogs from "./pages/AuditLogs";
 import CapacitiesManagement from "./pages/CapacitiesManagement";
@@ -108,6 +109,7 @@ const App = () => {
             <Route path="/squad-team" element={userRole === 'squad_lead' ? <Index userRole={userRole} userData={userData} /> : <Navigate to="/" replace />} />
             <Route path="/squad-projects" element={userRole === 'squad_lead' ? <ProjectsManagement /> : <Navigate to="/" replace />} />
             <Route path="/squad-capacities" element={userRole === 'squad_lead' ? <CapacitiesManagement /> : <Navigate to="/" replace />} />
+            <Route path="/squad-holidays" element={userRole === 'squad_lead' ? <SquadLeadHolidaysManagement /> : <Navigate to="/" replace />} />
             <Route path="/squad-availability" element={userRole === 'squad_lead' ? <Index /> : <Navigate to="/" replace />} />
             <Route path="/squad-reports" element={userRole === 'squad_lead' ? <Index /> : <Navigate to="/" replace />} />
             

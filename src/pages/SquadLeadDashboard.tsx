@@ -9,7 +9,8 @@ import {
   Award, 
   TrendingUp, 
   FileText, 
-  LogOut 
+  LogOut,
+  CalendarDays
 } from 'lucide-react';
 
 export default function SquadLeadDashboard() {
@@ -96,6 +97,21 @@ export default function SquadLeadDashboard() {
             <CardContent className="text-center">
               <p className="text-muted-foreground text-sm">
                 Revisa las habilidades de tu equipo
+              </p>
+            </CardContent>
+          </Card>
+
+          {/* Gestión de Festivos */}
+          <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => handleNavigation('/squad-holidays')}>
+            <CardHeader className="text-center pb-4">
+              <div className="mx-auto bg-orange-600/10 w-16 h-16 rounded-full flex items-center justify-center mb-3">
+                <CalendarDays className="h-8 w-8 text-orange-600" />
+              </div>
+              <CardTitle className="text-lg">Gestión de Festivos</CardTitle>
+            </CardHeader>
+            <CardContent className="text-center">
+              <p className="text-muted-foreground text-sm">
+                Consulta los días festivos del calendario
               </p>
             </CardContent>
           </Card>
