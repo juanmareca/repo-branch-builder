@@ -13,15 +13,15 @@ const PersonTable: React.FC<PersonTableProps> = ({ persons, onEditPerson }) => {
   const [sortField, setSortField] = useState<keyof Person | null>(null);
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
   const [columnWidths, setColumnWidths] = useState({
-    index: 80,
-    nombre: 250,
-    cex: 120,
-    num_pers: 120,
-    fecha_incorporacion: 180,
-    mail_empresa: 300,
-    grupo: 150,
-    categoria: 180,
-    oficina: 150
+    index: 60,
+    nombre: 280,
+    cex: 100,
+    num_pers: 110,
+    fecha_incorporacion: 160,
+    mail_empresa: 320,
+    grupo: 140,
+    categoria: 200,
+    oficina: 120
   });
   const [isResizing, setIsResizing] = useState(false);
   const resizingColumn = useRef<string | null>(null);
