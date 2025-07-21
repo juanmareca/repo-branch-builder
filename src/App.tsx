@@ -37,7 +37,13 @@ const App = () => {
     console.log('App - Loading complete. UserRole is:', userRole);
     setIsLoading(false);
     setIsAuthenticated(true);
-    // No forzar navegación - el router manejará la navegación automáticamente
+    
+    // Limpiar el historial del navegador y forzar redirección correcta
+    if (userRole === 'admin') {
+      window.history.replaceState(null, '', '/admin');
+    } else if (userRole === 'squad_lead') {
+      window.history.replaceState(null, '', '/squad-dashboard');
+    }
   };
 
   const handleLogout = () => {
