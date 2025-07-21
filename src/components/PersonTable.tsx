@@ -159,11 +159,11 @@ const PersonTable: React.FC<PersonTableProps> = ({ persons, onEditPerson }) => {
       {/* Tabla */}
     <div className="bg-background rounded-xl shadow-sm border border-border overflow-hidden w-full max-h-[70vh]">
       <div className="overflow-auto">
-        <table className="divide-y divide-border" style={{ 
+        <table style={{ 
           tableLayout: 'fixed',
           width: `${Object.values(columnWidths).reduce((sum, width) => sum + width, 0)}px`,
           minWidth: '100%'
-        }}>
+        }} className="divide-y divide-border">
           <colgroup>
             <col style={{ width: `${columnWidths.index}px` }} />
             <col style={{ width: `${columnWidths.nombre}px` }} />
@@ -178,7 +178,16 @@ const PersonTable: React.FC<PersonTableProps> = ({ persons, onEditPerson }) => {
           <thead className="bg-muted sticky top-0 z-10">
             <tr className="bg-muted border-b border-border">
               <th 
-                className={`px-3 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider bg-muted sticky left-0 z-20 border-r border-border relative group ${getFontSizeClass()}`}
+                className="text-left text-xs font-medium text-muted-foreground uppercase tracking-wider bg-muted sticky left-0 z-20 border-r border-border relative group"
+                style={{
+                  width: `${columnWidths.index}px`,
+                  minWidth: `${columnWidths.index}px`,
+                  maxWidth: `${columnWidths.index}px`,
+                  padding: '8px 12px',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap'
+                }}
               >
                 Índice
                 <div 
@@ -187,8 +196,17 @@ const PersonTable: React.FC<PersonTableProps> = ({ persons, onEditPerson }) => {
                 />
               </th>
               <th 
-                className="px-3 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider bg-muted cursor-pointer hover:bg-muted/80 select-none relative group"
+                className="text-left text-xs font-medium text-muted-foreground uppercase tracking-wider bg-muted cursor-pointer hover:bg-muted/80 select-none relative group"
                 onClick={() => handleSort('nombre')}
+                style={{
+                  width: `${columnWidths.nombre}px`,
+                  minWidth: `${columnWidths.nombre}px`,
+                  maxWidth: `${columnWidths.nombre}px`,
+                  padding: '8px 12px',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap'
+                }}
               >
                 <div className="flex items-center justify-between">
                   <span>Nombre</span>
@@ -200,8 +218,17 @@ const PersonTable: React.FC<PersonTableProps> = ({ persons, onEditPerson }) => {
                 />
               </th>
               <th 
-                className="px-3 py-2 text-center text-xs font-medium text-muted-foreground uppercase tracking-wider bg-muted cursor-pointer hover:bg-muted/80 select-none relative group"
+                className="text-center text-xs font-medium text-muted-foreground uppercase tracking-wider bg-muted cursor-pointer hover:bg-muted/80 select-none relative group"
                 onClick={() => handleSort('cex')}
+                style={{
+                  width: `${columnWidths.cex}px`,
+                  minWidth: `${columnWidths.cex}px`,
+                  maxWidth: `${columnWidths.cex}px`,
+                  padding: '8px 12px',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap'
+                }}
               >
                 <div className="flex items-center justify-between">
                   <span>CEX</span>
@@ -213,8 +240,17 @@ const PersonTable: React.FC<PersonTableProps> = ({ persons, onEditPerson }) => {
                 />
               </th>
               <th 
-                className="px-3 py-2 text-center text-xs font-medium text-muted-foreground uppercase tracking-wider bg-muted cursor-pointer hover:bg-muted/80 select-none relative group"
+                className="text-center text-xs font-medium text-muted-foreground uppercase tracking-wider bg-muted cursor-pointer hover:bg-muted/80 select-none relative group"
                 onClick={() => handleSort('num_pers')}
+                style={{
+                  width: `${columnWidths.num_pers}px`,
+                  minWidth: `${columnWidths.num_pers}px`,
+                  maxWidth: `${columnWidths.num_pers}px`,
+                  padding: '8px 12px',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap'
+                }}
               >
                 <div className="flex items-center justify-between">
                   <span>Nº Personal</span>
@@ -226,8 +262,17 @@ const PersonTable: React.FC<PersonTableProps> = ({ persons, onEditPerson }) => {
                 />
               </th>
               <th 
-                className="px-3 py-2 text-center text-xs font-medium text-muted-foreground uppercase tracking-wider bg-muted cursor-pointer hover:bg-muted/80 select-none relative group"
+                className="text-center text-xs font-medium text-muted-foreground uppercase tracking-wider bg-muted cursor-pointer hover:bg-muted/80 select-none relative group"
                 onClick={() => handleSort('fecha_incorporacion')}
+                style={{
+                  width: `${columnWidths.fecha_incorporacion}px`,
+                  minWidth: `${columnWidths.fecha_incorporacion}px`,
+                  maxWidth: `${columnWidths.fecha_incorporacion}px`,
+                  padding: '8px 12px',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap'
+                }}
               >
                 <div className="flex items-center justify-between">
                   <span>Fecha de Incorporación</span>
@@ -239,8 +284,17 @@ const PersonTable: React.FC<PersonTableProps> = ({ persons, onEditPerson }) => {
                 />
               </th>
               <th 
-                className="px-3 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider bg-muted cursor-pointer hover:bg-muted/80 select-none relative group"
+                className="text-left text-xs font-medium text-muted-foreground uppercase tracking-wider bg-muted cursor-pointer hover:bg-muted/80 select-none relative group"
                 onClick={() => handleSort('mail_empresa')}
+                style={{
+                  width: `${columnWidths.mail_empresa}px`,
+                  minWidth: `${columnWidths.mail_empresa}px`,
+                  maxWidth: `${columnWidths.mail_empresa}px`,
+                  padding: '8px 12px',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap'
+                }}
               >
                 <div className="flex items-center justify-between">
                   <span>Email</span>
@@ -252,8 +306,17 @@ const PersonTable: React.FC<PersonTableProps> = ({ persons, onEditPerson }) => {
                 />
               </th>
               <th 
-                className="px-3 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider bg-muted cursor-pointer hover:bg-muted/80 select-none relative group"
+                className="text-left text-xs font-medium text-muted-foreground uppercase tracking-wider bg-muted cursor-pointer hover:bg-muted/80 select-none relative group"
                 onClick={() => handleSort('grupo')}
+                style={{
+                  width: `${columnWidths.grupo}px`,
+                  minWidth: `${columnWidths.grupo}px`,
+                  maxWidth: `${columnWidths.grupo}px`,
+                  padding: '8px 12px',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap'
+                }}
               >
                 <div className="flex items-center justify-between">
                   <span>Grupo</span>
@@ -265,8 +328,17 @@ const PersonTable: React.FC<PersonTableProps> = ({ persons, onEditPerson }) => {
                 />
               </th>
               <th 
-                className="px-3 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider bg-muted cursor-pointer hover:bg-muted/80 select-none relative group"
+                className="text-left text-xs font-medium text-muted-foreground uppercase tracking-wider bg-muted cursor-pointer hover:bg-muted/80 select-none relative group"
                 onClick={() => handleSort('categoria')}
+                style={{
+                  width: `${columnWidths.categoria}px`,
+                  minWidth: `${columnWidths.categoria}px`,
+                  maxWidth: `${columnWidths.categoria}px`,
+                  padding: '8px 12px',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap'
+                }}
               >
                 <div className="flex items-center justify-between">
                   <span>Categoría</span>
@@ -278,8 +350,17 @@ const PersonTable: React.FC<PersonTableProps> = ({ persons, onEditPerson }) => {
                 />
               </th>
               <th 
-                className="px-3 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider bg-muted cursor-pointer hover:bg-muted/80 select-none relative group"
+                className="text-left text-xs font-medium text-muted-foreground uppercase tracking-wider bg-muted cursor-pointer hover:bg-muted/80 select-none relative group"
                 onClick={() => handleSort('oficina')}
+                style={{
+                  width: `${columnWidths.oficina}px`,
+                  minWidth: `${columnWidths.oficina}px`,
+                  maxWidth: `${columnWidths.oficina}px`,
+                  padding: '8px 12px',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap'
+                }}
               >
                 <div className="flex items-center justify-between">
                   <span>Oficina</span>
@@ -302,11 +383,31 @@ const PersonTable: React.FC<PersonTableProps> = ({ persons, onEditPerson }) => {
                 }`}
               >
                 <td 
-                  className={`px-3 py-2 whitespace-nowrap text-muted-foreground font-mono bg-background sticky left-0 z-10 border-r border-border ${getFontSizeClass()}`}
+                  className="whitespace-nowrap text-muted-foreground font-mono bg-background sticky left-0 z-10 border-r border-border"
+                  style={{
+                    width: `${columnWidths.index}px`,
+                    minWidth: `${columnWidths.index}px`,
+                    maxWidth: `${columnWidths.index}px`,
+                    padding: '8px 12px',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap'
+                  }}
                 >
                   {index + 1}
                 </td>
-                <td className={`px-3 py-2 whitespace-nowrap ${getFontSizeClass()}`}>
+                <td 
+                  className="whitespace-nowrap"
+                  style={{
+                    width: `${columnWidths.nombre}px`,
+                    minWidth: `${columnWidths.nombre}px`,
+                    maxWidth: `${columnWidths.nombre}px`,
+                    padding: '8px 12px',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap'
+                  }}
+                >
                   <div className="flex items-center">
                     <div className="flex-shrink-0 h-8 w-8 bg-primary/10 rounded-full flex items-center justify-center">
                       <User className="w-4 h-4 text-primary" />
@@ -316,13 +417,46 @@ const PersonTable: React.FC<PersonTableProps> = ({ persons, onEditPerson }) => {
                     </div>
                   </div>
                 </td>
-                <td className={`px-3 py-2 whitespace-nowrap text-foreground text-center ${getFontSizeClass()}`}>
+                <td 
+                  className="whitespace-nowrap text-foreground text-center"
+                  style={{
+                    width: `${columnWidths.cex}px`,
+                    minWidth: `${columnWidths.cex}px`,
+                    maxWidth: `${columnWidths.cex}px`,
+                    padding: '8px 12px',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap'
+                  }}
+                >
                   {person.cex}
                 </td>
-                <td className={`px-3 py-2 whitespace-nowrap text-foreground text-center ${getFontSizeClass()}`}>
+                <td 
+                  className="whitespace-nowrap text-foreground text-center"
+                  style={{
+                    width: `${columnWidths.num_pers}px`,
+                    minWidth: `${columnWidths.num_pers}px`,
+                    maxWidth: `${columnWidths.num_pers}px`,
+                    padding: '8px 12px',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap'
+                  }}
+                >
                   {person.num_pers}
                 </td>
-                <td className={`px-3 py-2 whitespace-nowrap text-foreground text-center ${getFontSizeClass()}`}>
+                <td 
+                  className="whitespace-nowrap text-foreground text-center"
+                  style={{
+                    width: `${columnWidths.fecha_incorporacion}px`,
+                    minWidth: `${columnWidths.fecha_incorporacion}px`,
+                    maxWidth: `${columnWidths.fecha_incorporacion}px`,
+                    padding: '8px 12px',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap'
+                  }}
+                >
                   <div className="flex items-center">
                     <Calendar className="w-4 h-4 text-muted-foreground mr-2" />
                     {(() => {
@@ -350,7 +484,18 @@ const PersonTable: React.FC<PersonTableProps> = ({ persons, onEditPerson }) => {
                     })()}
                   </div>
                 </td>
-                <td className={`px-3 py-2 whitespace-nowrap text-foreground ${getFontSizeClass()}`}>
+                <td 
+                  className="whitespace-nowrap text-foreground"
+                  style={{
+                    width: `${columnWidths.mail_empresa}px`,
+                    minWidth: `${columnWidths.mail_empresa}px`,
+                    maxWidth: `${columnWidths.mail_empresa}px`,
+                    padding: '8px 12px',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap'
+                  }}
+                >
                   <div className="flex items-center">
                     <Mail className="w-4 h-4 text-muted-foreground mr-2" />
                     <a href={`mailto:${person.mail_empresa}`} className="text-primary hover:text-primary/80">
@@ -358,15 +503,48 @@ const PersonTable: React.FC<PersonTableProps> = ({ persons, onEditPerson }) => {
                     </a>
                   </div>
                 </td>
-                <td className={`px-3 py-2 whitespace-nowrap text-foreground ${getFontSizeClass()}`}>
+                <td 
+                  className="whitespace-nowrap text-foreground"
+                  style={{
+                    width: `${columnWidths.grupo}px`,
+                    minWidth: `${columnWidths.grupo}px`,
+                    maxWidth: `${columnWidths.grupo}px`,
+                    padding: '8px 12px',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap'
+                  }}
+                >
                   {person.grupo}
                 </td>
-                <td className={`px-3 py-2 whitespace-nowrap text-foreground ${getFontSizeClass()}`}>
+                <td 
+                  className="whitespace-nowrap text-foreground"
+                  style={{
+                    width: `${columnWidths.categoria}px`,
+                    minWidth: `${columnWidths.categoria}px`,
+                    maxWidth: `${columnWidths.categoria}px`,
+                    padding: '8px 12px',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap'
+                  }}
+                >
                   <span className="px-2 py-1 text-xs font-medium bg-secondary text-secondary-foreground rounded-full">
                     {person.categoria}
                   </span>
                 </td>
-                <td className={`px-3 py-2 whitespace-nowrap text-foreground ${getFontSizeClass()}`}>
+                <td 
+                  className="whitespace-nowrap text-foreground"
+                  style={{
+                    width: `${columnWidths.oficina}px`,
+                    minWidth: `${columnWidths.oficina}px`,
+                    maxWidth: `${columnWidths.oficina}px`,
+                    padding: '8px 12px',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap'
+                  }}
+                >
                   <div className="flex items-center">
                     <MapPin className="w-4 h-4 text-muted-foreground mr-2" />
                     {person.oficina}
