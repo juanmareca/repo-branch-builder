@@ -36,7 +36,7 @@ const MONTHS_CHRONOLOGICAL = [
 const SpainHolidaysMap: React.FC<SpainHolidaysMapProps> = ({ holidays }) => {
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear().toString());
   const [selectedMonth, setSelectedMonth] = useState('all');
-  const [hoveredCommunity, setHoveredCommunity] = useState<string | null>(null);
+  const [selectedCommunity, setSelectedCommunity] = useState<string | null>(null);
 
   // Obtener años únicos de los festivos
   const availableYears = useMemo(() => {
@@ -126,32 +126,33 @@ const SpainHolidaysMap: React.FC<SpainHolidaysMapProps> = ({ holidays }) => {
       </div>
 
       <div className="flex gap-6">
-        {/* Mapa SVG de España realista */}
+        {/* Mapa SVG de España realista y grande */}
         <div className="flex-1">
           <div className="relative">
             <svg 
-              viewBox="0 0 1000 700" 
-              className="w-full h-96 border border-gray-200 rounded-lg bg-gradient-to-br from-blue-100 to-blue-200 shadow-lg"
+              viewBox="0 0 1200 800" 
+              className="w-full h-[500px] border border-gray-200 rounded-lg bg-gradient-to-br from-blue-100 to-blue-200 shadow-lg"
               style={{ filter: 'drop-shadow(0 4px 6px rgba(0, 0, 0, 0.1))' }}
             >
-              {/* Fondo del mar */}
+              {/* Definiciones */}
               <defs>
                 <linearGradient id="seaGradient" x1="0%" y1="0%" x2="100%" y2="100%">
                   <stop offset="0%" stopColor="#bfdbfe" />
                   <stop offset="100%" stopColor="#93c5fd" />
                 </linearGradient>
                 <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
-                  <feDropShadow dx="2" dy="2" stdDeviation="3" floodOpacity="0.3"/>
+                  <feDropShadow dx="3" dy="3" stdDeviation="4" floodOpacity="0.4"/>
                 </filter>
               </defs>
               
-              <rect width="1000" height="700" fill="url(#seaGradient)" />
+              <rect width="1200" height="800" fill="url(#seaGradient)" />
               
               {/* Comunidades Autónomas con formas reales */}
               {Object.entries(communityMapping).map(([community, id]) => {
                 const communityHolidays = getHolidaysForCommunity(community);
                 const hasHolidays = communityHolidays.length > 0;
-                const baseColor = hasHolidays ? "#059669" : "#d1d5db";
+                const isSelected = selectedCommunity === community;
+                const baseColor = isSelected ? "#1d4ed8" : (hasHolidays ? "#059669" : "#d1d5db");
                 
                 return (
                   <g key={community}>
@@ -159,16 +160,15 @@ const SpainHolidaysMap: React.FC<SpainHolidaysMapProps> = ({ holidays }) => {
                     {id === 'galicia' && (
                       <>
                         <path
-                          d="M60 150 Q50 140 45 155 L40 165 Q35 175 45 185 L55 195 Q60 205 70 200 L85 195 Q95 190 105 195 L120 200 Q130 205 140 195 L150 185 Q155 175 150 165 L145 155 Q140 145 130 150 L120 155 Q110 160 100 155 L90 150 Q80 145 70 150 L60 150 Z"
-                          fill={hasHolidays ? "#e11d48" : "#d1d5db"}
-                          stroke="#374151"
-                          strokeWidth="2"
+                          d="M80 180 Q70 170 65 185 L60 200 Q50 220 65 240 L80 260 Q100 275 125 270 L150 265 Q175 255 185 235 L195 215 Q200 195 185 180 L170 165 Q150 155 125 160 L100 165 Q85 170 80 180 Z"
+                          fill={baseColor}
+                          stroke="#1f2937"
+                          strokeWidth="3"
                           filter="url(#shadow)"
                           className="cursor-pointer transition-all duration-300 hover:brightness-110"
-                          onMouseEnter={() => setHoveredCommunity(community)}
-                          onMouseLeave={() => setHoveredCommunity(null)}
+                          onClick={() => setSelectedCommunity(community)}
                         />
-                        <text x="95" y="175" textAnchor="middle" className="text-xs font-bold fill-white pointer-events-none" style={{ textShadow: '1px 1px 2px rgba(0,0,0,0.7)' }}>
+                        <text x="140" y="215" textAnchor="middle" className="text-sm font-bold fill-white pointer-events-none" style={{ textShadow: '2px 2px 4px rgba(0,0,0,0.8)' }}>
                           Galicia
                         </text>
                       </>
@@ -178,16 +178,15 @@ const SpainHolidaysMap: React.FC<SpainHolidaysMapProps> = ({ holidays }) => {
                     {id === 'asturias' && (
                       <>
                         <path
-                          d="M170 140 L240 140 Q250 145 245 155 L240 165 Q235 175 225 170 L210 165 Q200 160 190 165 L180 170 Q170 175 165 165 L160 155 Q165 145 170 140 Z"
-                          fill={hasHolidays ? "#7c3aed" : "#d1d5db"}
-                          stroke="#374151"
-                          strokeWidth="2"
+                          d="M220 165 L320 165 Q340 170 335 190 L330 210 Q320 230 300 225 L280 220 Q260 215 240 220 L220 225 Q200 230 195 210 L190 190 Q195 170 220 165 Z"
+                          fill={baseColor}
+                          stroke="#1f2937"
+                          strokeWidth="3"
                           filter="url(#shadow)"
                           className="cursor-pointer transition-all duration-300 hover:brightness-110"
-                          onMouseEnter={() => setHoveredCommunity(community)}
-                          onMouseLeave={() => setHoveredCommunity(null)}
+                          onClick={() => setSelectedCommunity(community)}
                         />
-                        <text x="205" y="160" textAnchor="middle" className="text-xs font-bold fill-white pointer-events-none" style={{ textShadow: '1px 1px 2px rgba(0,0,0,0.7)' }}>
+                        <text x="265" y="200" textAnchor="middle" className="text-sm font-bold fill-white pointer-events-none" style={{ textShadow: '2px 2px 4px rgba(0,0,0,0.8)' }}>
                           Asturias
                         </text>
                       </>
@@ -197,16 +196,15 @@ const SpainHolidaysMap: React.FC<SpainHolidaysMapProps> = ({ holidays }) => {
                     {id === 'cantabria' && (
                       <>
                         <path
-                          d="M270 140 L340 140 Q350 145 345 155 L340 165 Q335 175 325 170 L310 165 Q300 160 290 165 L280 170 Q270 175 265 165 L260 155 Q265 145 270 140 Z"
-                          fill={hasHolidays ? "#0891b2" : "#d1d5db"}
-                          stroke="#374151"
-                          strokeWidth="2"
+                          d="M360 165 L430 165 Q450 170 445 190 L440 210 Q430 230 410 225 L390 220 Q370 215 365 195 L360 175 Q365 170 360 165 Z"
+                          fill={baseColor}
+                          stroke="#1f2937"
+                          strokeWidth="3"
                           filter="url(#shadow)"
                           className="cursor-pointer transition-all duration-300 hover:brightness-110"
-                          onMouseEnter={() => setHoveredCommunity(community)}
-                          onMouseLeave={() => setHoveredCommunity(null)}
+                          onClick={() => setSelectedCommunity(community)}
                         />
-                        <text x="305" y="160" textAnchor="middle" className="text-xs font-bold fill-white pointer-events-none" style={{ textShadow: '1px 1px 2px rgba(0,0,0,0.7)' }}>
+                        <text x="400" y="195" textAnchor="middle" className="text-sm font-bold fill-white pointer-events-none" style={{ textShadow: '2px 2px 4px rgba(0,0,0,0.8)' }}>
                           Cantabria
                         </text>
                       </>
@@ -216,16 +214,15 @@ const SpainHolidaysMap: React.FC<SpainHolidaysMapProps> = ({ holidays }) => {
                     {id === 'pais-vasco' && (
                       <>
                         <path
-                          d="M370 140 L420 140 Q430 145 425 155 L420 165 Q415 175 405 170 L395 165 Q385 160 375 165 L370 170 Q365 175 360 165 L355 155 Q360 145 370 140 Z"
-                          fill={hasHolidays ? "#be123c" : "#d1d5db"}
-                          stroke="#374151"
-                          strokeWidth="2"
+                          d="M470 165 L540 165 Q560 170 555 190 L550 210 Q540 230 520 225 L500 220 Q480 215 475 195 L470 175 Q475 170 470 165 Z"
+                          fill={baseColor}
+                          stroke="#1f2937"
+                          strokeWidth="3"
                           filter="url(#shadow)"
                           className="cursor-pointer transition-all duration-300 hover:brightness-110"
-                          onMouseEnter={() => setHoveredCommunity(community)}
-                          onMouseLeave={() => setHoveredCommunity(null)}
+                          onClick={() => setSelectedCommunity(community)}
                         />
-                        <text x="390" y="160" textAnchor="middle" className="text-xs font-bold fill-white pointer-events-none" style={{ textShadow: '1px 1px 2px rgba(0,0,0,0.7)' }}>
+                        <text x="510" y="195" textAnchor="middle" className="text-sm font-bold fill-white pointer-events-none" style={{ textShadow: '2px 2px 4px rgba(0,0,0,0.8)' }}>
                           País Vasco
                         </text>
                       </>
@@ -235,16 +232,15 @@ const SpainHolidaysMap: React.FC<SpainHolidaysMapProps> = ({ holidays }) => {
                     {id === 'navarra' && (
                       <>
                         <path
-                          d="M430 150 L480 150 Q490 155 485 165 L480 175 Q475 185 465 180 L455 175 Q445 170 435 175 L430 180 Q425 185 420 175 L415 165 Q420 155 430 150 Z"
-                          fill={hasHolidays ? "#f59e0b" : "#d1d5db"}
-                          stroke="#374151"
-                          strokeWidth="2"
+                          d="M520 240 L580 240 Q600 245 595 265 L590 285 Q580 305 560 300 L540 295 Q525 290 525 270 L520 250 Q525 245 520 240 Z"
+                          fill={baseColor}
+                          stroke="#1f2937"
+                          strokeWidth="3"
                           filter="url(#shadow)"
                           className="cursor-pointer transition-all duration-300 hover:brightness-110"
-                          onMouseEnter={() => setHoveredCommunity(community)}
-                          onMouseLeave={() => setHoveredCommunity(null)}
+                          onClick={() => setSelectedCommunity(community)}
                         />
-                        <text x="450" y="170" textAnchor="middle" className="text-xs font-bold fill-white pointer-events-none" style={{ textShadow: '1px 1px 2px rgba(0,0,0,0.7)' }}>
+                        <text x="555" y="270" textAnchor="middle" className="text-sm font-bold fill-white pointer-events-none" style={{ textShadow: '2px 2px 4px rgba(0,0,0,0.8)' }}>
                           Navarra
                         </text>
                       </>
@@ -254,16 +250,15 @@ const SpainHolidaysMap: React.FC<SpainHolidaysMapProps> = ({ holidays }) => {
                     {id === 'rioja' && (
                       <>
                         <path
-                          d="M380 190 L430 190 Q440 195 435 205 L430 215 Q425 225 415 220 L405 215 Q395 210 385 215 L380 220 Q375 225 370 215 L365 205 Q370 195 380 190 Z"
-                          fill={hasHolidays ? "#dc2626" : "#d1d5db"}
-                          stroke="#374151"
-                          strokeWidth="2"
+                          d="M470 280 L520 280 Q540 285 535 305 L530 325 Q520 345 500 340 L480 335 Q465 330 465 310 L460 290 Q465 285 470 280 Z"
+                          fill={baseColor}
+                          stroke="#1f2937"
+                          strokeWidth="3"
                           filter="url(#shadow)"
                           className="cursor-pointer transition-all duration-300 hover:brightness-110"
-                          onMouseEnter={() => setHoveredCommunity(community)}
-                          onMouseLeave={() => setHoveredCommunity(null)}
+                          onClick={() => setSelectedCommunity(community)}
                         />
-                        <text x="400" y="210" textAnchor="middle" className="text-xs font-bold fill-white pointer-events-none" style={{ textShadow: '1px 1px 2px rgba(0,0,0,0.7)' }}>
+                        <text x="495" y="315" textAnchor="middle" className="text-sm font-bold fill-white pointer-events-none" style={{ textShadow: '2px 2px 4px rgba(0,0,0,0.8)' }}>
                           La Rioja
                         </text>
                       </>
@@ -273,16 +268,15 @@ const SpainHolidaysMap: React.FC<SpainHolidaysMapProps> = ({ holidays }) => {
                     {id === 'cataluna' && (
                       <>
                         <path
-                          d="M500 160 Q520 155 540 165 L560 175 Q580 185 575 205 L570 225 Q565 245 545 250 L525 255 Q505 260 490 250 L480 240 Q470 230 475 210 L480 190 Q485 170 500 160 Z"
-                          fill={hasHolidays ? "#7c3aed" : "#d1d5db"}
-                          stroke="#374151"
-                          strokeWidth="2"
+                          d="M620 220 Q660 215 700 235 L740 255 Q780 275 775 315 L770 355 Q765 395 725 400 L685 405 Q645 410 620 390 L600 370 Q580 350 585 310 L590 270 Q595 230 620 220 Z"
+                          fill={baseColor}
+                          stroke="#1f2937"
+                          strokeWidth="3"
                           filter="url(#shadow)"
                           className="cursor-pointer transition-all duration-300 hover:brightness-110"
-                          onMouseEnter={() => setHoveredCommunity(community)}
-                          onMouseLeave={() => setHoveredCommunity(null)}
+                          onClick={() => setSelectedCommunity(community)}
                         />
-                        <text x="520" y="210" textAnchor="middle" className="text-xs font-bold fill-white pointer-events-none" style={{ textShadow: '1px 1px 2px rgba(0,0,0,0.7)' }}>
+                        <text x="680" y="315" textAnchor="middle" className="text-sm font-bold fill-white pointer-events-none" style={{ textShadow: '2px 2px 4px rgba(0,0,0,0.8)' }}>
                           Cataluña
                         </text>
                       </>
@@ -292,16 +286,15 @@ const SpainHolidaysMap: React.FC<SpainHolidaysMapProps> = ({ holidays }) => {
                     {id === 'aragon' && (
                       <>
                         <path
-                          d="M440 200 Q460 195 480 205 L500 215 Q520 225 515 245 L510 265 Q505 285 485 290 L465 295 Q445 300 430 290 L420 280 Q410 270 415 250 L420 230 Q425 210 440 200 Z"
-                          fill={hasHolidays ? "#16a34a" : "#d1d5db"}
-                          stroke="#374151"
-                          strokeWidth="2"
+                          d="M540 320 Q580 315 620 335 L660 355 Q700 375 695 415 L690 455 Q685 495 645 500 L605 505 Q565 510 540 490 L520 470 Q500 450 505 410 L510 370 Q515 330 540 320 Z"
+                          fill={baseColor}
+                          stroke="#1f2937"
+                          strokeWidth="3"
                           filter="url(#shadow)"
                           className="cursor-pointer transition-all duration-300 hover:brightness-110"
-                          onMouseEnter={() => setHoveredCommunity(community)}
-                          onMouseLeave={() => setHoveredCommunity(null)}
+                          onClick={() => setSelectedCommunity(community)}
                         />
-                        <text x="460" y="250" textAnchor="middle" className="text-xs font-bold fill-white pointer-events-none" style={{ textShadow: '1px 1px 2px rgba(0,0,0,0.7)' }}>
+                        <text x="600" y="415" textAnchor="middle" className="text-sm font-bold fill-white pointer-events-none" style={{ textShadow: '2px 2px 4px rgba(0,0,0,0.8)' }}>
                           Aragón
                         </text>
                       </>
@@ -311,16 +304,15 @@ const SpainHolidaysMap: React.FC<SpainHolidaysMapProps> = ({ holidays }) => {
                     {id === 'castilla-leon' && (
                       <>
                         <path
-                          d="M160 190 Q200 185 240 195 L280 205 Q320 215 315 255 L310 295 Q305 335 265 340 L225 345 Q185 350 150 340 L120 330 Q90 320 95 280 L100 240 Q105 200 160 190 Z"
-                          fill={hasHolidays ? "#0ea5e9" : "#d1d5db"}
-                          stroke="#374151"
-                          strokeWidth="2"
+                          d="M220 260 Q300 255 380 275 L460 295 Q540 315 535 375 L530 435 Q525 495 445 500 L365 505 Q285 510 220 490 L160 470 Q100 450 105 390 L110 330 Q115 270 220 260 Z"
+                          fill={baseColor}
+                          stroke="#1f2937"
+                          strokeWidth="3"
                           filter="url(#shadow)"
                           className="cursor-pointer transition-all duration-300 hover:brightness-110"
-                          onMouseEnter={() => setHoveredCommunity(community)}
-                          onMouseLeave={() => setHoveredCommunity(null)}
+                          onClick={() => setSelectedCommunity(community)}
                         />
-                        <text x="205" y="270" textAnchor="middle" className="text-xs font-bold fill-white pointer-events-none" style={{ textShadow: '1px 1px 2px rgba(0,0,0,0.7)' }}>
+                        <text x="320" y="380" textAnchor="middle" className="text-sm font-bold fill-white pointer-events-none" style={{ textShadow: '2px 2px 4px rgba(0,0,0,0.8)' }}>
                           Castilla y León
                         </text>
                       </>
@@ -329,19 +321,19 @@ const SpainHolidaysMap: React.FC<SpainHolidaysMapProps> = ({ holidays }) => {
                     {/* Madrid */}
                     {id === 'madrid' && (
                       <>
-                        <circle
-                          cx="320"
-                          cy="320"
-                          r="25"
-                          fill={hasHolidays ? "#dc2626" : "#d1d5db"}
-                          stroke="#374151"
-                          strokeWidth="2"
+                        <ellipse
+                          cx="420"
+                          cy="450"
+                          rx="40"
+                          ry="30"
+                          fill={baseColor}
+                          stroke="#1f2937"
+                          strokeWidth="3"
                           filter="url(#shadow)"
                           className="cursor-pointer transition-all duration-300 hover:brightness-110"
-                          onMouseEnter={() => setHoveredCommunity(community)}
-                          onMouseLeave={() => setHoveredCommunity(null)}
+                          onClick={() => setSelectedCommunity(community)}
                         />
-                        <text x="320" y="325" textAnchor="middle" className="text-xs font-bold fill-white pointer-events-none" style={{ textShadow: '1px 1px 2px rgba(0,0,0,0.7)' }}>
+                        <text x="420" y="455" textAnchor="middle" className="text-sm font-bold fill-white pointer-events-none" style={{ textShadow: '2px 2px 4px rgba(0,0,0,0.8)' }}>
                           Madrid
                         </text>
                       </>
@@ -351,16 +343,15 @@ const SpainHolidaysMap: React.FC<SpainHolidaysMapProps> = ({ holidays }) => {
                     {id === 'castilla-mancha' && (
                       <>
                         <path
-                          d="M250 360 Q290 355 330 365 L370 375 Q410 385 405 425 L400 465 Q395 505 355 510 L315 515 Q275 520 240 510 L200 500 Q160 490 165 450 L170 410 Q175 370 250 360 Z"
-                          fill={hasHolidays ? "#a855f7" : "#d1d5db"}
-                          stroke="#374151"
-                          strokeWidth="2"
+                          d="M340 510 Q420 505 500 525 L580 545 Q660 565 655 625 L650 685 Q645 745 565 750 L485 755 Q405 760 340 740 L280 720 Q220 700 225 640 L230 580 Q235 520 340 510 Z"
+                          fill={baseColor}
+                          stroke="#1f2937"
+                          strokeWidth="3"
                           filter="url(#shadow)"
                           className="cursor-pointer transition-all duration-300 hover:brightness-110"
-                          onMouseEnter={() => setHoveredCommunity(community)}
-                          onMouseLeave={() => setHoveredCommunity(null)}
+                          onClick={() => setSelectedCommunity(community)}
                         />
-                        <text x="285" y="440" textAnchor="middle" className="text-xs font-bold fill-white pointer-events-none" style={{ textShadow: '1px 1px 2px rgba(0,0,0,0.7)' }}>
+                        <text x="440" y="630" textAnchor="middle" className="text-sm font-bold fill-white pointer-events-none" style={{ textShadow: '2px 2px 4px rgba(0,0,0,0.8)' }}>
                           Castilla-La Mancha
                         </text>
                       </>
@@ -370,16 +361,15 @@ const SpainHolidaysMap: React.FC<SpainHolidaysMapProps> = ({ holidays }) => {
                     {id === 'extremadura' && (
                       <>
                         <path
-                          d="M120 360 Q160 355 200 365 L240 375 Q280 385 275 425 L270 465 Q265 505 225 510 L185 515 Q145 520 110 510 L70 500 Q30 490 35 450 L40 410 Q45 370 120 360 Z"
-                          fill={hasHolidays ? "#059669" : "#d1d5db"}
-                          stroke="#374151"
-                          strokeWidth="2"
+                          d="M140 510 Q220 505 300 525 L380 545 Q460 565 455 625 L450 685 Q445 745 365 750 L285 755 Q205 760 140 740 L80 720 Q20 700 25 640 L30 580 Q35 520 140 510 Z"
+                          fill={baseColor}
+                          stroke="#1f2937"
+                          strokeWidth="3"
                           filter="url(#shadow)"
                           className="cursor-pointer transition-all duration-300 hover:brightness-110"
-                          onMouseEnter={() => setHoveredCommunity(community)}
-                          onMouseLeave={() => setHoveredCommunity(null)}
+                          onClick={() => setSelectedCommunity(community)}
                         />
-                        <text x="155" y="440" textAnchor="middle" className="text-xs font-bold fill-white pointer-events-none" style={{ textShadow: '1px 1px 2px rgba(0,0,0,0.7)' }}>
+                        <text x="240" y="630" textAnchor="middle" className="text-sm font-bold fill-white pointer-events-none" style={{ textShadow: '2px 2px 4px rgba(0,0,0,0.8)' }}>
                           Extremadura
                         </text>
                       </>
@@ -389,16 +379,15 @@ const SpainHolidaysMap: React.FC<SpainHolidaysMapProps> = ({ holidays }) => {
                     {id === 'valencia' && (
                       <>
                         <path
-                          d="M480 280 Q500 275 520 285 L540 295 Q560 305 555 345 L550 385 Q545 425 505 430 L485 435 Q465 440 450 430 L440 420 Q430 410 435 370 L440 330 Q445 290 480 280 Z"
-                          fill={hasHolidays ? "#ea580c" : "#d1d5db"}
-                          stroke="#374151"
-                          strokeWidth="2"
+                          d="M680 420 Q720 415 760 435 L800 455 Q840 475 835 535 L830 595 Q825 655 785 660 L745 665 Q705 670 680 650 L660 630 Q640 610 645 550 L650 490 Q655 430 680 420 Z"
+                          fill={baseColor}
+                          stroke="#1f2937"
+                          strokeWidth="3"
                           filter="url(#shadow)"
                           className="cursor-pointer transition-all duration-300 hover:brightness-110"
-                          onMouseEnter={() => setHoveredCommunity(community)}
-                          onMouseLeave={() => setHoveredCommunity(null)}
+                          onClick={() => setSelectedCommunity(community)}
                         />
-                        <text x="495" y="360" textAnchor="middle" className="text-xs font-bold fill-white pointer-events-none" style={{ textShadow: '1px 1px 2px rgba(0,0,0,0.7)' }}>
+                        <text x="740" y="540" textAnchor="middle" className="text-sm font-bold fill-white pointer-events-none" style={{ textShadow: '2px 2px 4px rgba(0,0,0,0.8)' }}>
                           C. Valenciana
                         </text>
                       </>
@@ -408,16 +397,15 @@ const SpainHolidaysMap: React.FC<SpainHolidaysMapProps> = ({ holidays }) => {
                     {id === 'murcia' && (
                       <>
                         <path
-                          d="M440 450 Q480 445 520 455 L560 465 Q600 475 595 515 L590 555 Q585 595 545 600 L505 605 Q465 610 430 600 L390 590 Q350 580 355 540 L360 500 Q365 460 440 450 Z"
-                          fill={hasHolidays ? "#f59e0b" : "#d1d5db"}
-                          stroke="#374151"
-                          strokeWidth="2"
+                          d="M620 680 Q680 675 740 695 L800 715 Q860 735 855 795 L850 855 Q845 915 785 920 L725 925 Q665 930 620 910 L580 890 Q540 870 545 810 L550 750 Q555 690 620 680 Z"
+                          fill={baseColor}
+                          stroke="#1f2937"
+                          strokeWidth="3"
                           filter="url(#shadow)"
                           className="cursor-pointer transition-all duration-300 hover:brightness-110"
-                          onMouseEnter={() => setHoveredCommunity(community)}
-                          onMouseLeave={() => setHoveredCommunity(null)}
+                          onClick={() => setSelectedCommunity(community)}
                         />
-                        <text x="475" y="530" textAnchor="middle" className="text-xs font-bold fill-white pointer-events-none" style={{ textShadow: '1px 1px 2px rgba(0,0,0,0.7)' }}>
+                        <text x="700" y="810" textAnchor="middle" className="text-sm font-bold fill-white pointer-events-none" style={{ textShadow: '2px 2px 4px rgba(0,0,0,0.8)' }}>
                           Murcia
                         </text>
                       </>
@@ -427,16 +415,15 @@ const SpainHolidaysMap: React.FC<SpainHolidaysMapProps> = ({ holidays }) => {
                     {id === 'andalucia' && (
                       <>
                         <path
-                          d="M80 530 Q160 525 240 535 L320 545 Q400 555 395 595 L390 635 Q385 675 305 680 L225 685 Q145 690 60 680 L20 670 Q-20 660 -15 620 L-10 580 Q-5 540 80 530 Z"
-                          fill={hasHolidays ? "#0891b2" : "#d1d5db"}
-                          stroke="#374151"
-                          strokeWidth="2"
+                          d="M100 760 Q220 755 340 775 L460 795 Q580 815 575 875 L570 935 Q565 995 445 1000 L325 1005 Q205 1010 100 990 L40 970 Q-20 950 -15 890 L-10 830 Q-5 770 100 760 Z"
+                          fill={baseColor}
+                          stroke="#1f2937"
+                          strokeWidth="3"
                           filter="url(#shadow)"
                           className="cursor-pointer transition-all duration-300 hover:brightness-110"
-                          onMouseEnter={() => setHoveredCommunity(community)}
-                          onMouseLeave={() => setHoveredCommunity(null)}
+                          onClick={() => setSelectedCommunity(community)}
                         />
-                        <text x="190" y="610" textAnchor="middle" className="text-xs font-bold fill-white pointer-events-none" style={{ textShadow: '1px 1px 2px rgba(0,0,0,0.7)' }}>
+                        <text x="280" y="880" textAnchor="middle" className="text-lg font-bold fill-white pointer-events-none" style={{ textShadow: '2px 2px 4px rgba(0,0,0,0.8)' }}>
                           Andalucía
                         </text>
                       </>
@@ -446,10 +433,10 @@ const SpainHolidaysMap: React.FC<SpainHolidaysMapProps> = ({ holidays }) => {
                     {id === 'baleares' && (
                       <>
                         <g>
-                          <circle cx="620" cy="350" r="12" fill={hasHolidays ? "#7c3aed" : "#d1d5db"} stroke="#374151" strokeWidth="2" filter="url(#shadow)" className="cursor-pointer transition-all duration-300 hover:brightness-110" onMouseEnter={() => setHoveredCommunity(community)} onMouseLeave={() => setHoveredCommunity(null)} />
-                          <circle cx="640" cy="370" r="10" fill={hasHolidays ? "#7c3aed" : "#d1d5db"} stroke="#374151" strokeWidth="2" filter="url(#shadow)" className="cursor-pointer transition-all duration-300 hover:brightness-110" onMouseEnter={() => setHoveredCommunity(community)} onMouseLeave={() => setHoveredCommunity(null)} />
-                          <circle cx="660" cy="360" r="8" fill={hasHolidays ? "#7c3aed" : "#d1d5db"} stroke="#374151" strokeWidth="2" filter="url(#shadow)" className="cursor-pointer transition-all duration-300 hover:brightness-110" onMouseEnter={() => setHoveredCommunity(community)} onMouseLeave={() => setHoveredCommunity(null)} />
-                          <text x="640" y="400" textAnchor="middle" className="text-xs font-bold fill-gray-700 pointer-events-none">
+                          <ellipse cx="900" cy="450" rx="20" ry="15" fill={baseColor} stroke="#1f2937" strokeWidth="2" filter="url(#shadow)" className="cursor-pointer transition-all duration-300 hover:brightness-110" onClick={() => setSelectedCommunity(community)} />
+                          <ellipse cx="930" cy="470" rx="15" ry="12" fill={baseColor} stroke="#1f2937" strokeWidth="2" filter="url(#shadow)" className="cursor-pointer transition-all duration-300 hover:brightness-110" onClick={() => setSelectedCommunity(community)} />
+                          <ellipse cx="960" cy="460" rx="12" ry="10" fill={baseColor} stroke="#1f2937" strokeWidth="2" filter="url(#shadow)" className="cursor-pointer transition-all duration-300 hover:brightness-110" onClick={() => setSelectedCommunity(community)} />
+                          <text x="930" y="510" textAnchor="middle" className="text-sm font-bold fill-gray-700 pointer-events-none">
                             Baleares
                           </text>
                         </g>
@@ -459,16 +446,16 @@ const SpainHolidaysMap: React.FC<SpainHolidaysMapProps> = ({ holidays }) => {
                     {/* Canarias */}
                     {id === 'canarias' && (
                       <>
-                        <rect x="50" y="550" width="250" height="120" fill="none" stroke="#374151" strokeWidth="2" rx="8" />
-                        <text x="60" y="570" className="text-xs font-bold fill-gray-700">Islas Canarias</text>
+                        <rect x="80" y="650" width="300" height="120" fill="none" stroke="#1f2937" strokeWidth="3" rx="8" />
+                        <text x="90" y="675" className="text-sm font-bold fill-gray-700">Islas Canarias</text>
                         <g>
-                          <circle cx="80" cy="600" r="8" fill={hasHolidays ? "#f59e0b" : "#d1d5db"} stroke="#374151" strokeWidth="2" filter="url(#shadow)" className="cursor-pointer transition-all duration-300 hover:brightness-110" onMouseEnter={() => setHoveredCommunity(community)} onMouseLeave={() => setHoveredCommunity(null)} />
-                          <circle cx="110" cy="590" r="10" fill={hasHolidays ? "#f59e0b" : "#d1d5db"} stroke="#374151" strokeWidth="2" filter="url(#shadow)" className="cursor-pointer transition-all duration-300 hover:brightness-110" onMouseEnter={() => setHoveredCommunity(community)} onMouseLeave={() => setHoveredCommunity(null)} />
-                          <circle cx="140" cy="610" r="12" fill={hasHolidays ? "#f59e0b" : "#d1d5db"} stroke="#374151" strokeWidth="2" filter="url(#shadow)" className="cursor-pointer transition-all duration-300 hover:brightness-110" onMouseEnter={() => setHoveredCommunity(community)} onMouseLeave={() => setHoveredCommunity(null)} />
-                          <circle cx="170" cy="595" r="9" fill={hasHolidays ? "#f59e0b" : "#d1d5db"} stroke="#374151" strokeWidth="2" filter="url(#shadow)" className="cursor-pointer transition-all duration-300 hover:brightness-110" onMouseEnter={() => setHoveredCommunity(community)} onMouseLeave={() => setHoveredCommunity(null)} />
-                          <circle cx="200" cy="605" r="11" fill={hasHolidays ? "#f59e0b" : "#d1d5db"} stroke="#374151" strokeWidth="2" filter="url(#shadow)" className="cursor-pointer transition-all duration-300 hover:brightness-110" onMouseEnter={() => setHoveredCommunity(community)} onMouseLeave={() => setHoveredCommunity(null)} />
-                          <circle cx="230" cy="590" r="7" fill={hasHolidays ? "#f59e0b" : "#d1d5db"} stroke="#374151" strokeWidth="2" filter="url(#shadow)" className="cursor-pointer transition-all duration-300 hover:brightness-110" onMouseEnter={() => setHoveredCommunity(community)} onMouseLeave={() => setHoveredCommunity(null)} />
-                          <circle cx="260" cy="600" r="8" fill={hasHolidays ? "#f59e0b" : "#d1d5db"} stroke="#374151" strokeWidth="2" filter="url(#shadow)" className="cursor-pointer transition-all duration-300 hover:brightness-110" onMouseEnter={() => setHoveredCommunity(community)} onMouseLeave={() => setHoveredCommunity(null)} />
+                          <ellipse cx="120" cy="720" rx="12" ry="10" fill={baseColor} stroke="#1f2937" strokeWidth="2" filter="url(#shadow)" className="cursor-pointer transition-all duration-300 hover:brightness-110" onClick={() => setSelectedCommunity(community)} />
+                          <ellipse cx="150" cy="710" rx="15" ry="12" fill={baseColor} stroke="#1f2937" strokeWidth="2" filter="url(#shadow)" className="cursor-pointer transition-all duration-300 hover:brightness-110" onClick={() => setSelectedCommunity(community)} />
+                          <ellipse cx="180" cy="730" rx="18" ry="15" fill={baseColor} stroke="#1f2937" strokeWidth="2" filter="url(#shadow)" className="cursor-pointer transition-all duration-300 hover:brightness-110" onClick={() => setSelectedCommunity(community)} />
+                          <ellipse cx="210" cy="715" rx="14" ry="11" fill={baseColor} stroke="#1f2937" strokeWidth="2" filter="url(#shadow)" className="cursor-pointer transition-all duration-300 hover:brightness-110" onClick={() => setSelectedCommunity(community)} />
+                          <ellipse cx="240" cy="725" rx="16" ry="13" fill={baseColor} stroke="#1f2937" strokeWidth="2" filter="url(#shadow)" className="cursor-pointer transition-all duration-300 hover:brightness-110" onClick={() => setSelectedCommunity(community)} />
+                          <ellipse cx="270" cy="705" rx="10" ry="8" fill={baseColor} stroke="#1f2937" strokeWidth="2" filter="url(#shadow)" className="cursor-pointer transition-all duration-300 hover:brightness-110" onClick={() => setSelectedCommunity(community)} />
+                          <ellipse cx="300" cy="720" rx="12" ry="10" fill={baseColor} stroke="#1f2937" strokeWidth="2" filter="url(#shadow)" className="cursor-pointer transition-all duration-300 hover:brightness-110" onClick={() => setSelectedCommunity(community)} />
                         </g>
                       </>
                     )}
@@ -477,15 +464,19 @@ const SpainHolidaysMap: React.FC<SpainHolidaysMapProps> = ({ holidays }) => {
               })}
               
               {/* Ceuta y Melilla */}
-              <circle cx="220" cy="680" r="4" fill="#6b7280" stroke="#374151" strokeWidth="1" />
-              <text x="235" y="685" className="text-xs fill-gray-700">Ceuta</text>
-              <circle cx="280" cy="680" r="4" fill="#6b7280" stroke="#374151" strokeWidth="1" />
-              <text x="295" y="685" className="text-xs fill-gray-700">Melilla</text>
+              <circle cx="300" cy="1000" r="6" fill="#6b7280" stroke="#1f2937" strokeWidth="2" />
+              <text x="315" y="1005" className="text-xs fill-gray-700">Ceuta</text>
+              <circle cx="380" cy="1000" r="6" fill="#6b7280" stroke="#1f2937" strokeWidth="2" />
+              <text x="395" y="1005" className="text-xs fill-gray-700">Melilla</text>
             </svg>
           </div>
           
           {/* Leyenda mejorada */}
           <div className="flex items-center gap-6 mt-4 p-3 bg-white rounded-lg border shadow-sm">
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 bg-blue-600 border border-gray-700 rounded"></div>
+              <span className="text-sm font-medium">Seleccionada</span>
+            </div>
             <div className="flex items-center gap-2">
               <div className="w-4 h-4 bg-green-600 border border-gray-700 rounded"></div>
               <span className="text-sm font-medium">Con festivos</span>
@@ -495,24 +486,24 @@ const SpainHolidaysMap: React.FC<SpainHolidaysMapProps> = ({ holidays }) => {
               <span className="text-sm font-medium">Sin festivos</span>
             </div>
             <div className="text-xs text-gray-500 ml-auto">
-              * Incluye festivos nacionales y autonómicos
+              * Haz click en una comunidad para ver sus festivos
             </div>
           </div>
         </div>
 
-        {/* Panel de información mejorado */}
-        <div className="w-80">
-          {hoveredCommunity ? (
-            <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-lg">
+        {/* Panel de información mejorado y más grande */}
+        <div className="w-96">
+          {selectedCommunity ? (
+            <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-lg h-[500px] flex flex-col">
               <h3 className="font-semibold text-lg mb-3 text-blue-600 border-b pb-2">
-                {hoveredCommunity}
+                {selectedCommunity}
               </h3>
               <p className="text-sm text-gray-600 mb-3">
                 Festivos en {selectedMonth === 'all' ? selectedYear : `${MONTHS_CHRONOLOGICAL.find(m => m.value === selectedMonth)?.label} ${selectedYear}`}:
               </p>
               
               {(() => {
-                const communityHolidays = getHolidaysForCommunity(hoveredCommunity);
+                const communityHolidays = getHolidaysForCommunity(selectedCommunity);
                 
                 if (communityHolidays.length === 0) {
                   return (
@@ -523,30 +514,32 @@ const SpainHolidaysMap: React.FC<SpainHolidaysMapProps> = ({ holidays }) => {
                 }
                 
                 return (
-                  <div className="space-y-2 max-h-64 overflow-y-auto">
+                  <div className="flex-1 overflow-y-auto space-y-1">
                     {communityHolidays.map((holiday, index) => (
                       <div 
                         key={holiday.id} 
-                        className={`flex flex-col gap-1 p-3 rounded-lg border-l-4 ${
+                        className={`flex items-center justify-between p-2 rounded border-l-4 text-sm ${
                           holiday.comunidad_autonoma === 'NACIONAL' 
                             ? 'bg-red-50 border-red-500' 
                             : 'bg-blue-50 border-blue-500'
                         }`}
                       >
-                        <div className={`font-medium text-sm ${
-                          holiday.comunidad_autonoma === 'NACIONAL' ? 'text-red-800' : 'text-blue-800'
-                        }`}>
-                          {holiday.festivo}
-                          {holiday.comunidad_autonoma === 'NACIONAL' && (
-                            <span className="ml-2 text-xs bg-red-100 text-red-700 px-2 py-1 rounded-full">
-                              NACIONAL
-                            </span>
-                          )}
+                        <div className="flex-1 min-w-0">
+                          <div className={`font-medium truncate ${
+                            holiday.comunidad_autonoma === 'NACIONAL' ? 'text-red-800' : 'text-blue-800'
+                          }`}>
+                            {holiday.festivo}
+                            {holiday.comunidad_autonoma === 'NACIONAL' && (
+                              <span className="ml-1 text-xs bg-red-100 text-red-700 px-1 rounded">
+                                NAC
+                              </span>
+                            )}
+                          </div>
                         </div>
-                        <div className={`text-xs ${
+                        <div className={`text-xs font-mono ml-2 ${
                           holiday.comunidad_autonoma === 'NACIONAL' ? 'text-red-600' : 'text-blue-600'
                         }`}>
-                          {format(new Date(holiday.date), 'dd/MM/yyyy')}
+                          {format(new Date(holiday.date), 'dd/MM')}
                         </div>
                       </div>
                     ))}
@@ -555,14 +548,14 @@ const SpainHolidaysMap: React.FC<SpainHolidaysMapProps> = ({ holidays }) => {
               })()}
             </div>
           ) : (
-            <div className="bg-gradient-to-br from-gray-50 to-gray-100 border border-gray-200 rounded-lg p-6">
+            <div className="bg-gradient-to-br from-gray-50 to-gray-100 border border-gray-200 rounded-lg p-6 h-[500px] flex items-center justify-center">
               <div className="text-center">
-                <div className="text-4xl mb-3">🗺️</div>
+                <div className="text-6xl mb-4">🗺️</div>
                 <p className="text-gray-600 font-medium mb-2">
-                  Explora los festivos por comunidad
+                  Selecciona una comunidad autónoma
                 </p>
                 <p className="text-sm text-gray-500">
-                  Pasa el ratón sobre una comunidad autónoma para ver sus festivos en {selectedMonth === 'all' ? selectedYear : `${MONTHS_CHRONOLOGICAL.find(m => m.value === selectedMonth)?.label} ${selectedYear}`}
+                  Haz click en cualquier comunidad del mapa para ver sus festivos en {selectedMonth === 'all' ? selectedYear : `${MONTHS_CHRONOLOGICAL.find(m => m.value === selectedMonth)?.label} ${selectedYear}`}
                 </p>
               </div>
             </div>
