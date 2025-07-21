@@ -308,20 +308,20 @@ const StaffingReport: React.FC<StaffingReportProps> = ({ squadLeadName, squadPer
 
     // =================== ESTILOS PROFESIONALES Y HERMOSOS ===================
     
-    // Anchos de columna perfectos
+    // Configurar anchos de columna GENEROSOS
     const colWidths = [
-      { wch: 10 },  // Código empleado
-      { wch: 30 },  // Nombre Persona (más ancho)
-      { wch: 15 },  // Categoría
-      { wch: 12 },  // Grupo
-      { wch: 10 },  // Oficina
-      { wch: 20 },  // Squad Lead
+      { wch: 12 },  // Código empleado
+      { wch: 35 },  // Nombre Persona (MUY ANCHO)
+      { wch: 20 },  // Categoría
+      { wch: 15 },  // Grupo
+      { wch: 12 },  // Oficina
+      { wch: 25 },  // Squad Lead
     ];
 
-    // Columnas de semanas más estrechas pero legibles
+    // Columnas de semanas ANCHAS para que se vea todo
     weeks.forEach(() => {
       for (let i = 0; i < 8; i++) {
-        colWidths.push({ wch: 9 });
+        colWidths.push({ wch: 12 }); // Todas las semanas con buen ancho
       }
     });
 
@@ -549,20 +549,22 @@ const StaffingReport: React.FC<StaffingReportProps> = ({ squadLeadName, squadPer
 
     // =================== FUNCIONALIDADES AVANZADAS ===================
     
-    // Merge cells para el título (que ocupe toda la fila)
+    // Merge cells para el título (que ocupe TODA la fila y se vea espectacular)
     const merges = [];
     merges.push({ 
       s: { r: 0, c: 0 }, 
-      e: { r: 0, c: Math.min(headerRow1.length - 1, 20) } 
+      e: { r: 0, c: Math.min(headerRow1.length - 1, 25) } // Más ancho
     });
 
-    // Merge cells para agrupar semanas visualmente
+    // Merge cells para agrupar semanas visualmente (SIN PROBLEMAS)
     let currentCol = 6;
     weeks.forEach(() => {
-      merges.push({ 
-        s: { r: 4, c: currentCol }, 
-        e: { r: 4, c: currentCol + 7 } 
-      });
+      if (currentCol + 7 < headerRow1.length) { // Verificar que no se salga del rango
+        merges.push({ 
+          s: { r: 4, c: currentCol }, 
+          e: { r: 4, c: currentCol + 7 } 
+        });
+      }
       currentCol += 8;
     });
 
@@ -571,13 +573,13 @@ const StaffingReport: React.FC<StaffingReportProps> = ({ squadLeadName, squadPer
     // Congelar paneles - SÚPER ÚTIL
     ws['!freeze'] = { xSplit: 6, ySplit: 6 };
 
-    // Filtros automáticos para análisis
-    ws['!autofilter'] = { 
-      ref: `A6:${XLSX.utils.encode_cell({ 
-        r: 5 + dataRows.length, 
-        c: headerRow1.length - 1 
-      })}` 
-    };
+    // ¡QUITAR los filtros automáticos que están haciendo que se vea horrible!
+    // ws['!autofilter'] = { 
+    //   ref: `A6:${XLSX.utils.encode_cell({ 
+    //     r: 5 + dataRows.length, 
+    //     c: headerRow1.length - 1 
+    //   })}` 
+    // };
 
     // Agregar al workbook
     XLSX.utils.book_append_sheet(wb, ws, 'Informe Staffing');
