@@ -265,7 +265,7 @@ export default function AssignmentSummary({
                       <div className="text-right">
                         <div className="font-semibold">{data.days.toFixed(1)} días</div>
                         <div className="text-sm text-muted-foreground">
-                          ({((data.days / summary.workDays) * 100).toFixed(1)}% del período)
+                          ({((data.days / summary.workDays) * 100).toFixed(1)}% período laboral)
                         </div>
                       </div>
                     </div>
@@ -280,7 +280,7 @@ export default function AssignmentSummary({
                       <div className="text-right">
                         <div className="font-semibold text-orange-800">{summary.unassignedDays.toFixed(1)} días</div>
                         <div className="text-sm text-orange-600">
-                          ({((summary.unassignedDays / summary.workDays) * 100).toFixed(1)}% del período)
+                          ({((summary.unassignedDays / summary.workDays) * 100).toFixed(1)}% período laboral)
                         </div>
                       </div>
                     </div>
