@@ -63,7 +63,7 @@ const ALL_SKILLS = [
 ];
 
 const LEVEL_OPTIONS = ['Nulo', 'Pre-A1', 'Básico', 'Medio', 'Alto', 'Experto'];
-const LANGUAGE_LEVEL_OPTIONS = ['Nulo', 'Pre-A1', 'A1', 'A2', 'B1', 'B2', 'C1', 'C2'];
+const LANGUAGE_LEVEL_OPTIONS = ['Pre-A1', 'A1', 'A2', 'B1', 'B2', 'C1', 'C2'];
 const INDUSTRY_OPTIONS = ['No', 'Sí'];
 
 const TeamCapabilities: React.FC<TeamCapabilitiesProps> = ({ 
@@ -308,7 +308,7 @@ const TeamCapabilities: React.FC<TeamCapabilitiesProps> = ({
     const basicModules = sapModules.filter(c => c.level === 'Básico' || c.level === 'Medio');
     
     const industries = personCapacities.filter(c => c.skill.includes('Industrias') && c.level === 'Sí');
-    const languages = personCapacities.filter(c => c.skill.includes('Idiomas') && c.level !== 'Nulo');
+    const languages = personCapacities.filter(c => c.skill.includes('Idiomas') && c.level !== 'Pre-A1');
     const nativeLanguage = languages.find(c => c.level === 'Experto' || c.level === 'Alto');
     const basicLanguages = languages.filter(c => ['Pre-A1', 'Básico', 'Medio'].includes(c.level));
 
@@ -343,9 +343,9 @@ const TeamCapabilities: React.FC<TeamCapabilitiesProps> = ({
     }
     
     // Idiomas - incluir todos los idiomas con algún nivel de conocimiento
-    const allLanguages = languages.filter(l => l.level !== 'Nulo');
+    const allLanguages = languages.filter(l => l.level !== 'Pre-A1');
     const nativeLanguages = allLanguages.filter(l => ['Alto', 'Experto'].includes(l.level));
-    const otherLanguages = allLanguages.filter(l => !['Alto', 'Experto', 'Nulo'].includes(l.level));
+    const otherLanguages = allLanguages.filter(l => !['Alto', 'Experto', 'Pre-A1'].includes(l.level));
     
     if (allLanguages.length > 0) {
       let languageText = '';
@@ -498,7 +498,7 @@ const TeamCapabilities: React.FC<TeamCapabilitiesProps> = ({
           completeData[personName][category].push(existingCapacity);
         } else {
           // Crear una capacidad con valor por defecto según el tipo
-          const defaultLevel = category === 'Industrias' ? 'No' : 'Nulo';
+          const defaultLevel = category === 'Industrias' ? 'No' : (category === 'Idiomas' ? 'Pre-A1' : 'Nulo');
           completeData[personName][category].push({
             id: `${personName}-${skill}`, // ID temporal
             person_name: personName,
@@ -549,7 +549,7 @@ const TeamCapabilities: React.FC<TeamCapabilitiesProps> = ({
         } else {
           // Insertar nueva capacidad - tanto para industrias como para otros niveles
           const isIndustry = skill_full.toLowerCase().includes('industria');
-          const shouldInsert = isIndustry ? (newLevel === 'Sí') : (newLevel !== 'Nulo');
+          const shouldInsert = isIndustry ? (newLevel === 'Sí') : (skill_full.includes('Idiomas') ? (newLevel !== 'Pre-A1') : (newLevel !== 'Nulo'));
           
           if (shouldInsert) {
             inserts.push({
