@@ -748,7 +748,8 @@ const StaffingReport: React.FC<StaffingReportProps> = ({ squadLeadName, squadPer
             <div className="overflow-x-auto">
               <table className="w-full border-collapse border text-xs">
                 <thead>
-                  <tr className="bg-muted">
+                  {/* PRIMERA CABECERA: Información personal + Nombres de semanas */}
+                  <tr className="bg-blue-600 text-white">
                     <th className="border p-3 text-center font-bold min-w-[80px]">Código</th>
                     <th className="border p-3 text-center font-bold min-w-[200px]">Nombre Persona</th>
                     <th className="border p-3 text-center font-bold min-w-[120px]">Categoría</th>
@@ -756,38 +757,45 @@ const StaffingReport: React.FC<StaffingReportProps> = ({ squadLeadName, squadPer
                     <th className="border p-3 text-center font-bold min-w-[80px]">Oficina</th>
                     <th className="border p-3 text-center font-bold min-w-[150px]">Squad Lead</th>
                     {Object.keys(staffingData[0].weeklyData).map(week => (
-                      <React.Fragment key={week}>
-                        <th className="border p-2 text-center font-bold min-w-[90px]">
-                          {week}<br/>
-                          <span className="text-xs font-normal">Jornadas<br/>Facturables<br/>Proyecto</span>
+                      <th key={week} className="border p-2 text-center font-bold min-w-[720px] bg-blue-500" colSpan={8}>
+                        {week}
+                      </th>
+                    ))}
+                  </tr>
+                  
+                  {/* SEGUNDA CABECERA: Vacías para info personal + Detalles de jornadas */}
+                  <tr className="bg-blue-400 text-white">
+                    <th className="border p-2 text-center font-bold"></th>
+                    <th className="border p-2 text-center font-bold"></th>
+                    <th className="border p-2 text-center font-bold"></th>
+                    <th className="border p-2 text-center font-bold"></th>
+                    <th className="border p-2 text-center font-bold"></th>
+                    <th className="border p-2 text-center font-bold"></th>
+                    {Object.keys(staffingData[0].weeklyData).map(week => (
+                      <React.Fragment key={`${week}-details`}>
+                        <th className="border p-1 text-center font-bold min-w-[90px] text-xs">
+                          Jornadas<br/>Facturables<br/>Proyecto
                         </th>
-                        <th className="border p-2 text-center font-bold min-w-[90px]">
-                          {week}<br/>
-                          <span className="text-xs font-normal">Jornadas<br/>STR<br/>Productos</span>
+                        <th className="border p-1 text-center font-bold min-w-[90px] text-xs">
+                          Jornadas<br/>STR<br/>Productos
                         </th>
-                        <th className="border p-2 text-center font-bold min-w-[90px]">
-                          {week}<br/>
-                          <span className="text-xs font-normal">Jornadas<br/>No<br/>Facturables<br/>Availability</span>
+                        <th className="border p-1 text-center font-bold min-w-[90px] text-xs">
+                          Jornadas<br/>No Facturables<br/>Availability
                         </th>
-                        <th className="border p-2 text-center font-bold min-w-[90px]">
-                          {week}<br/>
-                          <span className="text-xs font-normal">Jornadas<br/>No<br/>Facturables<br/>Management</span>
+                        <th className="border p-1 text-center font-bold min-w-[90px] text-xs">
+                          Jornadas<br/>No Facturables<br/>Management
                         </th>
-                        <th className="border p-2 text-center font-bold min-w-[90px]">
-                          {week}<br/>
-                          <span className="text-xs font-normal">Jornadas<br/>No<br/>Facturables<br/>SAM</span>
+                        <th className="border p-1 text-center font-bold min-w-[90px] text-xs">
+                          Jornadas<br/>No Facturables<br/>SAM
                         </th>
-                        <th className="border p-2 text-center font-bold min-w-[110px]">
-                          {week}<br/>
-                          <span className="text-xs font-normal">Jornadas<br/>Facturables<br/>Otros<br/>(Internal<br/>Activities, etc.)</span>
+                        <th className="border p-1 text-center font-bold min-w-[110px] text-xs">
+                          Jornadas<br/>Facturables<br/>Otros<br/>(Internal Activities)
                         </th>
-                        <th className="border p-2 text-center font-bold min-w-[90px]">
-                          {week}<br/>
-                          <span className="text-xs font-normal">Jornadas<br/>No<br/>Disponibles</span>
+                        <th className="border p-1 text-center font-bold min-w-[90px] text-xs">
+                          Jornadas<br/>No<br/>Disponibles
                         </th>
-                        <th className="border p-2 text-center font-bold min-w-[90px]">
-                          {week}<br/>
-                          <span className="text-xs font-normal">Total Días<br/>Laborables</span>
+                        <th className="border p-1 text-center font-bold min-w-[90px] text-xs">
+                          Total Días<br/>Laborables
                         </th>
                       </React.Fragment>
                     ))}
