@@ -841,11 +841,11 @@ const TeamCapabilities: React.FC<TeamCapabilitiesProps> = ({
                                  <h5 className="text-sm font-semibold text-primary uppercase tracking-wide">{subCategory}</h5>
                               </div>
                               {/* Grid de capacidades de la subcategoría */}
-                               <div className="grid gap-2" style={{ 
-                                 gridTemplateColumns: subCategory === 'Módulos TESORERÍA' 
-                                   ? 'repeat(auto-fit, minmax(140px, 1fr))' 
-                                   : 'repeat(auto-fit, minmax(180px, 1fr))'
-                               }}>
+                                <div className="grid gap-2" style={{ 
+                                  gridTemplateColumns: subCategory === 'Módulos TESORERÍA' 
+                                    ? 'repeat(auto-fit, minmax(120px, 1fr))' 
+                                    : 'repeat(auto-fit, minmax(180px, 1fr))'
+                                }}>
                                 {subCapacities.map((capacity) => {
                                   const editKey = `${capacity.person_name}-${capacity.skill}`;
                                   const currentLevel = editedCapacities[editKey] || capacity.level;
