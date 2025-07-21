@@ -409,16 +409,16 @@ export default function SpainHolidaysMap() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Calendar className="h-5 w-5" />
-            Seleccionar Período
+            Filtros de Consulta
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex flex-wrap gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <div className="flex flex-col gap-2">
               <label className="text-sm font-medium">Año:</label>
               <Select value={selectedYear} onValueChange={setSelectedYear}>
-                <SelectTrigger className="w-32">
-                  <SelectValue />
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Seleccionar año" />
                 </SelectTrigger>
                 <SelectContent>
                   {YEARS_RANGE.map((year) => (
@@ -433,13 +433,29 @@ export default function SpainHolidaysMap() {
             <div className="flex flex-col gap-2">
               <label className="text-sm font-medium">Mes:</label>
               <Select value={selectedMonth} onValueChange={setSelectedMonth}>
-                <SelectTrigger className="w-40">
-                  <SelectValue />
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Seleccionar mes" />
                 </SelectTrigger>
                 <SelectContent>
                   {MONTHS_OPTIONS.map((month) => (
                     <SelectItem key={month.value} value={month.value}>
                       {month.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <label className="text-sm font-medium">Región:</label>
+              <Select value={selectedRegion || ''} onValueChange={(value) => setSelectedRegion(value || null)}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Seleccionar región" />
+                </SelectTrigger>
+                <SelectContent>
+                  {Object.keys(REGIONS_DATA).map((regionName) => (
+                    <SelectItem key={regionName} value={regionName}>
+                      {regionName}
                     </SelectItem>
                   ))}
                 </SelectContent>
