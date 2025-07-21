@@ -122,14 +122,32 @@ const HolidaysUpload = () => {
   const handleUploadConfirm = async () => {
     setShowUploadDialog(false);
     
-    // Verificar si existen registros manuales
-    const hasManualRecordsResult = await checkForManualRecords();
-    setHasManualRecords(hasManualRecordsResult);
-    
-    if (hasManualRecordsResult) {
-      setShowConflictDialog(true);
-    } else {
-      processUpload();
+    // Verificar si existen registros (cualquier origen)
+    try {
+      const { data: allHolidays, error } = await supabase
+        .from('holidays')
+        .select('*');
+        
+      if (error) throw error;
+      
+      const hasAnyRecords = (allHolidays || []).length > 0;
+      
+      if (hasAnyRecords) {
+        // Verificar registros manuales específicamente
+        const hasManualRecordsResult = await checkForManualRecords();
+        setHasManualRecords(hasManualRecordsResult);
+        setShowConflictDialog(true);
+      } else {
+        // No hay registros, proceder directamente
+        processUpload();
+      }
+    } catch (error) {
+      console.error('Error checking existing records:', error);
+      toast({
+        title: "Error",
+        description: "Error al verificar registros existentes",
+        variant: "destructive",
+      });
     }
   };
 
@@ -522,7 +540,10 @@ const HolidaysUpload = () => {
                   <div>
                     <p className="font-medium text-green-800">Preservar registros del Administrador</p>
                     <p className="text-sm text-green-600">
-                      Mantener los {manualRecords.length} registro(s) manual(es) + agregar los nuevos del archivo Excel
+                      {hasManualRecords 
+                        ? `Mantener los ${manualRecords.length} registro(s) manual(es) + agregar los nuevos del archivo Excel`
+                        : "Mantener todos los registros existentes + agregar los nuevos del archivo Excel"
+                      }
                     </p>
                   </div>
                 </div>
