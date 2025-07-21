@@ -60,7 +60,7 @@ const ALL_SKILLS = [
   'Módulo SAP - SAP. Monedas S4'
 ];
 
-const LEVEL_OPTIONS = ['Nulo', 'Básico', 'Medio', 'Alto', 'Experto'];
+const LEVEL_OPTIONS = ['Nulo', 'Pre-A1', 'Básico', 'Medio', 'Alto', 'Experto'];
 const INDUSTRY_OPTIONS = ['No', 'Sí'];
 
 const TeamCapabilities: React.FC<TeamCapabilitiesProps> = ({ 
@@ -151,6 +151,8 @@ const TeamCapabilities: React.FC<TeamCapabilitiesProps> = ({
     
     // Colores para niveles de competencia (resto de capacidades)
     switch (level?.toLowerCase()) {
+      case 'pre-a1':
+        return 'bg-red-50 text-red-700 border-red-200 dark:bg-red-900/10 dark:text-red-400';
       case 'básico':
         return 'bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900/20 dark:text-blue-400';
       case 'medio':
@@ -292,7 +294,7 @@ const TeamCapabilities: React.FC<TeamCapabilitiesProps> = ({
     const industries = personCapacities.filter(c => c.skill.includes('Industrias') && c.level === 'Sí');
     const languages = personCapacities.filter(c => c.skill.includes('Idiomas') && c.level !== 'Nulo');
     const nativeLanguage = languages.find(c => c.level === 'Experto' || c.level === 'Alto');
-    const basicLanguages = languages.filter(c => c.level === 'Básico' || c.level === 'Medio');
+    const basicLanguages = languages.filter(c => ['Pre-A1', 'Básico', 'Medio'].includes(c.level));
 
     // Generar texto del currículum
     let curriculum = `${personName}`;
@@ -927,6 +929,17 @@ const TeamCapabilities: React.FC<TeamCapabilitiesProps> = ({
                                                 </div>
                                                 
                                                 <div className="space-y-2 ml-5">
+                                                  <div className="border-l-2 border-red-200 pl-3">
+                                                    <div className="flex items-center gap-2 mb-1">
+                                                      <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">Pre-A1</Badge>
+                                                      <span className="text-sm font-medium">Principiante</span>
+                                                      <span className="text-xs text-muted-foreground">• "Principiante"</span>
+                                                    </div>
+                                                    <p className="text-xs text-muted-foreground leading-relaxed">
+                                                      Comprende palabras y frases muy básicas. Nivel mínimo de comprensión y expresión oral.
+                                                    </p>
+                                                  </div>
+                                                  
                                                   <div className="border-l-2 border-green-200 pl-3">
                                                     <div className="flex items-center gap-2 mb-1">
                                                       <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">A1</Badge>

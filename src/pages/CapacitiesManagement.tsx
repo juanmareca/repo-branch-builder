@@ -1313,11 +1313,12 @@ export default function CapacitiesManagement() {
                               <Badge 
                                 className={cn(
                                   "text-xs font-medium",
+                                  level === 'Pre-A1' && "bg-red-100 text-red-800",
                                   level === 'B1' && "bg-yellow-100 text-yellow-800",
                                   level === 'Básico' && "bg-yellow-100 text-yellow-800",
                                   level === 'Bilingüe' && "bg-green-100 text-green-800",
                                   level === 'Nulo' && "bg-gray-100 text-gray-800",
-                                  !['B1', 'Básico', 'Bilingüe', 'Nulo'].includes(level) && "bg-blue-100 text-blue-800"
+                                  !['Pre-A1', 'B1', 'Básico', 'Bilingüe', 'Nulo'].includes(level) && "bg-blue-100 text-blue-800"
                                 )}
                               >
                                 {level}

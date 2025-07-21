@@ -402,7 +402,7 @@ const CapacitiesUpload = ({ onUploadComplete }: CapacitiesUploadProps) => {
                       </div>
                     </div>
                     <div className="mt-3 p-2 bg-cyan-100 rounded border border-cyan-300">
-                      <p className="text-xs"><strong>Valores:</strong> Básico, Medio, Alto, Experto, Nulo</p>
+                      <p className="text-xs"><strong>Valores:</strong> Pre-A1, Básico, Medio, Alto, Experto, Nulo</p>
                     </div>
                   </div>
                 </AlertDescription>
