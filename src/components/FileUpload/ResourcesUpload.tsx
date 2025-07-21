@@ -37,6 +37,7 @@ const ResourcesUpload = () => {
   const [uploading, setUploading] = useState(false);
   const [checkingManualRecords, setCheckingManualRecords] = useState(false);
   const [hasManualRecords, setHasManualRecords] = useState(false);
+  const [adminRecordsCount, setAdminRecordsCount] = useState(0);
   const [uploadMode, setUploadMode] = useState<'replace' | 'add'>('add');
   const { toast } = useToast();
 
@@ -104,6 +105,7 @@ const ResourcesUpload = () => {
       }));
       
       setManualRecords(manualPersons);
+      setAdminRecordsCount(manualPersons.length);
       return manualPersons.length > 0;
     } catch (error) {
       console.error('Error checking manual records:', error);
@@ -585,6 +587,12 @@ const ResourcesUpload = () => {
                 <label htmlFor="preserve-manual" className="text-sm text-gray-700 cursor-pointer">
                   <span className="font-medium">¿Desea mantener los registros del Administrador añadidos manualmente?</span>
                 </label>
+              </div>
+              
+              <div className="mt-2 ml-6">
+                <p className="text-xs text-blue-700">
+                  Actualmente tienes {adminRecordsCount} registros de Administrador en la Base de Datos.
+                </p>
               </div>
               
               {uploadMode === 'replace' && !preserveManual && (
