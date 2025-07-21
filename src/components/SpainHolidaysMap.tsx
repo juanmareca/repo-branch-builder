@@ -17,20 +17,20 @@ interface SpainHolidaysMapProps {
   holidays: Holiday[];
 }
 
-const MONTHS_ALPHABETICAL = [
+const MONTHS_CHRONOLOGICAL = [
   { value: 'all', label: 'Todos' },
-  { value: '4', label: 'Abril' },
-  { value: '8', label: 'Agosto' },
-  { value: '12', label: 'Diciembre' },
   { value: '1', label: 'Enero' },
   { value: '2', label: 'Febrero' },
-  { value: '7', label: 'Julio' },
-  { value: '6', label: 'Junio' },
   { value: '3', label: 'Marzo' },
+  { value: '4', label: 'Abril' },
   { value: '5', label: 'Mayo' },
-  { value: '11', label: 'Noviembre' },
+  { value: '6', label: 'Junio' },
+  { value: '7', label: 'Julio' },
+  { value: '8', label: 'Agosto' },
+  { value: '9', label: 'Septiembre' },
   { value: '10', label: 'Octubre' },
-  { value: '9', label: 'Septiembre' }
+  { value: '11', label: 'Noviembre' },
+  { value: '12', label: 'Diciembre' }
 ];
 
 const SpainHolidaysMap: React.FC<SpainHolidaysMapProps> = ({ holidays }) => {
@@ -115,7 +115,7 @@ const SpainHolidaysMap: React.FC<SpainHolidaysMapProps> = ({ holidays }) => {
               <SelectValue placeholder="Seleccionar mes" />
             </SelectTrigger>
             <SelectContent>
-              {MONTHS_ALPHABETICAL.map(month => (
+              {MONTHS_CHRONOLOGICAL.map(month => (
                 <SelectItem key={month.value} value={month.value}>
                   {month.label}
                 </SelectItem>
@@ -508,7 +508,7 @@ const SpainHolidaysMap: React.FC<SpainHolidaysMapProps> = ({ holidays }) => {
                 {hoveredCommunity}
               </h3>
               <p className="text-sm text-gray-600 mb-3">
-                Festivos en {selectedMonth === 'all' ? selectedYear : `${MONTHS_ALPHABETICAL.find(m => m.value === selectedMonth)?.label} ${selectedYear}`}:
+                Festivos en {selectedMonth === 'all' ? selectedYear : `${MONTHS_CHRONOLOGICAL.find(m => m.value === selectedMonth)?.label} ${selectedYear}`}:
               </p>
               
               {(() => {
@@ -517,7 +517,7 @@ const SpainHolidaysMap: React.FC<SpainHolidaysMapProps> = ({ holidays }) => {
                 if (communityHolidays.length === 0) {
                   return (
                     <p className="text-gray-500 italic">
-                      No hay festivos registrados para esta comunidad en {selectedMonth === 'all' ? selectedYear : `${MONTHS_ALPHABETICAL.find(m => m.value === selectedMonth)?.label} ${selectedYear}`}
+                      No hay festivos registrados para esta comunidad en {selectedMonth === 'all' ? selectedYear : `${MONTHS_CHRONOLOGICAL.find(m => m.value === selectedMonth)?.label} ${selectedYear}`}
                     </p>
                   );
                 }
@@ -562,7 +562,7 @@ const SpainHolidaysMap: React.FC<SpainHolidaysMapProps> = ({ holidays }) => {
                   Explora los festivos por comunidad
                 </p>
                 <p className="text-sm text-gray-500">
-                  Pasa el ratón sobre una comunidad autónoma para ver sus festivos en {selectedMonth === 'all' ? selectedYear : `${MONTHS_ALPHABETICAL.find(m => m.value === selectedMonth)?.label} ${selectedYear}`}
+                  Pasa el ratón sobre una comunidad autónoma para ver sus festivos en {selectedMonth === 'all' ? selectedYear : `${MONTHS_CHRONOLOGICAL.find(m => m.value === selectedMonth)?.label} ${selectedYear}`}
                 </p>
               </div>
             </div>
