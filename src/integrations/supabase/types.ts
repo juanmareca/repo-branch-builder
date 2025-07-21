@@ -391,6 +391,30 @@ export type Database = {
         }
         Relationships: []
       }
+      squad_lead_preferences: {
+        Row: {
+          card_order: string[]
+          created_at: string
+          id: string
+          squad_lead_name: string
+          updated_at: string
+        }
+        Insert: {
+          card_order?: string[]
+          created_at?: string
+          id?: string
+          squad_lead_name: string
+          updated_at?: string
+        }
+        Update: {
+          card_order?: string[]
+          created_at?: string
+          id?: string
+          squad_lead_name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       squad_leads: {
         Row: {
           created_at: string | null
