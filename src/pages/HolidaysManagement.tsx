@@ -113,6 +113,8 @@ const HolidaysManagement = () => {
   const [communityFilter, setCommunityFilter] = useState<string[]>([]);
   const [originFilter, setOriginFilter] = useState<string[]>([]);
   const [festivoFilter, setFestivoFilter] = useState<string[]>([]);
+  const [yearFilter, setYearFilter] = useState<string[]>([]);
+  const [monthFilter, setMonthFilter] = useState<string[]>([]);
   
   // Sorting
   const [sortField, setSortField] = useState<keyof Holiday>('date');
@@ -239,7 +241,7 @@ const HolidaysManagement = () => {
 
   useEffect(() => {
     applyFilters();
-  }, [holidays, searchTerm, countryFilter, communityFilter, originFilter, festivoFilter, sortField, sortDirection]);
+  }, [holidays, searchTerm, countryFilter, communityFilter, originFilter, festivoFilter, yearFilter, monthFilter, sortField, sortDirection]);
 
   const applyFilters = useCallback(() => {
     let filtered = [...holidays];
