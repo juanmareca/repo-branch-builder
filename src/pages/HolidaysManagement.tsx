@@ -148,18 +148,10 @@ const HolidaysManagement = () => {
 
   // Column management with persistence
   const getInitialColumns = (): ColumnConfig[] => {
-    const savedColumns = localStorage.getItem('holidays-columns-config');
-    if (savedColumns) {
-      try {
-        const parsed = JSON.parse(savedColumns);
-        // Filter out any obsolete columns
-        const validKeys: (keyof Holiday)[] = ['date', 'festivo', 'pais', 'comunidad_autonoma', 'origen'];
-        return parsed.filter((col: ColumnConfig) => validKeys.includes(col.key));
-      } catch (error) {
-        console.error('Error parsing saved columns config:', error);
-      }
-    }
-    // Default configuration
+    // Forzar limpieza de configuración obsoleta
+    localStorage.removeItem('holidays-columns-config');
+    
+    // Configuración por defecto con columnas separadas
     return [
       { key: 'date', label: 'FECHA', visible: true, width: 150, minWidth: 120, resizable: true },
       { key: 'festivo', label: 'FESTIVO', visible: true, width: 250, minWidth: 200, resizable: true },
