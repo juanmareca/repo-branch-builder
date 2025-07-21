@@ -292,7 +292,7 @@ export default function SquadLeadDashboard() {
         <div className="flex justify-between items-center mb-8">
           <div>
             <h1 className="text-3xl font-bold text-foreground">Panel Squad Lead</h1>
-            <p className="text-muted-foreground mt-2">Gestiona tu equipo y proyectos - Mantén presionado el botón derecho del ratón sobre una tarjeta para arrastrarla</p>
+            <p className="text-muted-foreground mt-2">Gestiona tu equipo y proyectos</p>
           </div>
           <Button variant="outline" onClick={handleLogout} className="gap-2">
             <LogOut className="h-4 w-4" />
@@ -355,6 +355,11 @@ export default function SquadLeadDashboard() {
             );
           })}
         </div>
+
+        {/* Instrucciones de uso */}
+        <p className="text-muted-foreground text-sm italic mt-6">
+          Mantén presionado el botón derecho del ratón sobre una tarjeta para arrastrarla
+        </p>
       </div>
     </div>
   );
