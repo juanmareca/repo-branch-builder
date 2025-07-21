@@ -4,13 +4,15 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { CalendarIcon, ArrowLeft, Plus } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { CalendarIcon, ArrowLeft, Plus, Search } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { format, addMonths, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isWeekend, getDay } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
+import { useSquadData } from '@/hooks/useSquadData';
 import AssignmentSummary from '@/components/AssignmentSummary';
 
 interface Assignment {
@@ -34,6 +36,7 @@ interface Person {
   id: string;
   nombre: string;
   oficina: string;
+  squad_lead?: string;
 }
 
 interface Project {
@@ -47,16 +50,21 @@ const PROJECT_COLORS = [
   'bg-pink-500', 'bg-indigo-500', 'bg-teal-500', 'bg-red-500'
 ];
 
-export default function SquadAssignments() {
+export default function SquadAssignments({ userRole, userData }: { userRole?: string; userData?: any }) {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { persons: allPersons, squadLeads } = useSquadData();
   
   const [selectedPerson, setSelectedPerson] = useState<string>('');
   const [selectedProject, setSelectedProject] = useState<string>('');
+  const [selectedProjectName, setSelectedProjectName] = useState<string>('');
   const [selectedOffice, setSelectedOffice] = useState<string>('');
   const [startDate, setStartDate] = useState<string>('');
   const [endDate, setEndDate] = useState<string>('');
   const [percentage, setPercentage] = useState<string>('100');
+  const [assignmentType, setAssignmentType] = useState<string>('development');
+  const [showProjectSearch, setShowProjectSearch] = useState<boolean>(false);
+  const [projectSearchTerm, setProjectSearchTerm] = useState<string>('');
   
   const [persons, setPersons] = useState<Person[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
@@ -69,9 +77,31 @@ export default function SquadAssignments() {
   const currentDate = new Date();
   const months = Array.from({ length: 3 }, (_, i) => addMonths(currentDate, i));
 
+  // Get current squad lead name
+  const currentSquadLeadName = userData?.name;
+  
+  // Filter persons for current squad lead
+  const squadPersons = allPersons.filter(person => 
+    person.squad_lead === currentSquadLeadName
+  );
+
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [allPersons, userData]);
+
+  useEffect(() => {
+    if (allPersons.length > 0 && currentSquadLeadName) {
+      const mappedPersons = squadPersons.map(p => ({
+        id: p.id || '',
+        nombre: p.nombre || '',
+        oficina: p.oficina || '',
+        squad_lead: p.squad_lead
+      }));
+      setPersons(mappedPersons);
+      const uniqueOffices = [...new Set(mappedPersons.map(p => p.oficina))];
+      setOffices(uniqueOffices);
+    }
+  }, [allPersons, squadPersons, currentSquadLeadName]);
 
   const fetchData = async () => {
     try {
@@ -95,11 +125,7 @@ export default function SquadAssignments() {
         .from('holidays')
         .select('*');
       
-      if (personsData) {
-        setPersons(personsData);
-        const uniqueOffices = [...new Set(personsData.map(p => p.oficina))];
-        setOffices(uniqueOffices);
-      }
+      // The persons filtering is now handled in useEffect
       
       if (projectsData) setProjects(projectsData);
       if (assignmentsData) {
@@ -120,7 +146,8 @@ export default function SquadAssignments() {
         const spanishCommunities = [
           'Andalucía', 'Aragón', 'Asturias', 'Baleares', 'Canarias', 'Cantabria',
           'Castilla La Mancha', 'Castilla y Leon', 'Cataluña', 'Extremadura',
-          'Galicia', 'La Rioja', 'Madrid', 'Murcia', 'Navarra', 'País Vasco', 'Valencia'
+          'Galicia', 'La Rioja', 'Madrid', 'Murcia', 'Navarra', 'País Vasco', 'Valencia',
+          'A Coruña'
         ];
         
         // Separate countries (non-Spanish locations) and communities
@@ -147,7 +174,7 @@ export default function SquadAssignments() {
   };
 
   const handleAssign = async () => {
-    if (!selectedPerson || !selectedProject || !startDate || !endDate || !percentage) {
+    if (!selectedPerson || !selectedProject || !startDate || !endDate || !percentage || !assignmentType) {
       toast({
         title: "Error",
         description: "Todos los campos son obligatorios",
@@ -200,7 +227,7 @@ export default function SquadAssignments() {
           start_date: startDate,
           end_date: endDate,
           hours_allocated: percentageNum,
-          type: 'project'
+          type: assignmentType
         });
 
       if (error) throw error;
@@ -212,9 +239,11 @@ export default function SquadAssignments() {
 
       // Reset form
       setSelectedProject('');
+      setSelectedProjectName('');
       setStartDate('');
       setEndDate('');
       setPercentage('100');
+      setAssignmentType('development');
       
       // Refresh assignments
       fetchData();
@@ -282,7 +311,7 @@ export default function SquadAssignments() {
           
           {/* Empty cells for padding */}
           {startPadding.map((_, i) => (
-            <div key={`pad-${i}`} className="p-1"></div>
+            <div key={`pad-start-${i}`} className="p-1"></div>
           ))}
           
           {/* Calendar days */}
@@ -353,7 +382,7 @@ export default function SquadAssignments() {
           <div className="flex items-center gap-2">
             <CalendarIcon className="h-6 w-6 text-primary" />
             <div>
-              <h1 className="text-2xl font-bold">Asignaciones Avanzadas - Squad Lead: REVILLA MAILLO, JUAN MANUEL</h1>
+              <h1 className="text-2xl font-bold">Asignaciones Avanzadas - Squad Lead: {currentSquadLeadName || 'REVILLA MAILLO, JUAN MANUEL'}</h1>
               <p className="text-muted-foreground">
                 <span className="text-blue-600">Miembros del equipo: {persons.length} personas</span> | 
                 <span className="text-blue-600 ml-1">Proyectos activos: {projects.length} proyectos</span> | 
@@ -372,7 +401,7 @@ export default function SquadAssignments() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-7 gap-4">
               <div>
                 <Label htmlFor="person">Seleccionar Miembro del Equipo</Label>
                 <Select value={selectedPerson} onValueChange={setSelectedPerson}>
@@ -456,16 +485,64 @@ export default function SquadAssignments() {
 
               <div>
                 <Label htmlFor="project">Proyecto</Label>
-                <Select value={selectedProject} onValueChange={setSelectedProject}>
+                <Dialog open={showProjectSearch} onOpenChange={setShowProjectSearch}>
+                  <DialogTrigger asChild>
+                    <Button variant="outline" className="w-full justify-start">
+                      {selectedProjectName || "Seleccionar proyecto..."}
+                      <Search className="ml-2 h-4 w-4" />
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-lg">
+                    <DialogHeader>
+                      <DialogTitle>Buscar Proyecto</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4">
+                      <Input
+                        placeholder="Buscar por código o denominación..."
+                        value={projectSearchTerm}
+                        onChange={(e) => setProjectSearchTerm(e.target.value)}
+                      />
+                      <div className="max-h-96 overflow-y-auto space-y-2">
+                        {projects
+                          .filter(project => 
+                            projectSearchTerm === '' ||
+                            project.codigo_inicial.toLowerCase().includes(projectSearchTerm.toLowerCase()) ||
+                            project.denominacion.toLowerCase().includes(projectSearchTerm.toLowerCase())
+                          )
+                          .slice(0, 50)
+                          .map(project => (
+                            <div
+                              key={project.id}
+                              className="p-3 border rounded-lg cursor-pointer hover:bg-muted"
+                              onClick={() => {
+                                setSelectedProject(project.id);
+                                setSelectedProjectName(`${project.codigo_inicial} - ${project.denominacion}`);
+                                setShowProjectSearch(false);
+                                setProjectSearchTerm('');
+                              }}
+                            >
+                              <div className="font-medium">{project.codigo_inicial}</div>
+                              <div className="text-sm text-muted-foreground">{project.denominacion}</div>
+                            </div>
+                          ))}
+                      </div>
+                    </div>
+                  </DialogContent>
+                </Dialog>
+              </div>
+
+              <div>
+                <Label htmlFor="assignment-type">Tipo de Asignación</Label>
+                <Select value={assignmentType} onValueChange={setAssignmentType}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Seleccionar proyecto..." />
+                    <SelectValue placeholder="Seleccionar tipo..." />
                   </SelectTrigger>
                   <SelectContent>
-                    {projects.map(project => (
-                      <SelectItem key={project.id} value={project.id}>
-                        {project.codigo_inicial} - {project.denominacion}
-                      </SelectItem>
-                    ))}
+                    <SelectItem value="development">Desarrollo</SelectItem>
+                    <SelectItem value="testing">Testing</SelectItem>
+                    <SelectItem value="analysis">Análisis</SelectItem>
+                    <SelectItem value="management">Gestión</SelectItem>
+                    <SelectItem value="support">Soporte</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -511,12 +588,12 @@ export default function SquadAssignments() {
                     <div className="w-4 h-4 bg-red-100 border rounded"></div>
                     <span className="text-sm">Festivo</span>
                   </div>
-                  {assignments
+                   {assignments
                     .filter(a => a.person_id === selectedPerson)
-                    .map((assignment, index) => {
+                    .map((assignment) => {
                       const project = projects.find(p => p.id === assignment.project_id);
                       return (
-                        <div key={assignment.id} className="flex items-center gap-2">
+                        <div key={`legend-${assignment.id}`} className="flex items-center gap-2">
                           <div className={cn("w-4 h-4 rounded", assignment.project_color)}></div>
                           <span className="text-sm">{project?.codigo_inicial}</span>
                         </div>
@@ -528,8 +605,8 @@ export default function SquadAssignments() {
                   <div>
                     <h4 className="font-medium mb-2">Festivos en {personOffice}:</h4>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
-                      {currentMonthHolidays.map(holiday => (
-                        <div key={holiday.date} className="text-sm">
+                      {currentMonthHolidays.map((holiday, idx) => (
+                        <div key={`${holiday.date}-${idx}`} className="text-sm">
                           {format(new Date(holiday.date), 'dd/MM/yyyy')} - {holiday.festivo}
                         </div>
                       ))}
@@ -576,7 +653,7 @@ export default function SquadAssignments() {
                         const holidayName = getHolidayName(day, personOffice);
 
                         return (
-                          <div key={format(day, 'yyyy-MM-dd')} className="border rounded-lg p-3 bg-muted/30">
+                          <div key={`task-day-${format(day, 'yyyy-MM-dd')}`} className="border rounded-lg p-3 bg-muted/30">
                             <div className="font-medium text-sm mb-2">
                               {format(day, 'EEEE, dd/MM/yyyy', { locale: es })}
                             </div>
@@ -601,7 +678,7 @@ export default function SquadAssignments() {
                               {dayAssignments.map(assignment => {
                                 const project = projects.find(p => p.id === assignment.project_id);
                                 return (
-                                  <div key={assignment.id} className="flex items-center gap-2">
+                                  <div key={`day-assignment-${assignment.id}`} className="flex items-center gap-2">
                                     <div className={cn("w-3 h-3 rounded", assignment.project_color)}></div>
                                     <span className="text-foreground">
                                       {project?.codigo_inicial} - {assignment.hours_allocated}% de dedicación
