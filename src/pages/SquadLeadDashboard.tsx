@@ -310,7 +310,7 @@ export default function SquadLeadDashboard() {
             return (
               <div
                 key={card.id}
-                draggable={isDragMode && dragModeCard === card.id}
+                draggable={true}
                 onContextMenu={handleContextMenu}
                 onMouseDown={(e) => handleMouseDown(e, card.id)}
                 onMouseUp={handleMouseUp}
@@ -321,7 +321,7 @@ export default function SquadLeadDashboard() {
                 onDragEnd={handleDragEnd}
                 className={`transition-all duration-200 ${
                   isDragMode && dragModeCard === card.id && isRightMouseDown
-                    ? 'cursor-move bg-primary/5 ring-4 ring-primary/30 scale-[1.02] shadow-2xl' 
+                    ? 'cursor-move bg-yellow-400/30 ring-4 ring-yellow-400 scale-[1.05] shadow-2xl shadow-yellow-400/50 animate-pulse' 
                     : 'cursor-pointer hover:scale-[1.01]'
                 } ${
                   draggedCard === card.id ? 'opacity-70 scale-105' : ''
@@ -329,8 +329,8 @@ export default function SquadLeadDashboard() {
               >
                 <Card 
                   className={`h-full hover:shadow-lg transition-all duration-200 ${
-                    isDragMode && dragModeCard === card.id 
-                      ? 'shadow-xl border-primary/30' 
+                    isDragMode && dragModeCard === card.id && isRightMouseDown
+                      ? 'shadow-2xl shadow-yellow-400/60 border-yellow-400 border-2 bg-gradient-to-br from-yellow-200/20 to-red-200/20' 
                       : ''
                   }`}
                   onClick={() => !draggedCard && !isDragMode && handleNavigation(card.route)}
