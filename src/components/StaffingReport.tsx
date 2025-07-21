@@ -216,8 +216,8 @@ const StaffingReport: React.FC<StaffingReportProps> = ({ squadLeadName, squadPer
 
     const weeks = Object.keys(staffingData[0].weeklyData);
     
-    // Crear headers
-    const headers = [
+    // Crear headers principales
+    const mainHeaders = [
       'Código empleado',
       'Nombre Persona',
       'Categoría',
@@ -226,8 +226,10 @@ const StaffingReport: React.FC<StaffingReportProps> = ({ squadLeadName, squadPer
       'Squad Lead'
     ];
 
+    // Headers de semanas
+    const weekHeaders: string[] = [];
     weeks.forEach(week => {
-      headers.push(
+      weekHeaders.push(
         `${week} - Jornadas Facturables Proyecto`,
         `${week} - Jornadas STR Productos`,
         `${week} - Jornadas No Facturables Availability`,
@@ -238,6 +240,8 @@ const StaffingReport: React.FC<StaffingReportProps> = ({ squadLeadName, squadPer
         `${week} - Total Días Laborables`
       );
     });
+
+    const allHeaders = [...mainHeaders, ...weekHeaders];
 
     // Crear datos
     const data = staffingData.map(person => {
@@ -250,45 +254,194 @@ const StaffingReport: React.FC<StaffingReportProps> = ({ squadLeadName, squadPer
         person.squadLead
       ];
 
-       weeks.forEach(week => {
-         const weekData = person.weeklyData[week];
-         row.push(
-           weekData.jornadasFacturablesProyecto.toFixed(2),
-           weekData.jornadasSTRProductos.toFixed(2),
-           weekData.jornadasNoFacturablesAvailability.toFixed(2),
-           weekData.jornadasNoFacturablesManagement.toFixed(2),
-           weekData.jornadasNoFacturablesSAM.toFixed(2),
-           weekData.jornadasFacturablesOtros.toFixed(2),
-           weekData.jornadasNoDisponibles.toFixed(2),
-           weekData.totalDiasLaborables.toFixed(2)
-         );
-       });
+      weeks.forEach(week => {
+        const weekData = person.weeklyData[week];
+        row.push(
+          weekData.jornadasFacturablesProyecto.toFixed(2),
+          weekData.jornadasSTRProductos.toFixed(2),
+          weekData.jornadasNoFacturablesAvailability.toFixed(2),
+          weekData.jornadasNoFacturablesManagement.toFixed(2),
+          weekData.jornadasNoFacturablesSAM.toFixed(2),
+          weekData.jornadasFacturablesOtros.toFixed(2),
+          weekData.jornadasNoDisponibles.toFixed(2),
+          weekData.totalDiasLaborables.toFixed(2)
+        );
+      });
 
       return row;
     });
 
-    // Crear workbook
+    // Crear workbook y worksheet
     const wb = XLSX.utils.book_new();
-    const ws = XLSX.utils.aoa_to_sheet([headers, ...data]);
-    
-    // Agregar información del período
+    const ws = XLSX.utils.aoa_to_sheet([]);
+
+    // Información del período (primera fila con estilo)
     const periodInfo = [
-      [`Período considerado: ${format(startDate!, 'dd/MM/yyyy')} - ${format(endDate!, 'dd/MM/yyyy')}`],
-      [`Squad lead: ${squadLeadName}`],
+      [`INFORME DE STAFFING - ${squadLeadName.toUpperCase()}`],
+      [`Período: ${format(startDate!, 'dd/MM/yyyy')} - ${format(endDate!, 'dd/MM/yyyy')}`],
+      [`Generado: ${format(new Date(), 'dd/MM/yyyy HH:mm')}`],
       []
     ];
-    
+
+    // Agregar información del período
     XLSX.utils.sheet_add_aoa(ws, periodInfo, { origin: 'A1' });
-    XLSX.utils.sheet_add_aoa(ws, [headers, ...data], { origin: 'A4' });
     
+    // Agregar headers
+    XLSX.utils.sheet_add_aoa(ws, [allHeaders], { origin: 'A5' });
+    
+    // Agregar datos
+    XLSX.utils.sheet_add_aoa(ws, data, { origin: 'A6' });
+
+    // Calcular el rango de datos
+    const range = XLSX.utils.decode_range(ws['!ref'] || 'A1');
+    
+    // Configurar anchos de columna
+    const colWidths = [
+      { wch: 12 }, // Código empleado
+      { wch: 25 }, // Nombre Persona
+      { wch: 15 }, // Categoría
+      { wch: 15 }, // Grupo
+      { wch: 12 }, // Oficina
+      { wch: 18 }, // Squad Lead
+    ];
+
+    // Agregar anchos para columnas de semanas
+    weeks.forEach(() => {
+      colWidths.push(
+        { wch: 12 }, // Facturables Proyecto
+        { wch: 12 }, // STR Productos
+        { wch: 12 }, // No Facturables Availability
+        { wch: 12 }, // No Facturables Management
+        { wch: 12 }, // No Facturables SAM
+        { wch: 12 }, // Facturables Otros
+        { wch: 12 }, // No Disponibles
+        { wch: 12 }  // Total Días Laborables
+      );
+    });
+
+    ws['!cols'] = colWidths;
+
+    // Estilos para celdas
+    const headerStyle = {
+      font: { bold: true, color: { rgb: "FFFFFF" }, size: 11, name: "Calibri" },
+      fill: { fgColor: { rgb: "366092" } },
+      alignment: { horizontal: "center", vertical: "center", wrapText: true },
+      border: {
+        top: { style: "thin", color: { rgb: "000000" } },
+        bottom: { style: "thin", color: { rgb: "000000" } },
+        left: { style: "thin", color: { rgb: "000000" } },
+        right: { style: "thin", color: { rgb: "000000" } }
+      }
+    };
+
+    const titleStyle = {
+      font: { bold: true, color: { rgb: "FFFFFF" }, size: 14, name: "Calibri" },
+      fill: { fgColor: { rgb: "2F5687" } },
+      alignment: { horizontal: "center", vertical: "center" }
+    };
+
+    const subtitleStyle = {
+      font: { bold: true, color: { rgb: "2F5687" }, size: 11, name: "Calibri" },
+      alignment: { horizontal: "left", vertical: "center" }
+    };
+
+    const dataStyle = {
+      font: { size: 10, name: "Calibri" },
+      alignment: { horizontal: "center", vertical: "center" },
+      border: {
+        top: { style: "thin", color: { rgb: "CCCCCC" } },
+        bottom: { style: "thin", color: { rgb: "CCCCCC" } },
+        left: { style: "thin", color: { rgb: "CCCCCC" } },
+        right: { style: "thin", color: { rgb: "CCCCCC" } }
+      }
+    };
+
+    const personDataStyle = {
+      font: { size: 10, name: "Calibri" },
+      alignment: { horizontal: "left", vertical: "center" },
+      border: {
+        top: { style: "thin", color: { rgb: "CCCCCC" } },
+        bottom: { style: "thin", color: { rgb: "CCCCCC" } },
+        left: { style: "thin", color: { rgb: "CCCCCC" } },
+        right: { style: "thin", color: { rgb: "CCCCCC" } }
+      }
+    };
+
+    // Aplicar estilos al título principal
+    if (ws['A1']) {
+      ws['A1'].s = titleStyle;
+    }
+
+    // Aplicar estilos a subtítulos
+    if (ws['A2']) {
+      ws['A2'].s = subtitleStyle;
+    }
+    if (ws['A3']) {
+      ws['A3'].s = subtitleStyle;
+    }
+
+    // Aplicar estilos a headers (fila 5)
+    for (let col = 0; col < allHeaders.length; col++) {
+      const cellRef = XLSX.utils.encode_cell({ r: 4, c: col });
+      if (ws[cellRef]) {
+        ws[cellRef].s = headerStyle;
+      }
+    }
+
+    // Aplicar estilos a datos
+    for (let row = 5; row < 5 + data.length; row++) {
+      for (let col = 0; col < allHeaders.length; col++) {
+        const cellRef = XLSX.utils.encode_cell({ r: row, c: col });
+        if (ws[cellRef]) {
+          // Estilo diferente para columnas de información personal vs datos numéricos
+          if (col < 6) {
+            ws[cellRef].s = personDataStyle;
+          } else {
+            ws[cellRef].s = dataStyle;
+            
+            // Colores especiales según el tipo de jornada
+            const colIndex = (col - 6) % 8;
+            if (colIndex === 0) { // Jornadas Facturables Proyecto
+              ws[cellRef].s = { ...dataStyle, fill: { fgColor: { rgb: "E8F5E8" } } };
+            } else if (colIndex === 1) { // STR Productos
+              ws[cellRef].s = { ...dataStyle, fill: { fgColor: { rgb: "E8F0FF" } } };
+            } else if (colIndex === 2) { // No Facturables Availability
+              ws[cellRef].s = { ...dataStyle, fill: { fgColor: { rgb: "FFF8E8" } } };
+            } else if (colIndex === 3) { // No Facturables Management
+              ws[cellRef].s = { ...dataStyle, fill: { fgColor: { rgb: "F0E8FF" } } };
+            } else if (colIndex === 4) { // No Facturables SAM
+              ws[cellRef].s = { ...dataStyle, fill: { fgColor: { rgb: "FFE8E8" } } };
+            } else if (colIndex === 5) { // Facturables Otros
+              ws[cellRef].s = { ...dataStyle, fill: { fgColor: { rgb: "E8FFF8" } } };
+            } else if (colIndex === 6) { // No Disponibles
+              ws[cellRef].s = { ...dataStyle, fill: { fgColor: { rgb: "F5F5F5" } } };
+            } else if (colIndex === 7) { // Total Días Laborables
+              ws[cellRef].s = { ...dataStyle, fill: { fgColor: { rgb: "E0E0E0" } }, font: { bold: true, size: 10, name: "Calibri" } };
+            }
+          }
+        }
+      }
+    }
+
+    // Congelar paneles (fijar headers y columnas de información personal)
+    ws['!freeze'] = { xSplit: 6, ySplit: 5 };
+
+    // Agregar filtros automáticos
+    ws['!autofilter'] = { ref: `A5:${XLSX.utils.encode_cell({ r: 4 + data.length, c: allHeaders.length - 1 })}` };
+
+    // Merge cells para el título
+    ws['!merges'] = [
+      { s: { r: 0, c: 0 }, e: { r: 0, c: Math.min(allHeaders.length - 1, 10) } }
+    ];
+
     XLSX.utils.book_append_sheet(wb, ws, 'Informe Staffing');
     
-    const fileName = `informe_staffing_${format(startDate!, 'yyyyMMdd')}_${format(endDate!, 'yyyyMMdd')}.xlsx`;
+    const fileName = `informe_staffing_${squadLeadName.toLowerCase().replace(/\s+/g, '_')}_${format(startDate!, 'yyyyMMdd')}_${format(endDate!, 'yyyyMMdd')}.xlsx`;
     XLSX.writeFile(wb, fileName);
 
     toast({
-      title: "Éxito",
-      description: "Informe exportado correctamente",
+      title: "¡Preciosidad exportada! ✨",
+      description: `Excel generado con estilo: ${fileName}`,
     });
   };
 
