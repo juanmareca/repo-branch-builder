@@ -482,11 +482,7 @@ const TeamCapabilities: React.FC<TeamCapabilitiesProps> = ({
 
     allMembers.forEach(personName => {
       completeData[personName] = {
-        'Módulos FINANCIEROS': [],
-        'Módulos TESORERÍA': [],
-        'Módulos CONTROLLING': [],
-        'Otros Módulos': [],
-        'Implantaciones SAP': [],
+        'Módulos SAP e Implantaciones': [],
         'Idiomas': [],
         'Industrias': [],
         'Otras Capacidades': []
@@ -495,19 +491,8 @@ const TeamCapabilities: React.FC<TeamCapabilitiesProps> = ({
       ALL_SKILLS.forEach(skill => {
         let category = 'Otras Capacidades';
         
-        if (skill.toLowerCase().includes('módulo sap')) {
-          // Clasificar módulos SAP en subcategorías
-          if (skill.includes('FI-')) {
-            category = 'Módulos FINANCIEROS';
-          } else if (skill.includes('TR-')) {
-            category = 'Módulos TESORERÍA';
-          } else if (skill.includes('CO-')) {
-            category = 'Módulos CONTROLLING';
-          } else {
-            category = 'Otros Módulos';
-          }
-        } else if (skill.toLowerCase().includes('implantación sap')) {
-          category = 'Implantaciones SAP';
+        if (skill.toLowerCase().includes('módulo sap') || skill.toLowerCase().includes('implantación sap')) {
+          category = 'Módulos SAP e Implantaciones';
         } else if (skill.toLowerCase().includes('idioma')) {
           category = 'Idiomas';
         } else if (skill.toLowerCase().includes('industria')) {
@@ -672,6 +657,34 @@ const TeamCapabilities: React.FC<TeamCapabilitiesProps> = ({
     );
   }
 
+  // Función para agrupar módulos SAP en subcategorías
+  const groupSAPModules = (sapCapacities: Capacity[]) => {
+    const groups: { [key: string]: Capacity[] } = {
+      'Módulos FINANCIEROS': [],
+      'Módulos TESORERÍA': [],
+      'Módulos CONTROLLING': [],
+      'Otros Módulos': [],
+      'Implantaciones SAP': []
+    };
+
+    sapCapacities.forEach(capacity => {
+      if (capacity.skill.toLowerCase().includes('implantación sap')) {
+        groups['Implantaciones SAP'].push(capacity);
+      } else if (capacity.skill.includes('FI-')) {
+        groups['Módulos FINANCIEROS'].push(capacity);
+      } else if (capacity.skill.includes('TR-')) {
+        groups['Módulos TESORERÍA'].push(capacity);
+      } else if (capacity.skill.includes('CO-')) {
+        groups['Módulos CONTROLLING'].push(capacity);
+      } else {
+        groups['Otros Módulos'].push(capacity);
+      }
+    });
+
+    // Filtrar grupos vacíos
+    return Object.entries(groups).filter(([_, caps]) => caps.length > 0);
+  };
+
   const completeCapacities = generateCompleteCapacities();
   const allMembers = getAllTeamMembers();
 
@@ -785,15 +798,234 @@ const TeamCapabilities: React.FC<TeamCapabilitiesProps> = ({
                       </CardTitle>
                     </CardHeader>
                     <CardContent className="p-4">
-                      <div className={cn(
-                        "grid gap-2",
-                        category === 'Idiomas' || category === 'Industrias'
-                          ? "grid-cols-[repeat(auto-fit,minmax(120px,1fr))]"
-                          : ""
-                      )} style={category !== 'Idiomas' && category !== 'Industrias' ? { 
-                        gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))'
-                      } : undefined}>
-                        {categoryCapacities.map((capacity) => {
+                      {category === 'Módulos SAP e Implantaciones' ? (
+                        // Renderizar subcategorías para módulos SAP
+                        <div className="space-y-4">
+                          {groupSAPModules(categoryCapacities).map(([subCategory, subCapacities]) => (
+                            <div key={subCategory}>
+                              {/* Cabecera de subcategoría */}
+                              <div className="bg-gradient-to-r from-secondary/30 to-secondary/50 px-3 py-2 rounded-md mb-3">
+                                <h5 className="text-sm font-semibold text-secondary-foreground">{subCategory}</h5>
+                              </div>
+                              {/* Grid de capacidades de la subcategoría */}
+                              <div className="grid gap-2" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))' }}>
+                                {subCapacities.map((capacity) => {
+                                  const editKey = `${capacity.person_name}-${capacity.skill}`;
+                                  const currentLevel = editedCapacities[editKey] || capacity.level;
+                                  
+                                  return (
+                                    <div
+                                      key={editKey}
+                                      className="p-3 border rounded-lg hover:shadow-sm transition-shadow group"
+                                    >
+                                      <div className="flex items-start justify-between gap-2 mb-2">
+                                        <div className="flex-1 min-w-0">
+                                          <div className="flex items-center gap-2">
+                                             <h4 className="font-medium text-sm leading-tight group-hover:text-primary transition-colors">
+                                               {capacity.skill.replace('Módulo SAP - ', '')}
+                                             </h4>
+                                             {isSAPModule(capacity.skill) && (
+                                               <Popover>
+                                                 <PopoverTrigger asChild>
+                                                   <Button
+                                                     variant="ghost"
+                                                     size="sm"
+                                                     className="h-6 w-6 p-0 hover:bg-primary/10 transition-colors"
+                                                   >
+                                                     <Info className="h-4 w-4 text-muted-foreground hover:text-primary transition-colors" />
+                                                   </Button>
+                                                 </PopoverTrigger>
+                                                 <PopoverContent className="w-[400px] p-0 bg-background border shadow-lg animate-fade-in" sideOffset={8}>
+                                                   {(() => {
+                                                     const description = getSAPModuleInfo(capacity.skill);
+                                                     const moduleInfo = parseModuleInfo(capacity.skill, description);
+                                                     
+                                                     return (
+                                                       <div className="space-y-4 p-5">
+                                                         {/* Header del módulo */}
+                                                         <div className="flex items-start gap-3 pb-3 border-b">
+                                                           <div className={`flex-shrink-0 w-10 h-10 rounded-lg flex items-center justify-center ${
+                                                             moduleInfo.isFinancial ? 'bg-blue-100 dark:bg-blue-900/30' :
+                                                             moduleInfo.isControlling ? 'bg-purple-100 dark:bg-purple-900/30' :
+                                                             moduleInfo.isTreasury ? 'bg-green-100 dark:bg-green-900/30' :
+                                                             moduleInfo.isRealEstate ? 'bg-orange-100 dark:bg-orange-900/30' :
+                                                             moduleInfo.isBRIM ? 'bg-pink-100 dark:bg-pink-900/30' :
+                                                             moduleInfo.isGRC ? 'bg-red-100 dark:bg-red-900/30' :
+                                                             moduleInfo.isS4Implementation ? 'bg-indigo-100 dark:bg-indigo-900/30' :
+                                                             'bg-gray-100 dark:bg-gray-900/30'
+                                                           }`}>
+                                                             {moduleInfo.isFinancial ? <Building2 className="w-5 h-5 text-blue-600 dark:text-blue-400" /> :
+                                                              moduleInfo.isControlling ? <Cog className="w-5 h-5 text-purple-600 dark:text-purple-400" /> :
+                                                              moduleInfo.isTreasury ? <Globe className="w-5 h-5 text-green-600 dark:text-green-400" /> :
+                                                              moduleInfo.isRealEstate ? <Building2 className="w-5 h-5 text-orange-600 dark:text-orange-400" /> :
+                                                              moduleInfo.isBRIM ? <Cog className="w-5 h-5 text-pink-600 dark:text-pink-400" /> :
+                                                              moduleInfo.isGRC ? <AlertCircle className="w-5 h-5 text-red-600 dark:text-red-400" /> :
+                                                              moduleInfo.isS4Implementation ? <ArrowRight className="w-5 h-5 text-indigo-600 dark:text-indigo-400" /> :
+                                                              <Brain className="w-5 h-5 text-gray-600 dark:text-gray-400" />}
+                                                           </div>
+                                                           <div className="flex-1 min-w-0">
+                                                             <h4 className="font-bold text-base text-foreground leading-tight">
+                                                               {moduleInfo.moduleCode}
+                                                             </h4>
+                                                             <p className="text-sm text-muted-foreground mt-1 leading-relaxed">
+                                                               {moduleInfo.mainDefinition}
+                                                             </p>
+                                                           </div>
+                                                         </div>
+
+                                                         {/* Contenido estructurado */}
+                                                         <div className="space-y-4">
+                                                           {moduleInfo.funciones && (
+                                                             <div className="space-y-2">
+                                                               <div className="flex items-center gap-2">
+                                                                 <CheckCircle className="w-4 h-4 text-green-600 dark:text-green-400" />
+                                                                 <h5 className="font-semibold text-sm text-foreground">Funciones Principales</h5>
+                                                               </div>
+                                                               <p className="text-xs text-muted-foreground leading-relaxed pl-6">
+                                                                 {moduleInfo.funciones}
+                                                               </p>
+                                                             </div>
+                                                           )}
+
+                                                           {moduleInfo.componentes && (
+                                                             <div className="space-y-2">
+                                                               <div className="flex items-center gap-2">
+                                                                 <Cog className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                                                                 <h5 className="font-semibold text-sm text-foreground">Componentes</h5>
+                                                               </div>
+                                                               <p className="text-xs text-muted-foreground leading-relaxed pl-6">
+                                                                 {moduleInfo.componentes}
+                                                               </p>
+                                                             </div>
+                                                           )}
+
+                                                           {moduleInfo.transacciones && (
+                                                             <div className="space-y-2">
+                                                               <div className="flex items-center gap-2">
+                                                                 <ArrowRight className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+                                                                 <h5 className="font-semibold text-sm text-foreground">Transacciones Clave</h5>
+                                                               </div>
+                                                               <p className="text-xs text-muted-foreground leading-relaxed pl-6 font-mono">
+                                                                 {moduleInfo.transacciones}
+                                                               </p>
+                                                             </div>
+                                                           )}
+
+                                                           {moduleInfo.integraciones && (
+                                                             <div className="space-y-2">
+                                                               <div className="flex items-center gap-2">
+                                                                 <Globe className="w-4 h-4 text-orange-600 dark:text-orange-400" />
+                                                                 <h5 className="font-semibold text-sm text-foreground">Integraciones</h5>
+                                                               </div>
+                                                               <p className="text-xs text-muted-foreground leading-relaxed pl-6">
+                                                                 {moduleInfo.integraciones}
+                                                               </p>
+                                                             </div>
+                                                           )}
+
+                                                           {moduleInfo.s4hana && (
+                                                             <div className="space-y-2 bg-gradient-to-r from-primary/5 to-primary/10 p-3 rounded-lg border border-primary/20">
+                                                               <div className="flex items-center gap-2">
+                                                                 <Star className="w-4 h-4 text-primary" />
+                                                                 <h5 className="font-semibold text-sm text-primary">S/4HANA</h5>
+                                                               </div>
+                                                               <p className="text-xs text-muted-foreground leading-relaxed pl-6">
+                                                                 {moduleInfo.s4hana}
+                                                               </p>
+                                                             </div>
+                                                           )}
+                                                         </div>
+
+                                                         {/* Badge del tipo de módulo */}
+                                                         <div className="flex justify-end pt-2 border-t">
+                                                           <Badge 
+                                                             variant="secondary" 
+                                                             className={`text-xs px-3 py-1 ${
+                                                               moduleInfo.isFinancial ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' :
+                                                               moduleInfo.isControlling ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400' :
+                                                               moduleInfo.isTreasury ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' :
+                                                               moduleInfo.isRealEstate ? 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400' :
+                                                               moduleInfo.isBRIM ? 'bg-pink-100 text-pink-700 dark:bg-pink-900/30 dark:text-pink-400' :
+                                                               moduleInfo.isGRC ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' :
+                                                               moduleInfo.isS4Implementation ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400' :
+                                                               'bg-gray-100 text-gray-700 dark:bg-gray-900/30 dark:text-gray-400'
+                                                             }`}
+                                                           >
+                                                             {moduleInfo.isFinancial ? 'Financials' :
+                                                              moduleInfo.isControlling ? 'Controlling' :
+                                                              moduleInfo.isTreasury ? 'Treasury' :
+                                                              moduleInfo.isRealEstate ? 'Real Estate' :
+                                                              moduleInfo.isBRIM ? 'BRIM' :
+                                                              moduleInfo.isGRC ? 'GRC' :
+                                                              moduleInfo.isS4Implementation ? 'S/4HANA Implementation' :
+                                                              'SAP Module'}
+                                                           </Badge>
+                                                         </div>
+                                                       </div>
+                                                     );
+                                                   })()}
+                                                  </PopoverContent>
+                                                </Popover>
+                                              )}
+                                          </div>
+                                        </div>
+                                        
+                                        {isEditing ? (
+                                          <Select 
+                                            value={currentLevel} 
+                                            onValueChange={(value) => setEditedCapacities(prev => ({ ...prev, [editKey]: value }))}
+                                          >
+                                            <SelectTrigger className="w-20 h-7 text-xs">
+                                              <SelectValue />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                              {LEVEL_OPTIONS.map(level => (
+                                                <SelectItem key={level} value={level} className="text-xs">
+                                                  {level}
+                                                </SelectItem>
+                                              ))}
+                                            </SelectContent>
+                                          </Select>
+                                        ) : (
+                                          <Badge 
+                                            variant="outline" 
+                                            className={`${getLevelColor(currentLevel)} text-xs px-2 py-1 border`}
+                                          >
+                                            {currentLevel}
+                                          </Badge>
+                                        )}
+                                      </div>
+                                      
+                                      {capacity.certification && (
+                                        <div className="mt-2 flex items-center gap-1">
+                                          <Award className="h-3 w-3 text-amber-500" />
+                                          <span className="text-xs text-muted-foreground">{capacity.certification}</span>
+                                        </div>
+                                      )}
+                                      
+                                      {capacity.comments && (
+                                        <div className="mt-2">
+                                          <p className="text-xs text-muted-foreground">{capacity.comments}</p>
+                                        </div>
+                                      )}
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        // Renderizado normal para otras categorías
+                        <div className={cn(
+                          "grid gap-2",
+                          category === 'Idiomas' || category === 'Industrias'
+                            ? "grid-cols-[repeat(auto-fit,minmax(120px,1fr))]"
+                            : ""
+                        )} style={category !== 'Idiomas' && category !== 'Industrias' ? { 
+                          gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))'
+                        } : undefined}>
+                          {categoryCapacities.map((capacity) => {
                           const editKey = `${capacity.person_name}-${capacity.skill}`;
                           const currentLevel = editedCapacities[editKey] || capacity.level;
                           
@@ -1147,7 +1379,9 @@ const TeamCapabilities: React.FC<TeamCapabilitiesProps> = ({
                             </div>
                           );
                         })}
-                      </div>
+                        </div>
+                      )}
+                    </CardContent>
                     </CardContent>
                   </Card>
                 ))}
