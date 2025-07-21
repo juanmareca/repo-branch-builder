@@ -77,7 +77,7 @@ interface ColumnConfig {
   resizable: boolean;
 }
 
-const SKILL_LEVELS = ['Básico', 'Medio', 'Alto', 'Experto'];
+const SKILL_LEVELS = ['Nulo', 'Básico', 'Medio', 'Alto', 'Experto'];
 
 export default function CapacitiesManagement() {
   const [capacities, setCapacities] = useState<Capacity[]>([]);
