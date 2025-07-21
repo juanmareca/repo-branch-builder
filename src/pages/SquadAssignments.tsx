@@ -237,7 +237,7 @@ export default function SquadAssignments() {
     const startPadding = Array.from({ length: (getDay(monthStart) + 6) % 7 }, (_, i) => null);
     
     const selectedPersonData = persons.find(p => p.id === selectedPerson);
-    const personOffice = selectedOffice || selectedPersonData?.oficina || '';
+    const personOffice = (selectedOffice && selectedOffice !== 'default') ? selectedOffice : selectedPersonData?.oficina || '';
 
     return (
       <div className="bg-white rounded-lg border p-4">
@@ -304,7 +304,7 @@ export default function SquadAssignments() {
   };
 
   const selectedPersonData = persons.find(p => p.id === selectedPerson);
-  const personOffice = selectedOffice || selectedPersonData?.oficina || '';
+  const personOffice = (selectedOffice && selectedOffice !== 'default') ? selectedOffice : selectedPersonData?.oficina || '';
   
   // Get holidays for legend
   const currentMonthHolidays = holidays.filter(h => {
@@ -365,7 +365,7 @@ export default function SquadAssignments() {
                     <SelectValue placeholder="Usar oficina por defecto" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Por defecto</SelectItem>
+                    <SelectItem value="default">Por defecto</SelectItem>
                     {offices.map(office => (
                       <SelectItem key={office} value={office}>
                         {office}
