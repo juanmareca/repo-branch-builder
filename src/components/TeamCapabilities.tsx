@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Brain, Star, Award, Loader2, Users, Info, Edit, Save, X, Building2, Globe, Cog, ArrowRight, CheckCircle, AlertCircle, FileText } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useToast } from '@/hooks/use-toast';
+import { cn } from '@/lib/utils';
 import jsPDF from 'jspdf';
 import { useSquadData } from '../hooks/useSquadData';
 
@@ -761,9 +762,14 @@ const TeamCapabilities: React.FC<TeamCapabilitiesProps> = ({
                       </CardDescription>
                     </CardHeader>
                     <CardContent className="p-4">
-                      <div className="grid gap-2" style={{ 
+                      <div className={cn(
+                        "grid gap-2",
+                        category === 'Idiomas' 
+                          ? "grid-cols-[repeat(auto-fit,minmax(120px,1fr))]"
+                          : ""
+                      )} style={category !== 'Idiomas' ? { 
                         gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))'
-                      }}>
+                      } : undefined}>
                         {categoryCapacities.map((capacity) => {
                           const editKey = `${capacity.person_name}-${capacity.skill}`;
                           const currentLevel = editedCapacities[editKey] || capacity.level;
@@ -1083,7 +1089,12 @@ const TeamCapabilities: React.FC<TeamCapabilitiesProps> = ({
                                 ) : (
                                   <Badge 
                                     variant="outline" 
-                                    className={`text-xs px-2 py-1 ${getLevelColor(currentLevel, category === 'Industrias')}`}
+                                    className={cn(
+                                      category === 'Idiomas' 
+                                        ? "text-xs px-1 py-0.5 min-w-0 h-5 leading-tight font-medium" 
+                                        : "text-xs px-2 py-1",
+                                      getLevelColor(currentLevel, category === 'Industrias')
+                                    )}
                                   >
                                     {currentLevel}
                                   </Badge>
