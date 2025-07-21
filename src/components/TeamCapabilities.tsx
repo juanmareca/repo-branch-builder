@@ -4,6 +4,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 import { Brain, Star, Award, Loader2, Users, Info, Edit, Save, X, Building2, Globe, Cog, ArrowRight, CheckCircle, AlertCircle, FileText } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useToast } from '@/hooks/use-toast';
@@ -88,6 +90,7 @@ const TeamCapabilities: React.FC<TeamCapabilitiesProps> = ({
   const [isEditing, setIsEditing] = useState(false);
   const [editedCapacities, setEditedCapacities] = useState<{[key: string]: string}>({});
   const [saving, setSaving] = useState(false);
+  const [hideNoExperience, setHideNoExperience] = useState(false);
   const { toast } = useToast();
   const { refetch } = useSquadData();
 
@@ -624,6 +627,35 @@ const TeamCapabilities: React.FC<TeamCapabilitiesProps> = ({
   const completeCapacities = generateCompleteCapacities();
   const allMembers = getAllTeamMembers();
 
+  // Función para filtrar capacidades sin experiencia
+  const shouldHideCapacity = (capacity: Capacity) => {
+    if (!hideNoExperience) return false;
+    
+    // Ocultar si es "Nulo"
+    if (capacity.level === 'Nulo') return true;
+    
+    // Ocultar si es idioma con "Pre-A1"
+    if (capacity.skill.startsWith('Idiomas -') && capacity.level === 'Pre-A1') return true;
+    
+    return false;
+  };
+
+  // Filtrar capacidades completas
+  const filteredCompleteCapacities = Object.entries(completeCapacities).reduce((acc, [personName, personCapacities]) => {
+    const filteredPersonCapacities = Object.entries(personCapacities).reduce((personAcc, [category, categoryCapacities]) => {
+      const filteredCategoryCapacities = categoryCapacities.filter(capacity => !shouldHideCapacity(capacity));
+      if (filteredCategoryCapacities.length > 0) {
+        personAcc[category] = filteredCategoryCapacities;
+      }
+      return personAcc;
+    }, {} as typeof personCapacities);
+    
+    if (Object.keys(filteredPersonCapacities).length > 0) {
+      acc[personName] = filteredPersonCapacities;
+    }
+    return acc;
+  }, {} as typeof completeCapacities);
+
   return (
     <div className="space-y-6">
       {/* Botón de actualizar capacidades y exportar PDF */}
@@ -670,10 +702,28 @@ const TeamCapabilities: React.FC<TeamCapabilitiesProps> = ({
         </div>
       </div>
 
+      {/* Toggle para ocultar capacidades sin conocimiento */}
+      <div className="flex items-center space-x-2 p-3 bg-muted/50 rounded-lg border">
+        <Switch
+          id="hide-no-experience"
+          checked={hideNoExperience}
+          onCheckedChange={setHideNoExperience}
+        />
+        <Label htmlFor="hide-no-experience" className="text-sm font-medium cursor-pointer">
+          Ocultar capacidades sin conocimiento o experiencia
+        </Label>
+      </div>
+
       {/* Lista de miembros del equipo */}
       <div className="space-y-8">
         {allMembers.map((personName, index) => {
-          const personCapacities = completeCapacities[personName];
+          const personCapacities = filteredCompleteCapacities[personName];
+          
+          // Si no hay capacidades después del filtrado, no mostrar la persona
+          if (!personCapacities || Object.keys(personCapacities).length === 0) {
+            return null;
+          }
+          
           const isSquadLead = index === 0 && personName === currentSquadLeadName;
           const allPersonCapacities = Object.values(personCapacities).flat();
           
