@@ -752,14 +752,11 @@ const TeamCapabilities: React.FC<TeamCapabilitiesProps> = ({
               <div className="grid gap-4 ml-4">
                 {Object.entries(personCapacities).map(([category, categoryCapacities]) => (
                   <Card key={category} className="overflow-hidden">
-                    <CardHeader className="bg-gradient-to-r from-muted/50 to-muted/80 py-3">
+                    <CardHeader className="bg-gradient-to-r from-muted/50 to-muted/80 py-2">
                       <CardTitle className="flex items-center gap-2 text-base">
                         {getSkillIcon(category)}
                         {category}
                       </CardTitle>
-                      <CardDescription className="text-xs">
-                        {categoryCapacities.length} capacidades
-                      </CardDescription>
                     </CardHeader>
                     <CardContent className="p-4">
                       <div className={cn(
