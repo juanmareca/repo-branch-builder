@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { CalendarIcon, ArrowLeft, Plus, Search } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { format, addMonths, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isWeekend, getDay } from 'date-fns';
@@ -65,6 +66,12 @@ export default function SquadAssignments({ userRole, userData }: { userRole?: st
   const [assignmentType, setAssignmentType] = useState<string>('development');
   const [showProjectSearch, setShowProjectSearch] = useState<boolean>(false);
   const [projectSearchTerm, setProjectSearchTerm] = useState<string>('');
+  const [showConflictDialog, setShowConflictDialog] = useState<boolean>(false);
+  const [conflictData, setConflictData] = useState<{
+    conflictingAssignments: Assignment[];
+    conflictDays: string[];
+    newAssignmentData: any;
+  } | null>(null);
   
   const [persons, setPersons] = useState<Person[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
@@ -193,9 +200,127 @@ export default function SquadAssignments({ userRole, userData }: { userRole?: st
       return;
     }
 
-    // Check if total percentage for any day exceeds 100%
+    // Check for existing assignments (conflicts)
     const startDateObj = new Date(startDate);
     const endDateObj = new Date(endDate);
+    const days = eachDayOfInterval({ start: startDateObj, end: endDateObj });
+    
+    const conflictingAssignments: Assignment[] = [];
+    const conflictDays: string[] = [];
+    
+    for (const day of days) {
+      const dayStr = format(day, 'yyyy-MM-dd');
+      const existingAssignments = assignments.filter(a => 
+        a.person_id === selectedPerson &&
+        dayStr >= a.start_date && 
+        dayStr <= a.end_date
+      );
+      
+      if (existingAssignments.length > 0) {
+        conflictDays.push(dayStr);
+        existingAssignments.forEach(assignment => {
+          if (!conflictingAssignments.find(ca => ca.id === assignment.id)) {
+            conflictingAssignments.push(assignment);
+          }
+        });
+      }
+    }
+
+    const newAssignmentData = {
+      person_id: selectedPerson,
+      project_id: selectedProject,
+      start_date: startDate,
+      end_date: endDate,
+      hours_allocated: percentageNum,
+      type: assignmentType
+    };
+
+    // If there are conflicts, show dialog
+    if (conflictingAssignments.length > 0) {
+      setConflictData({
+        conflictingAssignments,
+        conflictDays,
+        newAssignmentData
+      });
+      setShowConflictDialog(true);
+      return;
+    }
+
+    // No conflicts, proceed normally
+    await createAssignment(newAssignmentData);
+  };
+
+  const createAssignment = async (assignmentData: any) => {
+    try {
+      const { error } = await supabase
+        .from('assignments')
+        .insert(assignmentData);
+
+      if (error) throw error;
+
+      toast({
+        title: "Éxito",
+        description: "Asignación creada correctamente"
+      });
+
+      resetForm();
+      fetchData();
+      
+    } catch (error) {
+      console.error('Error creating assignment:', error);
+      toast({
+        title: "Error",
+        description: "Error al crear la asignación",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const resetForm = () => {
+    setSelectedProject('');
+    setSelectedProjectName('');
+    setStartDate('');
+    setEndDate('');
+    setPercentage('100');
+    setAssignmentType('development');
+  };
+
+  const handleReplaceAssignments = async () => {
+    if (!conflictData) return;
+
+    try {
+      // Delete conflicting assignments
+      for (const assignment of conflictData.conflictingAssignments) {
+        const { error } = await supabase
+          .from('assignments')
+          .delete()
+          .eq('id', assignment.id);
+        
+        if (error) throw error;
+      }
+
+      // Create new assignment
+      await createAssignment(conflictData.newAssignmentData);
+      
+      setShowConflictDialog(false);
+      setConflictData(null);
+      
+    } catch (error) {
+      console.error('Error replacing assignments:', error);
+      toast({
+        title: "Error",
+        description: "Error al sustituir las asignaciones",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleAddAssignment = async () => {
+    if (!conflictData) return;
+
+    // Check if total percentage would exceed 100%
+    const startDateObj = new Date(conflictData.newAssignmentData.start_date);
+    const endDateObj = new Date(conflictData.newAssignmentData.end_date);
     const days = eachDayOfInterval({ start: startDateObj, end: endDateObj });
     
     for (const day of days) {
@@ -206,7 +331,7 @@ export default function SquadAssignments({ userRole, userData }: { userRole?: st
         dayStr <= a.end_date
       );
       
-      const totalPercentage = existingAssignments.reduce((sum, a) => sum + a.hours_allocated, 0) + percentageNum;
+      const totalPercentage = existingAssignments.reduce((sum, a) => sum + a.hours_allocated, 0) + conflictData.newAssignmentData.hours_allocated;
       
       if (totalPercentage > 100) {
         toast({
@@ -218,44 +343,10 @@ export default function SquadAssignments({ userRole, userData }: { userRole?: st
       }
     }
 
-    try {
-      const { error } = await supabase
-        .from('assignments')
-        .insert({
-          person_id: selectedPerson,
-          project_id: selectedProject,
-          start_date: startDate,
-          end_date: endDate,
-          hours_allocated: percentageNum,
-          type: assignmentType
-        });
-
-      if (error) throw error;
-
-      toast({
-        title: "Éxito",
-        description: "Asignación creada correctamente"
-      });
-
-      // Reset form
-      setSelectedProject('');
-      setSelectedProjectName('');
-      setStartDate('');
-      setEndDate('');
-      setPercentage('100');
-      setAssignmentType('development');
-      
-      // Refresh assignments
-      fetchData();
-      
-    } catch (error) {
-      console.error('Error creating assignment:', error);
-      toast({
-        title: "Error",
-        description: "Error al crear la asignación",
-        variant: "destructive"
-      });
-    }
+    // Proceed with adding assignment
+    await createAssignment(conflictData.newAssignmentData);
+    setShowConflictDialog(false);
+    setConflictData(null);
   };
 
   const getPersonAssignments = (personId: string, date: Date) => {
@@ -717,6 +808,51 @@ export default function SquadAssignments({ userRole, userData }: { userRole?: st
           </>
         )}
       </div>
+      
+      {/* Conflict Resolution Dialog */}
+      <AlertDialog open={showConflictDialog} onOpenChange={setShowConflictDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Conflicto de Asignaciones Detectado</AlertDialogTitle>
+            <AlertDialogDescription>
+              Ya existen asignaciones para algunos días en el período seleccionado. 
+              ¿Cómo desea proceder?
+              
+              {conflictData && (
+                <div className="mt-4 p-3 bg-muted rounded-lg">
+                  <div className="text-sm font-medium mb-2">Asignaciones existentes:</div>
+                  <div className="space-y-1 text-xs">
+                    {conflictData.conflictingAssignments.map(assignment => {
+                      const project = projects.find(p => p.id === assignment.project_id);
+                      return (
+                        <div key={assignment.id}>
+                          • {project?.codigo_inicial || 'Proyecto'} - {assignment.hours_allocated}% 
+                          ({assignment.start_date} a {assignment.end_date})
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="flex-col sm:flex-row gap-2">
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleReplaceAssignments}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              Sustituir Asignaciones
+            </AlertDialogAction>
+            <AlertDialogAction 
+              onClick={handleAddAssignment}
+              className="bg-green-600 hover:bg-green-700"
+            >
+              Añadir a las Existentes
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
