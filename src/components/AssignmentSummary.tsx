@@ -242,7 +242,9 @@ export default function AssignmentSummary({
                   <CardContent className="p-4">
                     <div className="text-center">
                       <div className="text-2xl font-bold text-green-600">{summary.workDays}</div>
-                      <div className="text-sm text-muted-foreground">Días laborables</div>
+                      <div className="text-sm text-muted-foreground">
+                        Días laborables ({((summary.workDays / summary.totalDays) * 100).toFixed(1)}%)
+                      </div>
                     </div>
                   </CardContent>
                 </Card>
