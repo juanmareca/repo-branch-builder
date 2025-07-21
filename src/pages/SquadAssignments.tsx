@@ -23,6 +23,7 @@ interface Assignment {
   start_date: string;
   end_date: string;
   hours_allocated: number;
+  type?: string;
   project_name?: string;
   project_color?: string;
 }
@@ -289,21 +290,73 @@ export default function SquadAssignments({ userRole, userData }: { userRole?: st
     if (!conflictData) return;
 
     try {
-      // Delete conflicting assignments
+      const newStartDate = new Date(conflictData.newAssignmentData.start_date);
+      const newEndDate = new Date(conflictData.newAssignmentData.end_date);
+
+      // Process each conflicting assignment
       for (const assignment of conflictData.conflictingAssignments) {
-        const { error } = await supabase
+        const existingStartDate = new Date(assignment.start_date);
+        const existingEndDate = new Date(assignment.end_date);
+
+        // Delete the original assignment
+        const { error: deleteError } = await supabase
           .from('assignments')
           .delete()
           .eq('id', assignment.id);
         
-        if (error) throw error;
+        if (deleteError) throw deleteError;
+
+        // Create new assignments for non-overlapping periods
+        
+        // Period before the new assignment (if exists)
+        if (existingStartDate < newStartDate) {
+          const beforeEndDate = new Date(newStartDate);
+          beforeEndDate.setDate(beforeEndDate.getDate() - 1);
+          
+          const { error: beforeError } = await supabase
+            .from('assignments')
+            .insert({
+              person_id: assignment.person_id,
+              project_id: assignment.project_id,
+              start_date: format(existingStartDate, 'yyyy-MM-dd'),
+              end_date: format(beforeEndDate, 'yyyy-MM-dd'),
+              hours_allocated: assignment.hours_allocated,
+               type: assignment.type || 'development'
+            });
+          
+          if (beforeError) throw beforeError;
+        }
+
+        // Period after the new assignment (if exists)
+        if (existingEndDate > newEndDate) {
+          const afterStartDate = new Date(newEndDate);
+          afterStartDate.setDate(afterStartDate.getDate() + 1);
+          
+          const { error: afterError } = await supabase
+            .from('assignments')
+            .insert({
+              person_id: assignment.person_id,
+              project_id: assignment.project_id,
+              start_date: format(afterStartDate, 'yyyy-MM-dd'),
+              end_date: format(existingEndDate, 'yyyy-MM-dd'),
+              hours_allocated: assignment.hours_allocated,
+               type: assignment.type || 'development'
+            });
+          
+          if (afterError) throw afterError;
+        }
       }
 
-      // Create new assignment
+      // Create the new assignment
       await createAssignment(conflictData.newAssignmentData);
       
       setShowConflictDialog(false);
       setConflictData(null);
+      
+      toast({
+        title: "Éxito",
+        description: "Asignaciones sustituidas correctamente para el período seleccionado"
+      });
       
     } catch (error) {
       console.error('Error replacing assignments:', error);
