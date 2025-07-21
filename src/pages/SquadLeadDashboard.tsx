@@ -92,6 +92,7 @@ export default function SquadLeadDashboard() {
   const [draggedCard, setDraggedCard] = useState<string | null>(null);
   const [isDragMode, setIsDragMode] = useState(false);
   const [dragModeCard, setDragModeCard] = useState<string | null>(null);
+  const [isRightMouseDown, setIsRightMouseDown] = useState(false);
 
   // Cargar preferencias guardadas
   useEffect(() => {
@@ -177,22 +178,39 @@ export default function SquadLeadDashboard() {
     }
   };
 
-  // Handlers para el nuevo sistema de drag
-  const handleContextMenu = (e: React.MouseEvent, cardId: string) => {
-    e.preventDefault(); // Evitar menú contextual
-    setIsDragMode(true);
-    setDragModeCard(cardId);
+  // Handlers para el sistema de drag con botón derecho mantenido presionado
+  const handleMouseDown = (e: React.MouseEvent, cardId: string) => {
+    if (e.button === 2) { // Botón derecho
+      e.preventDefault();
+      setIsRightMouseDown(true);
+      setIsDragMode(true);
+      setDragModeCard(cardId);
+    }
+  };
+
+  const handleMouseUp = (e: React.MouseEvent) => {
+    if (e.button === 2) { // Botón derecho
+      setIsRightMouseDown(false);
+      setIsDragMode(false);
+      setDragModeCard(null);
+      setDraggedCard(null);
+    }
+  };
+
+  const handleContextMenu = (e: React.MouseEvent) => {
+    e.preventDefault(); // Evitar menú contextual siempre
   };
 
   const handleMouseLeave = () => {
-    if (!draggedCard) {
+    // Solo resetear si no estamos arrastrando
+    if (!draggedCard && !isRightMouseDown) {
       setIsDragMode(false);
       setDragModeCard(null);
     }
   };
 
   const handleDragStart = (e: React.DragEvent, cardId: string) => {
-    if (!isDragMode || dragModeCard !== cardId) {
+    if (!isDragMode || !isRightMouseDown || dragModeCard !== cardId) {
       e.preventDefault();
       return;
     }
@@ -202,7 +220,7 @@ export default function SquadLeadDashboard() {
   };
 
   const handleDragOver = (e: React.DragEvent) => {
-    if (!isDragMode) return;
+    if (!isDragMode || !isRightMouseDown) return;
     e.preventDefault();
     e.dataTransfer.dropEffect = 'move';
   };
@@ -210,10 +228,7 @@ export default function SquadLeadDashboard() {
   const handleDrop = (e: React.DragEvent, targetCardId: string) => {
     e.preventDefault();
     
-    if (!draggedCard || draggedCard === targetCardId || !isDragMode) {
-      setDraggedCard(null);
-      setIsDragMode(false);
-      setDragModeCard(null);
+    if (!draggedCard || draggedCard === targetCardId || !isDragMode || !isRightMouseDown) {
       return;
     }
 
@@ -226,9 +241,6 @@ export default function SquadLeadDashboard() {
     newCards.splice(targetIndex, 0, draggedItem);
 
     setCards(newCards);
-    setDraggedCard(null);
-    setIsDragMode(false);
-    setDragModeCard(null);
     
     // Guardar el nuevo orden
     const newOrder = newCards.map(card => card.id);
@@ -236,10 +248,26 @@ export default function SquadLeadDashboard() {
   };
 
   const handleDragEnd = () => {
+    // Solo limpiar el draggedCard, mantener el modo si aún tiene botón derecho presionado
     setDraggedCard(null);
-    setIsDragMode(false);
-    setDragModeCard(null);
   };
+
+  // Listener global para detectar cuando suelta el botón derecho fuera de la tarjeta
+  useEffect(() => {
+    const handleGlobalMouseUp = (e: MouseEvent) => {
+      if (e.button === 2) { // Botón derecho
+        setIsRightMouseDown(false);
+        setIsDragMode(false);
+        setDragModeCard(null);
+        setDraggedCard(null);
+      }
+    };
+
+    document.addEventListener('mouseup', handleGlobalMouseUp);
+    return () => {
+      document.removeEventListener('mouseup', handleGlobalMouseUp);
+    };
+  }, []);
 
   const handleNavigation = (route: string) => {
     navigate(route);
@@ -267,7 +295,7 @@ export default function SquadLeadDashboard() {
         <div className="flex justify-between items-center mb-8">
           <div>
             <h1 className="text-3xl font-bold text-foreground">Panel Squad Lead</h1>
-            <p className="text-muted-foreground mt-2">Gestiona tu equipo y proyectos - Haz click derecho en una tarjeta para activar el modo de arrastre</p>
+            <p className="text-muted-foreground mt-2">Gestiona tu equipo y proyectos - Mantén presionado el botón derecho del ratón sobre una tarjeta para arrastrarla</p>
           </div>
           <Button variant="outline" onClick={handleLogout} className="gap-2">
             <LogOut className="h-4 w-4" />
@@ -283,18 +311,20 @@ export default function SquadLeadDashboard() {
               <div
                 key={card.id}
                 draggable={isDragMode && dragModeCard === card.id}
-                onContextMenu={(e) => handleContextMenu(e, card.id)}
+                onContextMenu={handleContextMenu}
+                onMouseDown={(e) => handleMouseDown(e, card.id)}
+                onMouseUp={handleMouseUp}
                 onMouseLeave={handleMouseLeave}
                 onDragStart={(e) => handleDragStart(e, card.id)}
                 onDragOver={handleDragOver}
                 onDrop={(e) => handleDrop(e, card.id)}
                 onDragEnd={handleDragEnd}
                 className={`transition-all duration-200 ${
-                  isDragMode && dragModeCard === card.id
-                    ? 'cursor-move bg-primary/5 ring-2 ring-primary/20 scale-[1.02]' 
-                    : 'cursor-pointer'
+                  isDragMode && dragModeCard === card.id && isRightMouseDown
+                    ? 'cursor-move bg-primary/5 ring-4 ring-primary/30 scale-[1.02] shadow-2xl' 
+                    : 'cursor-pointer hover:scale-[1.01]'
                 } ${
-                  draggedCard === card.id ? 'opacity-50 scale-105' : ''
+                  draggedCard === card.id ? 'opacity-70 scale-105' : ''
                 }`}
               >
                 <Card 
