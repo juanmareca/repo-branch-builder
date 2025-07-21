@@ -39,6 +39,7 @@ const HolidaysUpload = () => {
   const [uploading, setUploading] = useState(false);
   const [checkingManualRecords, setCheckingManualRecords] = useState(false);
   const [hasManualRecords, setHasManualRecords] = useState(false);
+  const [uploadMode, setUploadMode] = useState<'replace' | 'add'>('add');
   const { toast } = useToast();
 
   // Función para procesar el archivo Excel y contar registros
@@ -195,29 +196,33 @@ const HolidaysUpload = () => {
       }
 
       // Manejar eliminación según la opción seleccionada
-      if (!preserveManual) {
-        // Si NO preservar manuales, eliminar TODOS los registros
-        const { error: deleteError } = await supabase
-          .from('holidays')
-          .delete()
-          .neq('id', '00000000-0000-0000-0000-000000000000'); // Eliminar todos los registros
-        
-        if (deleteError) {
-          console.error('Error al eliminar todos los registros:', deleteError);
-          throw new Error('Error al eliminar registros existentes');
-        }
-      } else if (hasManualRecords) {
-        // Si SÍ preservar manuales, eliminar SOLO los registros con origen "Fichero"
-        const { error: deleteError } = await supabase
-          .from('holidays')
-          .delete()
-          .eq('origen', 'Fichero');
-        
-        if (deleteError) {
-          console.error('Error al eliminar registros de archivo:', deleteError);
-          throw new Error('Error al eliminar registros del archivo');
+      if (uploadMode === 'replace') {
+        // MODO SUSTITUIR
+        if (preserveManual && hasManualRecords) {
+          // Mantener registros del Administrador, eliminar solo los de Fichero
+          const { error: deleteError } = await supabase
+            .from('holidays')
+            .delete()
+            .eq('origen', 'Fichero');
+          
+          if (deleteError) {
+            console.error('Error al eliminar registros de archivo:', deleteError);
+            throw new Error('Error al eliminar registros del archivo');
+          }
+        } else {
+          // Eliminar TODOS los registros
+          const { error: deleteError } = await supabase
+            .from('holidays')
+            .delete()
+            .neq('id', '00000000-0000-0000-0000-000000000000'); // Eliminar todos
+          
+          if (deleteError) {
+            console.error('Error al eliminar todos los registros:', deleteError);
+            throw new Error('Error al eliminar registros existentes');
+          }
         }
       }
+      // En modo AÑADIR no eliminamos nada, solo insertamos nuevos registros
 
       // Leer y procesar el archivo Excel
       const reader = new FileReader();
@@ -277,10 +282,14 @@ const HolidaysUpload = () => {
           
           // Construir mensaje dinámico según el contexto
           let additionalMessage = '';
-          if (!preserveManual) {
-            additionalMessage = 'Todos los registros anteriores han sido eliminados.';
-          } else if (hasManualRecords && preserveManual) {
-            additionalMessage = 'Se preservaron los registros del Administrador.';
+          if (uploadMode === 'replace') {
+            if (preserveManual && hasManualRecords) {
+              additionalMessage = 'Se sustituyeron los registros del archivo, manteniendo los del Administrador.';
+            } else {
+              additionalMessage = 'Se sustituyeron todos los registros anteriores.';
+            }
+          } else {
+            additionalMessage = 'Se añadieron a los registros existentes.';
           }
           
           toast({
@@ -503,87 +512,141 @@ const HolidaysUpload = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Dialog de Conflicto con Registros Manuales */}
+      {/* Dialog de Conflicto - Registros Existentes */}
       <Dialog open={showConflictDialog} onOpenChange={setShowConflictDialog}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="max-w-2xl bg-white">
           <DialogHeader>
-            <div className="flex items-center gap-2 text-amber-600 mb-2">
+            <DialogTitle className="flex items-center gap-2 text-amber-800">
               <AlertTriangle className="h-5 w-5" />
-              <DialogTitle>Registros del Administrador Detectados</DialogTitle>
-            </div>
-            <p className="text-sm text-muted-foreground">
-              Se encontraron {manualRecords.length} registro(s) añadido(s) manualmente
-            </p>
+              Registros Existentes Detectados
+            </DialogTitle>
           </DialogHeader>
           
           <div className="py-4">
-            <p className="text-sm text-foreground mb-4">
-              ¿Qué deseas hacer con los registros añadidos por el Administrador?
-            </p>
-            
-            <div className="space-y-3">
-              {/* Opción Preservar */}
-              <div 
-                className={`p-4 rounded-lg border-2 cursor-pointer transition-all ${
-                  preserveManual 
-                    ? 'border-green-500 bg-green-50' 
-                    : 'border-gray-200 hover:border-green-300'
-                }`}
-                onClick={() => setPreserveManual(true)}
-              >
-                <div className="flex items-center gap-3">
-                  <div className={`w-4 h-4 rounded-full border-2 ${
-                    preserveManual ? 'bg-green-500 border-green-500' : 'border-gray-300'
-                  }`}>
-                    {preserveManual && <CheckCircle className="w-4 h-4 text-white" />}
-                  </div>
-                  <div>
-                    <p className="font-medium text-green-800">Preservar registros del Administrador</p>
-                    <p className="text-sm text-green-600">
-                      {hasManualRecords 
-                        ? `Mantener los ${manualRecords.length} registro(s) manual(es) + agregar los nuevos del archivo Excel`
-                        : "Mantener todos los registros existentes + agregar los nuevos del archivo Excel"
-                      }
-                    </p>
-                  </div>
-                </div>
-              </div>
+            <Alert className="border-amber-200 bg-amber-50 mb-4">
+              <AlertTriangle className="h-4 w-4 text-amber-600" />
+              <AlertDescription className="text-amber-800">
+                Ya existen registros de festivos en la base de datos.
+                {hasManualRecords && (
+                  <span className="font-medium">
+                    {" "}Se detectaron {manualRecords.length} registros del Administrador.
+                  </span>
+                )}
+              </AlertDescription>
+            </Alert>
 
-              {/* Opción Sustituir */}
-              <div 
-                className={`p-4 rounded-lg border-2 cursor-pointer transition-all ${
-                  !preserveManual 
-                    ? 'border-red-500 bg-red-50' 
-                    : 'border-gray-200 hover:border-red-300'
-                }`}
-                onClick={() => setPreserveManual(false)}
-              >
-                <div className="flex items-center gap-3">
-                  <div className={`w-4 h-4 rounded-full border-2 ${
-                    !preserveManual ? 'bg-red-500 border-red-500' : 'border-gray-300'
-                  }`}>
-                    {!preserveManual && <CheckCircle className="w-4 h-4 text-white" />}
+            <div className="mb-4">
+              <p className="text-sm text-gray-600 mb-4">
+                Tu archivo contiene <strong>{fileRecordsCount}</strong> registros. 
+                ¿Qué quieres hacer con los registros existentes?
+              </p>
+              
+              {/* Opciones de carga */}
+              <div className="bg-gray-50 border rounded-lg p-4 mb-4">
+                <p className="text-sm font-medium text-gray-800 mb-3">Selecciona el modo de carga:</p>
+                <div className="space-y-3">
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="radio"
+                      id="mode-replace"
+                      name="uploadMode"
+                      value="replace"
+                      checked={uploadMode === 'replace'}
+                      onChange={(e) => setUploadMode(e.target.value as 'replace' | 'add')}
+                      className="h-4 w-4 text-amber-600"
+                    />
+                    <label htmlFor="mode-replace" className="text-sm text-gray-700">
+                      <span className="font-medium">SUSTITUIR:</span> Reemplazar toda la base de festivos por el nuevo archivo
+                    </label>
                   </div>
-                  <div>
-                    <p className="font-medium text-red-800">Sustitución completa</p>
-                    <p className="text-sm text-red-600">
-                      Eliminar TODOS los registros existentes y reemplazar solo con el archivo Excel
-                    </p>
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="radio"
+                      id="mode-add"
+                      name="uploadMode"
+                      value="add"
+                      checked={uploadMode === 'add'}
+                      onChange={(e) => setUploadMode(e.target.value as 'replace' | 'add')}
+                      className="h-4 w-4 text-amber-600"
+                    />
+                    <label htmlFor="mode-add" className="text-sm text-gray-700">
+                      <span className="font-medium">AÑADIR:</span> Añadir los registros del archivo a los existentes
+                    </label>
                   </div>
                 </div>
               </div>
+              
+              {hasManualRecords && (
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <CheckCircle className="h-4 w-4 text-blue-600" />
+                    <span className="text-sm font-medium text-blue-800">
+                      Registros del Administrador encontrados:
+                    </span>
+                  </div>
+                  <div className="text-xs text-blue-700 max-h-32 overflow-y-auto">
+                    {manualRecords.map((record, index) => (
+                      <div key={record.id} className="mb-1">
+                        <strong>{record.date}:</strong> {record.description} 
+                        ({record.country}{record.region && record.region !== 'NACIONAL' ? ` - ${record.region}` : ''})
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              
+              <div className="flex items-center gap-2 mb-4">
+                <input
+                  type="checkbox"
+                  id="preserve-manual"
+                  checked={preserveManual}
+                  onChange={(e) => setPreserveManual(e.target.checked)}
+                  className="h-4 w-4 text-amber-600 rounded border-amber-300 focus:ring-amber-500"
+                />
+                <label htmlFor="preserve-manual" className="text-sm text-gray-700">
+                  <span className="font-medium">¿Desea mantener los registros del Administrador añadidos manualmente?</span>
+                </label>
+              </div>
+              
+              {uploadMode === 'replace' && !preserveManual && (
+                <Alert className="border-red-200 bg-red-50">
+                  <AlertTriangle className="h-4 w-4 text-red-600" />
+                  <AlertDescription className="text-red-800">
+                    <strong>⚠️ Atención:</strong> Se eliminarán TODOS los registros existentes, incluidos los del Administrador.
+                  </AlertDescription>
+                </Alert>
+              )}
             </div>
           </div>
-          
+
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowConflictDialog(false)}>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowConflictDialog(false);
+                setSelectedFile(null);
+              }}
+              className="border-gray-300"
+            >
+              <X className="h-4 w-4 mr-2" />
               Cancelar
             </Button>
-            <Button 
-              className={preserveManual ? "bg-green-600 hover:bg-green-700" : "bg-red-600 hover:bg-red-700"}
+            <Button
               onClick={processUpload}
+              disabled={uploading || checkingManualRecords}
+              className="bg-amber-600 hover:bg-amber-700 text-white"
             >
-              {preserveManual ? "Preservar" : "Sustituir Todo"}
+              {uploading ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                  Procesando...
+                </>
+              ) : (
+                <>
+                  <CheckCircle className="h-4 w-4 mr-2" />
+                  {uploadMode === 'replace' ? 'Sustituir' : 'Añadir'} Registros
+                </>
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>
