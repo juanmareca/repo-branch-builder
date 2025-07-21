@@ -432,6 +432,10 @@ const TeamCapabilities: React.FC<TeamCapabilitiesProps> = ({
            skillName.includes('RE-');
   };
 
+  const isLanguageSkill = (skillName: string): boolean => {
+    return skillName.toLowerCase().includes('idiomas');
+  };
+
   const getSkillIcon = (skill: string) => {
     if (skill.toLowerCase().includes('idioma')) {
       return <Star className="h-4 w-4" />;
@@ -889,9 +893,131 @@ const TeamCapabilities: React.FC<TeamCapabilitiesProps> = ({
                                                </div>
                                              );
                                            })()}
-                                         </PopoverContent>
-                                       </Popover>
-                                     )}
+                                          </PopoverContent>
+                                        </Popover>
+                                      )}
+                                      {isLanguageSkill(capacity.skill) && (
+                                        <Popover>
+                                          <PopoverTrigger asChild>
+                                            <Button
+                                              variant="ghost"
+                                              size="sm"
+                                              className="h-6 w-6 p-0 hover:bg-primary/10 transition-colors"
+                                            >
+                                              <Info className="h-4 w-4 text-muted-foreground hover:text-primary transition-colors" />
+                                            </Button>
+                                          </PopoverTrigger>
+                                          <PopoverContent className="w-[500px] p-0 bg-background border shadow-lg animate-fade-in" sideOffset={8}>
+                                            <div className="space-y-4 p-6">
+                                              {/* Header */}
+                                              <div className="text-center pb-4 border-b">
+                                                <h4 className="font-bold text-lg text-foreground mb-2">
+                                                  Niveles de Conocimiento de Idiomas
+                                                </h4>
+                                                <p className="text-sm text-muted-foreground">
+                                                  Marco Común Europeo de Referencia para las Lenguas (MCER/CEFR)
+                                                </p>
+                                              </div>
+
+                                              {/* Usuario Básico */}
+                                              <div className="space-y-3">
+                                                <div className="flex items-center gap-2 mb-3">
+                                                  <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                                                  <h5 className="font-semibold text-foreground">Usuario Básico</h5>
+                                                </div>
+                                                
+                                                <div className="space-y-2 ml-5">
+                                                  <div className="border-l-2 border-green-200 pl-3">
+                                                    <div className="flex items-center gap-2 mb-1">
+                                                      <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">A1</Badge>
+                                                      <span className="text-sm font-medium">Acceso</span>
+                                                      <span className="text-xs text-muted-foreground">• "Principiante absoluto"</span>
+                                                    </div>
+                                                    <p className="text-xs text-muted-foreground leading-relaxed">
+                                                      Entiende y usa expresiones cotidianas muy básicas. Puede presentarse y responder preguntas simples.
+                                                    </p>
+                                                  </div>
+                                                  
+                                                  <div className="border-l-2 border-green-200 pl-3">
+                                                    <div className="flex items-center gap-2 mb-1">
+                                                      <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">A2</Badge>
+                                                      <span className="text-sm font-medium">Plataforma</span>
+                                                      <span className="text-xs text-muted-foreground">• "Básico"</span>
+                                                    </div>
+                                                    <p className="text-xs text-muted-foreground leading-relaxed">
+                                                      Se comunica en tareas simples y rutinarias. Puede describir aspectos sencillos de su entorno o necesidades.
+                                                    </p>
+                                                  </div>
+                                                </div>
+                                              </div>
+
+                                              {/* Usuario Independiente */}
+                                              <div className="space-y-3">
+                                                <div className="flex items-center gap-2 mb-3">
+                                                  <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
+                                                  <h5 className="font-semibold text-foreground">Usuario Independiente</h5>
+                                                </div>
+                                                
+                                                <div className="space-y-2 ml-5">
+                                                  <div className="border-l-2 border-yellow-200 pl-3">
+                                                    <div className="flex items-center gap-2 mb-1">
+                                                      <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200">B1</Badge>
+                                                      <span className="text-sm font-medium">Intermedio</span>
+                                                      <span className="text-xs text-muted-foreground">• "Intermedio bajo"</span>
+                                                    </div>
+                                                    <p className="text-xs text-muted-foreground leading-relaxed">
+                                                      Se desenvuelve en situaciones familiares, como viajes o trabajo. Puede expresar opiniones de forma sencilla.
+                                                    </p>
+                                                  </div>
+                                                  
+                                                  <div className="border-l-2 border-yellow-200 pl-3">
+                                                    <div className="flex items-center gap-2 mb-1">
+                                                      <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200">B2</Badge>
+                                                      <span className="text-sm font-medium">Intermedio alto</span>
+                                                      <span className="text-xs text-muted-foreground">• "First Certificate"</span>
+                                                    </div>
+                                                    <p className="text-xs text-muted-foreground leading-relaxed">
+                                                      Entiende textos complejos y puede debatir temas concretos y abstractos. Participa activamente en conversaciones.
+                                                    </p>
+                                                  </div>
+                                                </div>
+                                              </div>
+
+                                              {/* Usuario Competente */}
+                                              <div className="space-y-3">
+                                                <div className="flex items-center gap-2 mb-3">
+                                                  <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
+                                                  <h5 className="font-semibold text-foreground">Usuario Competente</h5>
+                                                </div>
+                                                
+                                                <div className="space-y-2 ml-5">
+                                                  <div className="border-l-2 border-blue-200 pl-3">
+                                                    <div className="flex items-center gap-2 mb-1">
+                                                      <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">C1</Badge>
+                                                      <span className="text-sm font-medium">Avanzado</span>
+                                                      <span className="text-xs text-muted-foreground">• "CAE"</span>
+                                                    </div>
+                                                    <p className="text-xs text-muted-foreground leading-relaxed">
+                                                      Se expresa con fluidez, usa el idioma con eficacia en contextos sociales, académicos o profesionales.
+                                                    </p>
+                                                  </div>
+                                                  
+                                                  <div className="border-l-2 border-blue-200 pl-3">
+                                                    <div className="flex items-center gap-2 mb-1">
+                                                      <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">C2</Badge>
+                                                      <span className="text-sm font-medium">Maestría</span>
+                                                      <span className="text-xs text-muted-foreground">• "Proficiency"</span>
+                                                    </div>
+                                                    <p className="text-xs text-muted-foreground leading-relaxed">
+                                                      Se comunica de forma espontánea, fluida y precisa. Nivel similar al de un nativo culto.
+                                                    </p>
+                                                  </div>
+                                                </div>
+                                              </div>
+                                            </div>
+                                          </PopoverContent>
+                                        </Popover>
+                                      )}
                                   </div>
                                 </div>
                                 
