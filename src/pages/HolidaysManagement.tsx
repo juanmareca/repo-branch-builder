@@ -275,6 +275,22 @@ const HolidaysManagement = () => {
       filtered = filtered.filter(holiday => festivoFilter.includes(holiday.festivo));
     }
 
+    // Year filter
+    if (yearFilter.length > 0) {
+      filtered = filtered.filter(holiday => {
+        const holidayYear = new Date(holiday.date).getFullYear().toString();
+        return yearFilter.includes(holidayYear);
+      });
+    }
+
+    // Month filter
+    if (monthFilter.length > 0) {
+      filtered = filtered.filter(holiday => {
+        const holidayMonth = (new Date(holiday.date).getMonth() + 1).toString();
+        return monthFilter.includes(holidayMonth);
+      });
+    }
+
     // Apply sorting
     if (sortField) {
       filtered.sort((a, b) => {
@@ -477,6 +493,8 @@ const HolidaysManagement = () => {
     setCommunityFilter([]);
     setOriginFilter([]);
     setFestivoFilter([]);
+    setYearFilter([]);
+    setMonthFilter([]);
   };
 
   const toggleFilter = (filterArray: string[], value: string, setFilter: (arr: string[]) => void) => {
@@ -725,7 +743,7 @@ const HolidaysManagement = () => {
         {showFilters && (
           <Card className="mb-6">
             <CardContent>
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                 <div>
                   <Label>País</Label>
                   <div className="max-h-40 overflow-auto border rounded p-2">
@@ -771,6 +789,9 @@ const HolidaysManagement = () => {
                     ))}
                   </div>
                 </div>
+              </div>
+              
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mt-4">
                 <div>
                   <Label>Festivo</Label>
                   <div className="max-h-40 overflow-auto border rounded p-2">
@@ -782,6 +803,40 @@ const HolidaysManagement = () => {
                           onCheckedChange={() => toggleFilter(festivoFilter, festivo, setFestivoFilter)}
                         />
                         <Label htmlFor={`festivo-${festivo}`} className="ml-2 cursor-pointer">{festivo}</Label>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <Label>Año</Label>
+                  <div className="max-h-40 overflow-auto border rounded p-2">
+                    {[...new Set(holidays.map(holiday => new Date(holiday.date).getFullYear().toString()))].sort().map((year) => (
+                      <div key={year} className="flex items-center">
+                        <Checkbox
+                          id={`year-${year}`}
+                          checked={yearFilter.includes(year)}
+                          onCheckedChange={() => toggleFilter(yearFilter, year, setYearFilter)}
+                        />
+                        <Label htmlFor={`year-${year}`} className="ml-2 cursor-pointer">{year}</Label>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <Label>Mes</Label>
+                  <div className="max-h-40 overflow-auto border rounded p-2">
+                    {Array.from({length: 12}, (_, i) => {
+                      const monthNum = (i + 1).toString();
+                      const monthName = new Date(2024, i, 1).toLocaleDateString('es-ES', { month: 'long' });
+                      return { value: monthNum, label: `${monthNum} - ${monthName}` };
+                    }).map((month) => (
+                      <div key={month.value} className="flex items-center">
+                        <Checkbox
+                          id={`month-${month.value}`}
+                          checked={monthFilter.includes(month.value)}
+                          onCheckedChange={() => toggleFilter(monthFilter, month.value, setMonthFilter)}
+                        />
+                        <Label htmlFor={`month-${month.value}`} className="ml-2 cursor-pointer">{month.label}</Label>
                       </div>
                     ))}
                   </div>
