@@ -950,9 +950,9 @@ const TeamCapabilities: React.FC<TeamCapabilitiesProps> = ({
                                    return (
                                      <div
                                        key={editKey}
-                                       className="p-2 border rounded-lg hover:shadow-sm transition-shadow group"
+                                       className="p-1.5 border rounded-lg hover:shadow-sm transition-shadow group"
                                      >
-                                      <div className="flex items-start justify-between gap-2 mb-2">
+                                       <div className="flex items-start justify-between gap-1 mb-1">
                                         <div className="flex-1 min-w-0">
                                            <div className="flex items-center gap-2">
                                               {(() => {
