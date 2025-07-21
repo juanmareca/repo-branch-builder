@@ -60,7 +60,7 @@ const REGIONS_DATA = {
   'Ceuta': { 
     code: 'CE', 
     apiCode: 'ES-CE',
-    image: null // Pendiente de imagen
+    image: '/lovable-uploads/4fdde556-e261-40b5-b29b-837ba5e9f580.png'
   },
   'Comunidad Valenciana': { 
     code: 'VC', 
