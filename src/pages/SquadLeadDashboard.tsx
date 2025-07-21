@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { DragDropContext, Droppable, Draggable, DropResult } from 'react-beautiful-dnd';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
@@ -12,7 +11,8 @@ import {
   TrendingUp, 
   FileText, 
   LogOut,
-  CalendarDays
+  CalendarDays,
+  GripVertical
 } from 'lucide-react';
 
 interface DashboardCard {
@@ -34,7 +34,7 @@ export default function SquadLeadDashboard() {
     {
       id: 'team',
       title: 'Mi Equipo',
-      description: 'Gestiona los miembros de tu squad y sus Capacidades',
+      description: 'Gestiona los miembros de tu Squad',
       icon: Users,
       route: '/squad-team',
       bgColor: 'bg-primary/10',
@@ -89,6 +89,7 @@ export default function SquadLeadDashboard() {
 
   const [cards, setCards] = useState<DashboardCard[]>(defaultCards);
   const [isLoading, setIsLoading] = useState(true);
+  const [draggedCard, setDraggedCard] = useState<string | null>(null);
 
   // Cargar preferencias guardadas
   useEffect(() => {
@@ -156,18 +157,43 @@ export default function SquadLeadDashboard() {
     }
   };
 
-  const handleDragEnd = (result: DropResult) => {
-    if (!result.destination) return;
+  const handleDragStart = (e: React.DragEvent, cardId: string) => {
+    setDraggedCard(cardId);
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/html', cardId);
+  };
 
-    const items = Array.from(cards);
-    const [reorderedItem] = items.splice(result.source.index, 1);
-    items.splice(result.destination.index, 0, reorderedItem);
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+  };
 
-    setCards(items);
+  const handleDrop = (e: React.DragEvent, targetCardId: string) => {
+    e.preventDefault();
+    
+    if (!draggedCard || draggedCard === targetCardId) {
+      setDraggedCard(null);
+      return;
+    }
+
+    const newCards = [...cards];
+    const draggedIndex = newCards.findIndex(card => card.id === draggedCard);
+    const targetIndex = newCards.findIndex(card => card.id === targetCardId);
+
+    // Reordenar las tarjetas
+    const [draggedItem] = newCards.splice(draggedIndex, 1);
+    newCards.splice(targetIndex, 0, draggedItem);
+
+    setCards(newCards);
+    setDraggedCard(null);
     
     // Guardar el nuevo orden
-    const newOrder = items.map(card => card.id);
+    const newOrder = newCards.map(card => card.id);
     saveOrder(newOrder);
+  };
+
+  const handleDragEnd = () => {
+    setDraggedCard(null);
   };
 
   const handleNavigation = (route: string) => {
@@ -204,56 +230,47 @@ export default function SquadLeadDashboard() {
           </Button>
         </div>
 
-        {/* Dashboard Grid with Drag and Drop */}
-        <DragDropContext onDragEnd={handleDragEnd}>
-          <Droppable droppableId="dashboard-cards">
-            {(provided) => (
-              <div 
-                {...provided.droppableProps}
-                ref={provided.innerRef}
-                className="flex flex-wrap gap-6"
+        {/* Dashboard Grid with Native Drag and Drop */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {cards.map((card) => {
+            const IconComponent = card.icon;
+            return (
+              <div
+                key={card.id}
+                draggable
+                onDragStart={(e) => handleDragStart(e, card.id)}
+                onDragOver={handleDragOver}
+                onDrop={(e) => handleDrop(e, card.id)}
+                onDragEnd={handleDragEnd}
+                className={`transition-all duration-200 cursor-move ${
+                  draggedCard === card.id ? 'opacity-50 scale-105' : ''
+                }`}
               >
-                {cards.map((card, index) => {
-                  const IconComponent = card.icon;
-                  return (
-                    <Draggable key={card.id} draggableId={card.id} index={index}>
-                      {(provided, snapshot) => (
-                        <div
-                          ref={provided.innerRef}
-                          {...provided.draggableProps}
-                          {...provided.dragHandleProps}
-                          className={`w-full md:w-[calc(50%-12px)] lg:w-[calc(33.333%-16px)] transition-all duration-200 ${
-                            snapshot.isDragging ? 'scale-105 rotate-2 shadow-2xl z-50' : ''
-                          }`}
-                        >
-                          <Card 
-                            className={`cursor-pointer hover:shadow-lg transition-shadow ${
-                              snapshot.isDragging ? 'ring-2 ring-primary' : ''
-                            }`} 
-                            onClick={() => !snapshot.isDragging && handleNavigation(card.route)}
-                          >
-                            <CardHeader className="text-center pb-4">
-                              <div className={`mx-auto ${card.bgColor} w-16 h-16 rounded-full flex items-center justify-center mb-3`}>
-                                <IconComponent className={`h-8 w-8 ${card.iconColor}`} />
-                              </div>
-                              <CardTitle className="text-lg">{card.title}</CardTitle>
-                            </CardHeader>
-                            <CardContent className="text-center">
-                              <p className="text-muted-foreground text-sm">
-                                {card.description}
-                              </p>
-                            </CardContent>
-                          </Card>
-                        </div>
-                      )}
-                    </Draggable>
-                  );
-                })}
-                {provided.placeholder}
+                <Card 
+                  className="h-full hover:shadow-lg transition-shadow group relative"
+                  onClick={() => !draggedCard && handleNavigation(card.route)}
+                >
+                  {/* Drag Handle */}
+                  <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <GripVertical className="h-4 w-4 text-muted-foreground" />
+                  </div>
+                  
+                  <CardHeader className="text-center pb-4">
+                    <div className={`mx-auto ${card.bgColor} w-16 h-16 rounded-full flex items-center justify-center mb-3`}>
+                      <IconComponent className={`h-8 w-8 ${card.iconColor}`} />
+                    </div>
+                    <CardTitle className="text-lg">{card.title}</CardTitle>
+                  </CardHeader>
+                  <CardContent className="text-center">
+                    <p className="text-muted-foreground text-sm">
+                      {card.description}
+                    </p>
+                  </CardContent>
+                </Card>
               </div>
-            )}
-          </Droppable>
-        </DragDropContext>
+            );
+          })}
+        </div>
       </div>
     </div>
   );
