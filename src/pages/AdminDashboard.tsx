@@ -209,9 +209,13 @@ const AdminDashboard = () => {
                     <Database className="h-4 w-4 mr-2" />
                     Crear Backup Manual
                   </Button>
-                  <Button variant="outline" className="w-full justify-start">
+                  <Button 
+                    variant="outline" 
+                    className="w-full justify-start"
+                    onClick={() => navigate('/backups')}
+                  >
                     <Download className="h-4 w-4 mr-2" />
-                    Descargar Backups
+                    Gestionar Backups
                   </Button>
                 </div>
                 

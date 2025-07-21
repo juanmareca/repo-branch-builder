@@ -142,6 +142,40 @@ const HolidaysUpload = () => {
         throw new Error('No se ha seleccionado ningún archivo');
       }
 
+      // Crear backup antes de hacer cambios
+      const { data: existingHolidays, error: fetchError } = await supabase
+        .from('holidays')
+        .select('*');
+
+      if (fetchError) {
+        console.error('Error al obtener festivos para backup:', fetchError);
+        throw new Error('Error al crear backup de los datos existentes');
+      }
+
+      // Crear backup
+      const backupData = {
+        table_name: 'holidays',
+        file_name: `holidays_backup_${new Date().toISOString().split('T')[0]}_${Date.now()}.json`,
+        record_count: existingHolidays?.length || 0,
+        file_size: `${Math.round((JSON.stringify(existingHolidays).length / 1024))} KB`,
+        created_by: 'System',
+        backup_data: existingHolidays
+      };
+
+      const { error: backupError } = await supabase
+        .from('backups')
+        .insert(backupData);
+
+      if (backupError) {
+        console.error('Error al crear backup:', backupError);
+        // Continuar sin backup pero advertir al usuario
+        toast({
+          title: "⚠️ Advertencia",
+          description: "No se pudo crear el backup automático, pero se continuará con la carga",
+          variant: "destructive",
+        });
+      }
+
       // Manejar eliminación según la opción seleccionada
       if (!preserveManual) {
         // Si NO preservar manuales, eliminar TODOS los registros
