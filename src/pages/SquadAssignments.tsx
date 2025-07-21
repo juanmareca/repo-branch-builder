@@ -879,14 +879,33 @@ export default function SquadAssignments({ userRole, userData }: { userRole?: st
               
               {conflictData && (
                 <div className="mt-4 p-3 bg-muted rounded-lg">
-                  <div className="text-sm font-medium mb-2">Asignaciones existentes:</div>
-                  <div className="space-y-1 text-xs">
+                  <div className="text-sm font-medium mb-2">
+                    Asignaciones afectadas en el período ({conflictData.newAssignmentData.start_date} a {conflictData.newAssignmentData.end_date}):
+                  </div>
+                  <div className="space-y-2 text-xs">
                     {conflictData.conflictingAssignments.map(assignment => {
                       const project = projects.find(p => p.id === assignment.project_id);
+                      
+                      // Calculate the overlapping period for this specific assignment
+                      const newStart = new Date(conflictData.newAssignmentData.start_date);
+                      const newEnd = new Date(conflictData.newAssignmentData.end_date);
+                      const existingStart = new Date(assignment.start_date);
+                      const existingEnd = new Date(assignment.end_date);
+                      
+                      const overlapStart = newStart > existingStart ? newStart : existingStart;
+                      const overlapEnd = newEnd < existingEnd ? newEnd : existingEnd;
+                      
                       return (
-                        <div key={assignment.id}>
-                          • {project?.codigo_inicial || 'Proyecto'} - {assignment.hours_allocated}% 
-                          ({assignment.start_date} a {assignment.end_date})
+                        <div key={assignment.id} className="p-2 bg-background border rounded">
+                          <div className="font-medium">
+                            • {project?.codigo_inicial || 'Proyecto'} - {assignment.hours_allocated}%
+                          </div>
+                          <div className="text-muted-foreground mt-1">
+                            Período afectado: {format(overlapStart, 'dd/MM/yyyy')} a {format(overlapEnd, 'dd/MM/yyyy')}
+                          </div>
+                          <div className="text-muted-foreground">
+                            Asignación completa: {format(existingStart, 'dd/MM/yyyy')} a {format(existingEnd, 'dd/MM/yyyy')}
+                          </div>
                         </div>
                       );
                     })}
