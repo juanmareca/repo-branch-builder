@@ -782,9 +782,21 @@ const TeamCapabilities: React.FC<TeamCapabilitiesProps> = ({
                               <div className="flex items-start justify-between gap-2 mb-2">
                                 <div className="flex-1 min-w-0">
                                   <div className="flex items-center gap-2">
-                                    <h4 className="font-medium text-sm leading-tight group-hover:text-primary transition-colors">
-                                      {capacity.skill.replace('Módulo SAP - ', '')}
-                                    </h4>
+                                     <h4 className={cn(
+                                       "font-medium text-sm leading-tight group-hover:text-primary transition-colors",
+                                       category === 'Industrias' ? "text-center" : ""
+                                     )}>
+                                       {category === 'Industrias' ? (
+                                         <div className="flex flex-col items-center">
+                                           <span className="text-xs">Industrias</span>
+                                           <span className="text-xs font-bold">
+                                             {capacity.skill.replace('Industrias - ', '')}
+                                           </span>
+                                         </div>
+                                       ) : (
+                                         capacity.skill.replace('Módulo SAP - ', '')
+                                       )}
+                                     </h4>
                                      {isSAPModule(capacity.skill) && (
                                        <Popover>
                                          <PopoverTrigger asChild>
