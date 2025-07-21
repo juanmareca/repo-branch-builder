@@ -234,7 +234,50 @@ const TeamCapabilities: React.FC<TeamCapabilitiesProps> = ({
       'TR-TRM': 'TR-TRM: Treasury and Risk Management (Gestión de Tesorería y Riesgos). Subcomponente avanzado del módulo SAP TR para gestión de operaciones financieras complejas. Funcionalidades: instrumentos financieros (derivados, bonos, préstamos, inversiones), riesgos de mercado y crédito, valoración y contabilización de productos financieros, análisis de exposición al riesgo, cumplimiento normativo (IFRS, EMIR, MiFID). Componentes: Transaction Manager (instrumentos financieros), Market Risk Analyzer (riesgo de mercado), Credit Risk Analyzer (riesgo de crédito), Portfolio Analyzer (carteras), Market Data Management (datos de mercado). Transacciones: FTR_CREATE/FTR_EDIT (transacciones financieras), TPM10 (valoración), TPM40 (cierre), TRMEX (datos mercado). Ideal para banca, seguros, energía y multinacionales con tesorería avanzada. En S/4HANA integrado con Fiori y Business Partner.',
       'CO-CCA': 'CO-CCA: Controlling - Cost Center Accounting (Contabilidad de Centros de Coste). Submódulo clave de SAP CO para planificar, registrar, monitorizar y analizar costes de áreas internas de la empresa (IT, RRHH, Finanzas, Marketing). Estructura: Centro de coste (unidad organizativa que acumula costes), Área de imputación (Controlling Area), Elementos de coste primarios (costes desde FI como sueldos, energía), Elementos secundarios (distribuciones internas). Flujo: planificación → imputación de costes reales → distribuciones/asignaciones internas → análisis de desviaciones plan vs real. Transacciones clave: KSB1 (partidas individuales), KP06/KP26 (planificación), KS01/KS02/KS03 (maestro centros), KSV5/KSU5 (distribuciones). En S/4HANA usa tabla ACDOCA con apps Fiori en tiempo real.',
       'CO-PC': 'CO-PC: Product Costing (Cálculo de Costes del Producto). Forma parte del módulo SAP CO (Controlling) y su función principal es calcular los costes de fabricación, adquisición y venta de productos o servicios. Es esencial en empresas manufactureras y de producción para la planificación, control y análisis de los costes reales y planificados de productos. Se divide en dos grandes subcomponentes: CO-PC-PC (Product Cost Planning) para estimación de costes antes de producir usando listas de materiales (BOM) y hojas de ruta para calcular costes estándar y fijación de precios; y CO-PC-OBJ (Cost Object Controlling) para control de costes durante la producción real con asignación a órdenes de producción, procesos, series, WIP, variaciones y liquidaciones. Funciones: calcular coste estándar de productos, controlar costes reales vs. planificados, analizar variaciones (materia prima, mano de obra, tiempos), valorar inventarios con base en coste estándar o real, tomar decisiones de fijación de precios y rentabilidad. Integración: MM (precios materiales y consumos), PP (órdenes de fabricación), FI (valoración del inventario), SD (márgenes y costes de ventas). En S/4HANA: sigue existiendo como parte del Universal Journal con integración simplificada con FI y otros módulos, valoración del inventario basada en coste real (actual) y herramientas de análisis mejoradas.',
-      'RE-FX': 'RE-FX: Real Estate Management - Flexible Real Estate (Gestión Inmobiliaria Flexible). Módulo SAP para gestión de activos inmobiliarios propios y arrendados. En S/4HANA reemplaza al RE clásico. Subcomponentes: gestión de contratos (arrendamientos, alquiler, subarrendamiento), gestión de inmuebles (edificios, terrenos, espacios), gestión contable IFRS/NIIF 16, Space Management (distribución de áreas), gestión de costes y rentabilidad, facturación y cobros automáticos. Se integra con FI (contabilidad de contratos), AA (activos inmobiliarios), CO (centros de coste), PS (proyectos de construcción), PM/MM (mantenimiento). En S/4HANA incluye compliance IFRS 16, Universal Journal, Apps Fiori y reporting avanzado. Ideal para inmobiliarias, retail, bancos con oficinas y empresas con muchos activos inmobiliarios.',
+      'RE-FX': `🏢 **SAP RE: Real Estate Management** (Gestión Inmobiliaria)
+
+**🎯 ¿Qué es SAP RE?**
+SAP RE es el módulo que permite a las empresas gestionar activos inmobiliarios, tanto propios como arrendados. Puede usarse en sectores como:
+- Inmobiliarias
+- Retail (con muchas tiendas físicas)  
+- Bancos con oficinas propias
+- Compañías con muchas plantas, terrenos, edificios
+
+**📦 Evolución del módulo**
+| Versión SAP | Módulo | Estado actual |
+|-------------|---------|---------------|
+| SAP ECC (clásico) | RE-FX o SAP RE | Sigue existiendo |
+| S/4HANA | SAP Flexible Real Estate (RE-FX) | Reemplaza RE clásico |
+
+🔁 **SAP RE-FX** es el módulo moderno y flexible, obligatorio en S/4HANA.
+
+**🧩 Subcomponentes principales de SAP RE-FX**
+- **Gestión de contratos**: Contratos de arrendamiento, alquiler, subarrendamiento
+- **Gestión de inmuebles**: Edificios, terrenos, espacios, unidades inmobiliarias
+- **Gestión contable IFRS/NIIF 16**: Arrendamientos financieros con contabilidad dual
+- **Gestión de espacios (Space Management)**: Control y distribución de áreas útiles
+- **Gestión de costes y rentabilidad**: Ingresos por alquiler, gastos por mantenimiento
+- **Facturación y cobros**: Rentas periódicas, ajustes, liquidaciones
+- **Integración con activos fijos (AA)**: Para valoración contable del inmueble
+
+**🔗 Integraciones**
+- **FI**: para contabilidad de contratos, pagos, ingresos
+- **AA**: activos inmobiliarios
+- **CO**: centros de coste asignados a inmuebles
+- **PS**: si se gestiona construcción de activos (proyectos)
+- **PM/MM**: para mantenimiento de edificios o contratos de servicios
+
+**🆕 ¿Qué aporta en S/4HANA?**
+- Gestión completa de arrendamientos conforme a IFRS 16 / NIIF 16
+- Universal Journal integrado (todo en ACDOCA)
+- Apps Fiori para gestionar contratos, inmuebles, rentas
+- Soporte de reporting y compliance legal
+
+**✅ ¿Cuándo usar SAP RE-FX?**
+- Si tu empresa posee o alquila muchos inmuebles
+- Si necesitas cumplir con normas contables como IFRS 16
+- Si gestionas múltiples contratos inmobiliarios
+- Si necesitas una visión financiera y operativa de tus activos inmobiliarios`,
       'SAP BRIM': 'SAP BRIM: Billing and Revenue Innovation Management (Gestión de Facturación e Innovación en Ingresos). Diseñado para empresas con servicios recurrentes, por consumo o suscripción que requieren facturación compleja y flexible. Componentes principales: SOM (Subscription Order Management - contratos de suscripción), CC (Convergent Charging - cálculo de precios por uso), CM (Convergent Mediation - procesamiento de datos de uso), CI (Convergent Invoicing - consolidación y emisión de facturas), FI-CA (Contract Accounts - contabilidad de clientes masiva). Ideal para telcos, utilities, transportes, empresas SaaS, medios digitales, automoción. Resuelve facturación basada en eventos, ofertas combinadas, consolidación de transacciones, precios dinámicos, cobros masivos. Completamente integrado en S/4HANA con apps Fiori.',
       'SAP GRC': 'SAP GRC: Governance, Risk and Compliance (Gobierno Corporativo, Gestión de Riesgos y Cumplimiento Normativo). Conjunto de soluciones para controlar accesos, gestionar riesgos, detectar fraudes y cumplir normativas. Componentes principales: Access Control (GRC-AC - gestión de usuarios, roles y segregación de funciones SoD), Process Control (GRC-PC - controles internos y auditorías automatizadas), Risk Management (GRC-RM - identificación y monitorización de riesgos), Audit Management (GRC-AM - auditorías internas), Fraud Management (detección de actividades sospechosas). Resuelve accesos no autorizados, conflictos de roles, riesgos no documentados, fraudes internos y falta de trazabilidad. Totalmente compatible con S/4HANA, Fiori, workflows automatizados. Ideal para empresas con procesos sensibles, auditorías SOX/GDPR/ISO 27001.',
       'SAP S4HANA Brownfield': 'SAP S4HANA Brownfield: Estrategia de migración hacia SAP S/4HANA que reutiliza el sistema SAP existente, en lugar de empezar desde cero. Término tomado del urbanismo donde Brownfield es terreno con edificaciones existentes que se renuevan vs. Greenfield (terreno virgen). En SAP: Brownfield = conversión del sistema ECC actual a S/4HANA conservando procesos, datos y personalizaciones; Greenfield = nueva implantación limpia de S/4HANA rediseñando todo desde cero. Proceso: conversión técnica del sistema ECC a S/4HANA, limpieza de datos innecesarios, adaptación de código Z (desarrollos propios), activación de nuevas funcionalidades gradualmente, conversión del sistema financiero al nuevo Universal Journal, migración de estructuras CO-PA, materiales, activos fijos. Ventajas: menor coste y tiempo que Greenfield, conserva la configuración y desarrollos actuales, menor disrupción para el negocio, ideal si sistema actual está bien construido y documentado. Requiere: sistema ECC actualizado (al menos EHP6), evaluar dependencias técnicas (addons, Z, integraciones), planificación detallada y pruebas extensas. Herramientas: SAP Readiness Check, Maintenance Planner, Simplification Item List, SUM (Software Update Manager) con DMO (Database Migration Option). Recomendable cuando: sistema ECC estabilizado y bien estructurado, se quiere conservar historial y desarrollos, se busca migración rápida y controlada sin rediseñar procesos de negocio desde cero.',
