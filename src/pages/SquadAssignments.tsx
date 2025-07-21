@@ -755,10 +755,10 @@ export default function SquadAssignments({ userRole, userData }: { userRole?: st
                   </div>
                 </div>
 
-                {/* Segunda sección: Proyectos de Stratesys */}
+                {/* Segunda sección: Proyectos de Stratesys - cada uno en su línea */}
                 <div>
                   <div className="text-sm font-medium text-muted-foreground mb-2">Proyectos Stratesys:</div>
-                  <div className="flex flex-wrap gap-4">
+                  <div className="space-y-2">
                     {assignments
                       .filter(a => a.person_id === selectedPerson)
                       .reduce((unique, assignment) => {
