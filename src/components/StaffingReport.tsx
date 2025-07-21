@@ -21,6 +21,7 @@ interface StaffingReportProps {
 
 interface StaffingData {
   personId: string;
+  personCode: string;
   personName: string;
   categoria: string;
   grupo: string;
@@ -93,7 +94,9 @@ const StaffingReport: React.FC<StaffingReportProps> = ({ squadLeadName, squadPer
             categoria,
             grupo,
             oficina,
-            squad_lead
+            squad_lead,
+            num_pers,
+            cex
           )
         `)
         .in('person_id', selectedPersons)
@@ -189,6 +192,7 @@ const StaffingReport: React.FC<StaffingReportProps> = ({ squadLeadName, squadPer
         return {
           personId,
           personName: person?.nombre || '',
+          personCode: person?.num_pers || person?.cex || '',
           categoria: person?.categoria || '',
           grupo: person?.grupo || '',
           oficina: person?.oficina || '',
@@ -216,37 +220,42 @@ const StaffingReport: React.FC<StaffingReportProps> = ({ squadLeadName, squadPer
 
     const weeks = Object.keys(staffingData[0].weeklyData);
     
-    // Crear headers principales
+    // Crear workbook y worksheet
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.aoa_to_sheet([]);
+
+    // Headers principales (información personal)
     const mainHeaders = [
-      'Código empleado',
-      'Nombre Persona',
-      'Categoría',
-      'Grupo',
-      'Oficina',
-      'Squad Lead'
+      'Código\nem', 'Nombre\nPersona', 'Categoría', 'Grupo', 'Oficina', 'Squad\nLead'
     ];
 
-    // Headers de semanas
-    const weekHeaders: string[] = [];
-    weeks.forEach(week => {
-      weekHeaders.push(
-        `${week} - Jornadas Facturables Proyecto`,
-        `${week} - Jornadas STR Productos`,
-        `${week} - Jornadas No Facturables Availability`,
-        `${week} - Jornadas No Facturables Management`,
-        `${week} - Jornadas No Facturables SAM`,
-        `${week} - Jornadas Facturables Otros`,
-        `${week} - Jornadas No Disponibles`,
-        `${week} - Total Días Laborables`
+    // Crear estructura de headers compleja como en la imagen
+    const row1: string[] = [...mainHeaders];
+    const row2: string[] = new Array(mainHeaders.length).fill('');
+
+    weeks.forEach((week, index) => {
+      // Primera fila: nombre de la semana repetido para todas las columnas de esa semana
+      for (let i = 0; i < 8; i++) {
+        row1.push(week);
+      }
+      
+      // Segunda fila: detalles específicos de cada columna
+      row2.push(
+        'Jornadas\nFacturables\nProyecto',
+        'Jornadas\nSTR\nProductos', 
+        'Jornadas\nNo\nFacturables\nAvailability',
+        'Jornadas\nNo\nFacturables\nManagement',
+        'Jornadas\nNo\nFacturables\nSAM',
+        'Jornadas\nFacturables\nOtros\n(Internal\nActivities,\netc.)',
+        'Jornadas\nNo\nDisponibles',
+        'Total Días\nLaborables'
       );
     });
-
-    const allHeaders = [...mainHeaders, ...weekHeaders];
 
     // Crear datos
     const data = staffingData.map(person => {
       const row = [
-        person.personId.substring(0, 8),
+        person.personCode,
         person.personName,
         person.categoria,
         person.grupo,
@@ -271,60 +280,52 @@ const StaffingReport: React.FC<StaffingReportProps> = ({ squadLeadName, squadPer
       return row;
     });
 
-    // Crear workbook y worksheet
-    const wb = XLSX.utils.book_new();
-    const ws = XLSX.utils.aoa_to_sheet([]);
-
-    // Información del período (primera fila con estilo)
+    // Información del período
     const periodInfo = [
-      [`INFORME DE STAFFING - ${squadLeadName.toUpperCase()}`],
-      [`Período: ${format(startDate!, 'dd/MM/yyyy')} - ${format(endDate!, 'dd/MM/yyyy')}`],
-      [`Generado: ${format(new Date(), 'dd/MM/yyyy HH:mm')}`],
+      [`Informe de Staffing - ${format(startDate!, 'dd/MM/yyyy')} a ${format(endDate!, 'dd/MM/yyyy')}`],
+      [`Squad lead: ${squadLeadName.toUpperCase()}`],
       []
     ];
 
-    // Agregar información del período
+    // Agregar contenido al worksheet
     XLSX.utils.sheet_add_aoa(ws, periodInfo, { origin: 'A1' });
-    
-    // Agregar headers
-    XLSX.utils.sheet_add_aoa(ws, [allHeaders], { origin: 'A5' });
-    
-    // Agregar datos
+    XLSX.utils.sheet_add_aoa(ws, [row1], { origin: 'A4' });
+    XLSX.utils.sheet_add_aoa(ws, [row2], { origin: 'A5' });
     XLSX.utils.sheet_add_aoa(ws, data, { origin: 'A6' });
 
-    // Calcular el rango de datos
-    const range = XLSX.utils.decode_range(ws['!ref'] || 'A1');
-    
     // Configurar anchos de columna
     const colWidths = [
-      { wch: 12 }, // Código empleado
-      { wch: 25 }, // Nombre Persona
-      { wch: 15 }, // Categoría
-      { wch: 15 }, // Grupo
-      { wch: 12 }, // Oficina
-      { wch: 18 }, // Squad Lead
+      { wch: 8 },   // Código empleado
+      { wch: 20 },  // Nombre Persona
+      { wch: 12 },  // Categoría
+      { wch: 10 },  // Grupo
+      { wch: 10 },  // Oficina
+      { wch: 15 },  // Squad Lead
     ];
 
-    // Agregar anchos para columnas de semanas
+    // Agregar anchos para columnas de semanas (más estrechas)
     weeks.forEach(() => {
-      colWidths.push(
-        { wch: 12 }, // Facturables Proyecto
-        { wch: 12 }, // STR Productos
-        { wch: 12 }, // No Facturables Availability
-        { wch: 12 }, // No Facturables Management
-        { wch: 12 }, // No Facturables SAM
-        { wch: 12 }, // Facturables Otros
-        { wch: 12 }, // No Disponibles
-        { wch: 12 }  // Total Días Laborables
-      );
+      for (let i = 0; i < 8; i++) {
+        colWidths.push({ wch: 8 });
+      }
     });
 
     ws['!cols'] = colWidths;
 
-    // Estilos para celdas
-    const headerStyle = {
-      font: { bold: true, color: { rgb: "FFFFFF" }, size: 11, name: "Calibri" },
-      fill: { fgColor: { rgb: "366092" } },
+    // Estilos mejorados
+    const titleStyle = {
+      font: { bold: true, color: { rgb: "000000" }, size: 14, name: "Calibri" },
+      alignment: { horizontal: "left", vertical: "center" }
+    };
+
+    const subtitleStyle = {
+      font: { bold: false, color: { rgb: "666666" }, size: 11, name: "Calibri" },
+      alignment: { horizontal: "left", vertical: "center" }
+    };
+
+    const headerMainStyle = {
+      font: { bold: true, color: { rgb: "000000" }, size: 10, name: "Calibri" },
+      fill: { fgColor: { rgb: "D9D9D9" } },
       alignment: { horizontal: "center", vertical: "center", wrapText: true },
       border: {
         top: { style: "thin", color: { rgb: "000000" } },
@@ -334,30 +335,32 @@ const StaffingReport: React.FC<StaffingReportProps> = ({ squadLeadName, squadPer
       }
     };
 
-    const titleStyle = {
-      font: { bold: true, color: { rgb: "FFFFFF" }, size: 14, name: "Calibri" },
-      fill: { fgColor: { rgb: "2F5687" } },
-      alignment: { horizontal: "center", vertical: "center" }
-    };
-
-    const subtitleStyle = {
-      font: { bold: true, color: { rgb: "2F5687" }, size: 11, name: "Calibri" },
-      alignment: { horizontal: "left", vertical: "center" }
-    };
-
-    const dataStyle = {
-      font: { size: 10, name: "Calibri" },
-      alignment: { horizontal: "center", vertical: "center" },
+    const headerWeekStyle = {
+      font: { bold: true, color: { rgb: "000000" }, size: 9, name: "Calibri" },
+      fill: { fgColor: { rgb: "E6E6E6" } },
+      alignment: { horizontal: "center", vertical: "center", wrapText: true },
       border: {
-        top: { style: "thin", color: { rgb: "CCCCCC" } },
-        bottom: { style: "thin", color: { rgb: "CCCCCC" } },
-        left: { style: "thin", color: { rgb: "CCCCCC" } },
-        right: { style: "thin", color: { rgb: "CCCCCC" } }
+        top: { style: "thin", color: { rgb: "000000" } },
+        bottom: { style: "thin", color: { rgb: "000000" } },
+        left: { style: "thin", color: { rgb: "000000" } },
+        right: { style: "thin", color: { rgb: "000000" } }
       }
     };
 
-    const personDataStyle = {
-      font: { size: 10, name: "Calibri" },
+    const headerDetailStyle = {
+      font: { bold: true, color: { rgb: "000000" }, size: 8, name: "Calibri" },
+      fill: { fgColor: { rgb: "F2F2F2" } },
+      alignment: { horizontal: "center", vertical: "center", wrapText: true },
+      border: {
+        top: { style: "thin", color: { rgb: "000000" } },
+        bottom: { style: "thin", color: { rgb: "000000" } },
+        left: { style: "thin", color: { rgb: "000000" } },
+        right: { style: "thin", color: { rgb: "000000" } }
+      }
+    };
+
+    const dataPersonalStyle = {
+      font: { size: 9, name: "Calibri" },
       alignment: { horizontal: "left", vertical: "center" },
       border: {
         top: { style: "thin", color: { rgb: "CCCCCC" } },
@@ -367,72 +370,100 @@ const StaffingReport: React.FC<StaffingReportProps> = ({ squadLeadName, squadPer
       }
     };
 
-    // Aplicar estilos al título principal
-    if (ws['A1']) {
-      ws['A1'].s = titleStyle;
+    const dataNumericStyle = {
+      font: { size: 9, name: "Calibri" },
+      alignment: { horizontal: "center", vertical: "center" },
+      border: {
+        top: { style: "thin", color: { rgb: "CCCCCC" } },
+        bottom: { style: "thin", color: { rgb: "CCCCCC" } },
+        left: { style: "thin", color: { rgb: "CCCCCC" } },
+        right: { style: "thin", color: { rgb: "CCCCCC" } }
+      }
+    };
+
+    // Aplicar estilos al título y subtítulo
+    if (ws['A1']) ws['A1'].s = titleStyle;
+    if (ws['A2']) ws['A2'].s = subtitleStyle;
+
+    // Aplicar estilos a headers principales (fila 4)
+    for (let col = 0; col < mainHeaders.length; col++) {
+      const cellRef = XLSX.utils.encode_cell({ r: 3, c: col });
+      if (ws[cellRef]) ws[cellRef].s = headerMainStyle;
     }
 
-    // Aplicar estilos a subtítulos
-    if (ws['A2']) {
-      ws['A2'].s = subtitleStyle;
-    }
-    if (ws['A3']) {
-      ws['A3'].s = subtitleStyle;
+    // Aplicar estilos a headers de semanas (fila 4, columnas de semanas)
+    for (let col = mainHeaders.length; col < row1.length; col++) {
+      const cellRef = XLSX.utils.encode_cell({ r: 3, c: col });
+      if (ws[cellRef]) ws[cellRef].s = headerWeekStyle;
     }
 
-    // Aplicar estilos a headers (fila 5)
-    for (let col = 0; col < allHeaders.length; col++) {
+    // Aplicar estilos a headers de detalle (fila 5)
+    for (let col = 0; col < row2.length; col++) {
       const cellRef = XLSX.utils.encode_cell({ r: 4, c: col });
       if (ws[cellRef]) {
-        ws[cellRef].s = headerStyle;
+        if (col < mainHeaders.length) {
+          ws[cellRef].s = headerMainStyle;
+        } else {
+          ws[cellRef].s = headerDetailStyle;
+        }
       }
     }
 
     // Aplicar estilos a datos
     for (let row = 5; row < 5 + data.length; row++) {
-      for (let col = 0; col < allHeaders.length; col++) {
+      for (let col = 0; col < row1.length; col++) {
         const cellRef = XLSX.utils.encode_cell({ r: row, c: col });
         if (ws[cellRef]) {
-          // Estilo diferente para columnas de información personal vs datos numéricos
-          if (col < 6) {
-            ws[cellRef].s = personDataStyle;
+          if (col < mainHeaders.length) {
+            ws[cellRef].s = dataPersonalStyle;
           } else {
-            ws[cellRef].s = dataStyle;
+            // Colores sutiles para diferentes tipos de jornadas
+            const colIndex = (col - mainHeaders.length) % 8;
+            let fillColor = "FFFFFF";
             
-            // Colores especiales según el tipo de jornada
-            const colIndex = (col - 6) % 8;
-            if (colIndex === 0) { // Jornadas Facturables Proyecto
-              ws[cellRef].s = { ...dataStyle, fill: { fgColor: { rgb: "E8F5E8" } } };
-            } else if (colIndex === 1) { // STR Productos
-              ws[cellRef].s = { ...dataStyle, fill: { fgColor: { rgb: "E8F0FF" } } };
-            } else if (colIndex === 2) { // No Facturables Availability
-              ws[cellRef].s = { ...dataStyle, fill: { fgColor: { rgb: "FFF8E8" } } };
-            } else if (colIndex === 3) { // No Facturables Management
-              ws[cellRef].s = { ...dataStyle, fill: { fgColor: { rgb: "F0E8FF" } } };
-            } else if (colIndex === 4) { // No Facturables SAM
-              ws[cellRef].s = { ...dataStyle, fill: { fgColor: { rgb: "FFE8E8" } } };
-            } else if (colIndex === 5) { // Facturables Otros
-              ws[cellRef].s = { ...dataStyle, fill: { fgColor: { rgb: "E8FFF8" } } };
-            } else if (colIndex === 6) { // No Disponibles
-              ws[cellRef].s = { ...dataStyle, fill: { fgColor: { rgb: "F5F5F5" } } };
-            } else if (colIndex === 7) { // Total Días Laborables
-              ws[cellRef].s = { ...dataStyle, fill: { fgColor: { rgb: "E0E0E0" } }, font: { bold: true, size: 10, name: "Calibri" } };
+            switch(colIndex) {
+              case 0: fillColor = "E8F5E8"; break; // Facturables Proyecto - verde claro
+              case 1: fillColor = "E8F0FF"; break; // STR Productos - azul claro
+              case 2: fillColor = "FFF8E8"; break; // Availability - amarillo claro
+              case 3: fillColor = "F0E8FF"; break; // Management - morado claro
+              case 4: fillColor = "FFE8E8"; break; // SAM - rojo claro
+              case 5: fillColor = "E8FFF8"; break; // Otros - verde menta
+              case 6: fillColor = "F5F5F5"; break; // No Disponibles - gris
+              case 7: fillColor = "E0E0E0"; break; // Total - gris oscuro
             }
+            
+            ws[cellRef].s = {
+              ...dataNumericStyle,
+              fill: { fgColor: { rgb: fillColor } },
+              font: colIndex === 7 ? 
+                { bold: true, size: 9, name: "Calibri" } : 
+                { size: 9, name: "Calibri" }
+            };
           }
         }
       }
     }
 
-    // Congelar paneles (fijar headers y columnas de información personal)
-    ws['!freeze'] = { xSplit: 6, ySplit: 5 };
+    // Merge cells para agrupar semanas
+    const merges = [];
+    
+    // Merge del título
+    merges.push({ s: { r: 0, c: 0 }, e: { r: 0, c: Math.min(row1.length - 1, 15) } });
 
-    // Agregar filtros automáticos
-    ws['!autofilter'] = { ref: `A5:${XLSX.utils.encode_cell({ r: 4 + data.length, c: allHeaders.length - 1 })}` };
+    // Merge de los headers de semanas
+    let currentCol = mainHeaders.length;
+    weeks.forEach(() => {
+      merges.push({ s: { r: 3, c: currentCol }, e: { r: 3, c: currentCol + 7 } });
+      currentCol += 8;
+    });
 
-    // Merge cells para el título
-    ws['!merges'] = [
-      { s: { r: 0, c: 0 }, e: { r: 0, c: Math.min(allHeaders.length - 1, 10) } }
-    ];
+    ws['!merges'] = merges;
+
+    // Congelar paneles
+    ws['!freeze'] = { xSplit: mainHeaders.length, ySplit: 5 };
+
+    // Filtros automáticos
+    ws['!autofilter'] = { ref: `A5:${XLSX.utils.encode_cell({ r: 4 + data.length, c: row1.length - 1 })}` };
 
     XLSX.utils.book_append_sheet(wb, ws, 'Informe Staffing');
     
@@ -440,8 +471,8 @@ const StaffingReport: React.FC<StaffingReportProps> = ({ squadLeadName, squadPer
     XLSX.writeFile(wb, fileName);
 
     toast({
-      title: "¡Preciosidad exportada! ✨",
-      description: `Excel generado con estilo: ${fileName}`,
+      title: "🎨 Excel de lujo generado!",
+      description: `Archivo: ${fileName}`,
     });
   };
 
@@ -595,7 +626,7 @@ const StaffingReport: React.FC<StaffingReportProps> = ({ squadLeadName, squadPer
                 <tbody>
                   {staffingData.map(person => (
                     <tr key={person.personId}>
-                      <td className="border p-2">{person.personId.substring(0, 8)}</td>
+                      <td className="border p-2">{person.personCode}</td>
                       <td className="border p-2">{person.personName}</td>
                       <td className="border p-2">{person.categoria}</td>
                       <td className="border p-2">{person.grupo}</td>
