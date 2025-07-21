@@ -338,15 +338,6 @@ export default function SquadLeadDashboard() {
                   }`}
                   onClick={() => !draggedCard && !isDragMode && handleNavigation(card.route)}
                 >
-                  {/* Indicador de modo drag */}
-                  {isDragMode && dragModeCard === card.id && (
-                    <div className="absolute top-2 right-2 z-10">
-                      <div className="bg-primary text-primary-foreground px-2 py-1 rounded text-xs font-medium flex items-center gap-1">
-                        <GripVertical className="h-3 w-3" />
-                        Arrastrar
-                      </div>
-                    </div>
-                  )}
                   
                   <CardHeader className="text-center pb-4">
                     <div className={`mx-auto ${card.bgColor} w-16 h-16 rounded-full flex items-center justify-center mb-3`}>
