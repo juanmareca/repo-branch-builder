@@ -190,7 +190,7 @@ export default function SpainHolidaysMap() {
 
   const formatHolidayOneLine = (holiday: Holiday) => {
     const formattedDate = formatDate(holiday.date);
-    return `${holiday.localName} - ${formattedDate}`;
+    return { name: holiday.localName, date: formattedDate };
   };
 
   const handleRegionClick = useCallback((regionName: string) => {
@@ -454,9 +454,9 @@ export default function SpainHolidaysMap() {
         </div>
 
         {/* Panel de resultados */}
-        <div>
+        <div className="h-full">
           {selectedRegion ? (
-            <Card>
+            <Card className="h-full">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Calendar className="h-5 w-5" />
@@ -471,7 +471,7 @@ export default function SpainHolidaysMap() {
                   </Badge>
                 </div>
               </CardHeader>
-              <CardContent className="space-y-6">
+              <CardContent className="space-y-6 h-[calc(100%-120px)] overflow-y-auto">
                 {/* Festivos Nacionales */}
                 <div>
                   <h4 className="font-semibold text-lg mb-3 flex items-center gap-2">
@@ -484,11 +484,17 @@ export default function SpainHolidaysMap() {
                   </h4>
                    <div className="space-y-2 max-h-48 overflow-y-auto">
                     {filteredHolidays.national.length > 0 ? (
-                       filteredHolidays.national.map((holiday, index) => (
-                         <div key={index} className="p-2 bg-blue-50 border-blue-200 border rounded-lg">
-                           <div className="font-medium text-blue-900 text-sm">{formatHolidayOneLine(holiday)}</div>
-                         </div>
-                      ))
+                       filteredHolidays.national.map((holiday, index) => {
+                         const formattedHoliday = formatHolidayOneLine(holiday);
+                         return (
+                          <div key={index} className="p-2 bg-blue-50 border-blue-200 border rounded-lg">
+                            <div className="text-blue-900 text-sm">
+                              <span className="font-medium">{formattedHoliday.name}</span>
+                              <span className="font-normal text-xs"> - {formattedHoliday.date}</span>
+                            </div>
+                          </div>
+                        );
+                       })
                     ) : (
                       <p className="text-sm text-muted-foreground italic">
                         No hay festivos nacionales para este período
@@ -509,11 +515,17 @@ export default function SpainHolidaysMap() {
                   </h4>
                   <div className="space-y-2 max-h-48 overflow-y-auto">
                     {filteredHolidays.regional.length > 0 ? (
-                       filteredHolidays.regional.map((holiday, index) => (
-                         <div key={index} className="p-2 bg-orange-50 border-orange-200 border rounded-lg">
-                           <div className="font-medium text-orange-900 text-sm">{formatHolidayOneLine(holiday)}</div>
-                         </div>
-                       ))
+                       filteredHolidays.regional.map((holiday, index) => {
+                         const formattedHoliday = formatHolidayOneLine(holiday);
+                         return (
+                          <div key={index} className="p-2 bg-orange-50 border-orange-200 border rounded-lg">
+                            <div className="text-orange-900 text-sm">
+                              <span className="font-medium">{formattedHoliday.name}</span>
+                              <span className="font-normal text-xs"> - {formattedHoliday.date}</span>
+                            </div>
+                          </div>
+                        );
+                       })
                     ) : (
                       <p className="text-sm text-muted-foreground italic">
                         No hay festivos regionales para este período
@@ -524,8 +536,8 @@ export default function SpainHolidaysMap() {
               </CardContent>
             </Card>
           ) : (
-            <Card>
-              <CardContent className="flex flex-col items-center justify-center h-64 text-center">
+            <Card className="h-full">
+              <CardContent className="flex flex-col items-center justify-center h-full text-center">
                 <MapPin className="h-12 w-12 text-muted-foreground mb-4" />
                 <h3 className="text-lg font-semibold mb-2">Selecciona una comunidad</h3>
                 <p className="text-muted-foreground">
