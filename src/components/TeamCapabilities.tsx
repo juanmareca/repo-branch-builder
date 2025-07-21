@@ -61,6 +61,7 @@ const ALL_SKILLS = [
 ];
 
 const LEVEL_OPTIONS = ['Nulo', 'Pre-A1', 'Básico', 'Medio', 'Alto', 'Experto'];
+const LANGUAGE_LEVEL_OPTIONS = ['Nulo', 'Pre-A1', 'A1', 'A2', 'B1', 'B2', 'C1', 'C2'];
 const INDUSTRY_OPTIONS = ['No', 'Sí'];
 
 const TeamCapabilities: React.FC<TeamCapabilitiesProps> = ({ 
@@ -153,6 +154,18 @@ const TeamCapabilities: React.FC<TeamCapabilitiesProps> = ({
     switch (level?.toLowerCase()) {
       case 'pre-a1':
         return 'bg-red-50 text-red-700 border-red-200 dark:bg-red-900/10 dark:text-red-400';
+      case 'a1':
+        return 'bg-orange-50 text-orange-700 border-orange-200 dark:bg-orange-900/10 dark:text-orange-400';
+      case 'a2':
+        return 'bg-yellow-50 text-yellow-700 border-yellow-200 dark:bg-yellow-900/10 dark:text-yellow-400';
+      case 'b1':
+        return 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-900/10 dark:text-blue-400';
+      case 'b2':
+        return 'bg-indigo-50 text-indigo-700 border-indigo-200 dark:bg-indigo-900/10 dark:text-indigo-400';
+      case 'c1':
+        return 'bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-900/10 dark:text-purple-400';
+      case 'c2':
+        return 'bg-green-50 text-green-700 border-green-200 dark:bg-green-900/10 dark:text-green-400';
       case 'básico':
         return 'bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900/20 dark:text-blue-400';
       case 'medio':
@@ -1043,8 +1056,13 @@ const TeamCapabilities: React.FC<TeamCapabilitiesProps> = ({
                                       <SelectValue />
                                     </SelectTrigger>
                                     <SelectContent className="bg-background border shadow-lg z-50">
-                                      {/* Usar opciones diferentes según si es industria o no */}
-                                      {(category === 'Industrias' ? INDUSTRY_OPTIONS : LEVEL_OPTIONS).map(level => (
+                                      {/* Usar opciones diferentes según el tipo de capacidad */}
+                                      {(category === 'Industrias' 
+                                        ? INDUSTRY_OPTIONS 
+                                        : category === 'Idiomas' 
+                                          ? LANGUAGE_LEVEL_OPTIONS 
+                                          : LEVEL_OPTIONS
+                                      ).map(level => (
                                         <SelectItem key={level} value={level} className="bg-background hover:bg-muted">
                                           {level}
                                         </SelectItem>

@@ -119,25 +119,6 @@ const Index = ({ userRole, userData }: { userRole?: string; userData?: any }) =>
           </div>
         </div>
 
-        {/* Navegación rápida */}
-        <div className="mb-8">
-          <Card className="bg-gradient-to-r from-primary/10 to-primary/5 border-primary/20">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h2 className="text-xl font-semibold mb-2">Festivos de España</h2>
-                  <p className="text-muted-foreground">Consulta los festivos oficiales por comunidad autónoma</p>
-                </div>
-                <Link to="/holidays">
-                  <Button className="gap-2">
-                    <Calendar className="h-4 w-4" />
-                    Ver Festivos
-                  </Button>
-                </Link>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <Card className="border-l-4 border-l-blue-500 bg-gradient-to-br from-blue-50 to-blue-100/50 dark:from-blue-950/20 dark:to-blue-900/10">
