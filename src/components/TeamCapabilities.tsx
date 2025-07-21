@@ -486,7 +486,7 @@ const TeamCapabilities: React.FC<TeamCapabilitiesProps> = ({
       const curriculum = generateCurriculum(personName, allPersonCapacities);
       
       // Estimar altura necesaria
-      const estimatedHeight = Math.ceil(curriculum.length / 80) * 5 + 20;
+      const estimatedHeight = Math.ceil(curriculum.length / 80) * 5 + 30;
       
       // Si no cabe en la página actual, crear nueva página
       if (yPosition + estimatedHeight > pageHeight - 40) {
@@ -497,44 +497,139 @@ const TeamCapabilities: React.FC<TeamCapabilitiesProps> = ({
         yPosition = 40;
       }
       
-      // Texto justificado con mejor formato
-      pdf.setTextColor(50, 50, 50);
-      pdf.setFontSize(11);
-      pdf.setFont('helvetica', 'normal');
+      // Procesar el currículum palabra por palabra para formateo avanzado
+      const words = curriculum.split(' ');
+      let currentLine = '';
+      let isFirstWordOfPerson = true;
       
-      const splitText = pdf.splitTextToSize(curriculum, contentWidth);
-      
-      // Justificar texto
-      for (let lineIndex = 0; lineIndex < splitText.length; lineIndex++) {
-        const line = splitText[lineIndex];
+      for (let i = 0; i < words.length; i++) {
+        const word = words[i];
+        const testLine = currentLine + (currentLine ? ' ' : '') + word;
+        const testWidth = pdf.getTextWidth(testLine);
         
-        // No justificar la última línea o líneas cortas
-        if (lineIndex === splitText.length - 1 || line.trim().length < contentWidth * 0.7) {
-          pdf.text(line, marginLeft, yPosition);
+        // Si la línea se vuelve demasiado larga, renderizar la línea actual
+        if (testWidth > contentWidth && currentLine) {
+          // Verificar si necesitamos nueva página
+          if (yPosition > pageHeight - 40) {
+            addFooter(pageCount, totalPages);
+            pdf.addPage();
+            pageCount++;
+            addHeader();
+            yPosition = 40;
+          }
+          
+          // Justificar la línea
+          renderJustifiedLine(pdf, currentLine, marginLeft, yPosition, contentWidth, false);
+          yPosition += 5.5;
+          currentLine = word;
+          isFirstWordOfPerson = false;
         } else {
-          // Justificar la línea distribuyendo espacios
-          const words = line.split(' ');
-          if (words.length > 1) {
-            const totalTextWidth = words.reduce((sum, word) => sum + pdf.getTextWidth(word), 0);
-            const totalSpaceWidth = contentWidth - totalTextWidth;
-            const spaceWidth = totalSpaceWidth / (words.length - 1);
+          // Si es la primera palabra (nombre de la persona), aplicar formato especial
+          if (isFirstWordOfPerson && i === 0) {
+            // Verificar si es Squad Lead
+            const isSquadLead = currentSquadLeadName && personName.includes(currentSquadLeadName);
             
-            let xPosition = marginLeft;
-            for (let wordIndex = 0; wordIndex < words.length; wordIndex++) {
-              pdf.text(words[wordIndex], xPosition, yPosition);
-              if (wordIndex < words.length - 1) {
-                xPosition += pdf.getTextWidth(words[wordIndex]) + spaceWidth;
+            // Renderizar el nombre con formato especial
+            if (isSquadLead) {
+              pdf.setTextColor(220, 38, 38); // Rojo
+            } else {
+              pdf.setTextColor(50, 50, 50); // Gris oscuro
+            }
+            pdf.setFont('helvetica', 'bold');
+            pdf.setFontSize(11);
+            
+            // Encontrar hasta dónde va el nombre (hasta la primera coma)
+            let nameEnd = i;
+            let nameText = word;
+            while (nameEnd < words.length - 1 && !words[nameEnd].endsWith(',')) {
+              nameEnd++;
+              nameText += ' ' + words[nameEnd];
+            }
+            
+            pdf.text(nameText, marginLeft, yPosition);
+            const nameWidth = pdf.getTextWidth(nameText);
+            
+            // Continuar con el resto del texto en formato normal
+            pdf.setTextColor(50, 50, 50);
+            pdf.setFont('helvetica', 'normal');
+            
+            // Saltar las palabras del nombre ya procesadas
+            i = nameEnd;
+            currentLine = '';
+            
+            // Continuar en la misma línea si hay espacio
+            const remainingWidth = contentWidth - nameWidth;
+            let restOfLine = '';
+            
+            // Agregar el resto de palabras que quepan en la línea
+            for (let j = i + 1; j < words.length; j++) {
+              const nextWord = words[j];
+              const testRest = restOfLine + (restOfLine ? ' ' : '') + nextWord;
+              const testRestWidth = pdf.getTextWidth(testRest);
+              
+              if (testRestWidth <= remainingWidth - 10) { // Margen de seguridad
+                restOfLine = testRest;
+                i = j;
+              } else {
+                break;
               }
             }
+            
+            if (restOfLine) {
+              pdf.text(restOfLine, marginLeft + nameWidth + 5, yPosition);
+            }
+            
+            yPosition += 5.5;
+            currentLine = '';
+            isFirstWordOfPerson = false;
           } else {
-            pdf.text(line, marginLeft, yPosition);
+            currentLine = testLine;
           }
         }
-        yPosition += 5;
+      }
+      
+      // Renderizar la última línea si queda algo
+      if (currentLine) {
+        if (yPosition > pageHeight - 40) {
+          addFooter(pageCount, totalPages);
+          pdf.addPage();
+          pageCount++;
+          addHeader();
+          yPosition = 40;
+        }
+        
+        pdf.setTextColor(50, 50, 50);
+        pdf.setFont('helvetica', 'normal');
+        pdf.setFontSize(11);
+        renderJustifiedLine(pdf, currentLine, marginLeft, yPosition, contentWidth, true);
+        yPosition += 5.5;
       }
       
       yPosition += 15; // Espacio entre personas
     });
+    
+    // Función auxiliar para renderizar líneas justificadas
+    function renderJustifiedLine(pdf: any, line: string, x: number, y: number, maxWidth: number, isLastLine: boolean) {
+      const words = line.split(' ');
+      
+      if (words.length <= 1 || isLastLine) {
+        // No justificar líneas con una sola palabra o la última línea
+        pdf.text(line, x, y);
+      } else {
+        // Justificar distribuyendo espacios
+        const totalTextWidth = words.reduce((sum, word) => sum + pdf.getTextWidth(word), 0);
+        const totalSpaceWidth = maxWidth - totalTextWidth;
+        const spaceWidth = totalSpaceWidth / (words.length - 1);
+        
+        let xPosition = x;
+        for (let i = 0; i < words.length; i++) {
+          pdf.text(words[i], xPosition, y);
+          if (i < words.length - 1) {
+            xPosition += pdf.getTextWidth(words[i]) + spaceWidth;
+          }
+        }
+      }
+    }
     
     // Añadir pie de página a la última página
     addFooter(pageCount, pageCount);
