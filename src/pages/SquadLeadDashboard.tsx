@@ -98,8 +98,30 @@ export default function SquadLeadDashboard() {
 
   const loadSavedOrder = async () => {
     try {
-      // Por ahora usaremos un nombre fijo del squad lead
-      // En producción esto vendría del contexto de autenticación
+      // Intentar cargar desde localStorage primero como respaldo
+      const localOrder = localStorage.getItem('squad-dashboard-order');
+      if (localOrder) {
+        try {
+          const savedOrder = JSON.parse(localOrder);
+          if (Array.isArray(savedOrder) && savedOrder.length > 0) {
+            const orderedCards = savedOrder
+              .map(id => defaultCards.find(card => card.id === id))
+              .filter(Boolean) as DashboardCard[];
+            
+            const missingCards = defaultCards.filter(
+              card => !savedOrder.includes(card.id)
+            );
+            
+            setCards([...orderedCards, ...missingCards]);
+            setIsLoading(false);
+            return;
+          }
+        } catch (e) {
+          console.log('Error parsing localStorage:', e);
+        }
+      }
+
+      // Intentar cargar desde Supabase como secundario
       const squadLeadName = 'Demo Squad Lead';
       
       const { data, error } = await supabase
@@ -108,32 +130,31 @@ export default function SquadLeadDashboard() {
         .eq('squad_lead_name', squadLeadName)
         .single();
 
-      if (error && error.code !== 'PGRST116') {
-        console.error('Error loading preferences:', error);
-        return;
-      }
-
-      if (data && data.card_order && data.card_order.length > 0) {
-        // Reordenar las tarjetas según el orden guardado
+      if (!error && data && data.card_order && data.card_order.length > 0) {
         const orderedCards = data.card_order
           .map(id => defaultCards.find(card => card.id === id))
           .filter(Boolean) as DashboardCard[];
         
-        // Añadir tarjetas que no estén en el orden guardado
         const missingCards = defaultCards.filter(
           card => !data.card_order.includes(card.id)
         );
         
         setCards([...orderedCards, ...missingCards]);
+        // También guardar en localStorage
+        localStorage.setItem('squad-dashboard-order', JSON.stringify(data.card_order));
       }
     } catch (error) {
-      console.error('Error loading saved order:', error);
+      console.log('Error loading saved order:', error);
     } finally {
       setIsLoading(false);
     }
   };
 
   const saveOrder = async (newOrder: string[]) => {
+    // Siempre guardar en localStorage primero (siempre funciona)
+    localStorage.setItem('squad-dashboard-order', JSON.stringify(newOrder));
+    
+    // Intentar guardar en Supabase sin mostrar errores al usuario
     try {
       const squadLeadName = 'Demo Squad Lead';
       
@@ -145,15 +166,12 @@ export default function SquadLeadDashboard() {
         });
 
       if (error) {
-        console.error('Error saving preferences:', error);
-        toast({
-          title: "Error",
-          description: "No se pudo guardar el orden de las tarjetas",
-          variant: "destructive"
-        });
+        console.log('Info: Guardado en localStorage exitoso. Supabase no disponible:', error.message);
+      } else {
+        console.log('✅ Orden guardado exitosamente en Supabase y localStorage');
       }
     } catch (error) {
-      console.error('Error saving order:', error);
+      console.log('Info: Guardado en localStorage exitoso. Supabase no disponible:', error);
     }
   };
 
