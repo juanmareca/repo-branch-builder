@@ -721,22 +721,46 @@ const StaffingReport: React.FC<StaffingReportProps> = ({ squadLeadName, squadPer
               <table className="w-full border-collapse border text-xs">
                 <thead>
                   <tr className="bg-muted">
-                    <th className="border p-2 text-left">Código</th>
-                    <th className="border p-2 text-left">Nombre Persona</th>
-                    <th className="border p-2 text-left">Categoría</th>
-                    <th className="border p-2 text-left">Grupo</th>
-                    <th className="border p-2 text-left">Oficina</th>
-                    <th className="border p-2 text-left">Squad Lead</th>
+                    <th className="border p-3 text-center font-bold min-w-[80px]">Código</th>
+                    <th className="border p-3 text-center font-bold min-w-[200px]">Nombre Persona</th>
+                    <th className="border p-3 text-center font-bold min-w-[120px]">Categoría</th>
+                    <th className="border p-3 text-center font-bold min-w-[80px]">Grupo</th>
+                    <th className="border p-3 text-center font-bold min-w-[80px]">Oficina</th>
+                    <th className="border p-3 text-center font-bold min-w-[150px]">Squad Lead</th>
                     {Object.keys(staffingData[0].weeklyData).map(week => (
                       <React.Fragment key={week}>
-                        <th className="border p-1 text-center">{week}<br/>Jornadas<br/>Facturables<br/>Proyecto</th>
-                        <th className="border p-1 text-center">{week}<br/>Jornadas<br/>STR<br/>Productos</th>
-                        <th className="border p-1 text-center">{week}<br/>Jornadas<br/>No<br/>Facturables<br/>Availability</th>
-                        <th className="border p-1 text-center">{week}<br/>Jornadas<br/>No<br/>Facturables<br/>Management</th>
-                        <th className="border p-1 text-center">{week}<br/>Jornadas<br/>No<br/>Facturables<br/>SAM</th>
-                        <th className="border p-1 text-center">{week}<br/>Jornadas<br/>Facturables<br/>Otros<br/>(Internal<br/>Activities, etc.)</th>
-                        <th className="border p-1 text-center">{week}<br/>Jornadas<br/>No<br/>Disponibles</th>
-                        <th className="border p-1 text-center">{week}<br/>Total Días<br/>Laborables</th>
+                        <th className="border p-2 text-center font-bold min-w-[90px]">
+                          {week}<br/>
+                          <span className="text-xs font-normal">Jornadas<br/>Facturables<br/>Proyecto</span>
+                        </th>
+                        <th className="border p-2 text-center font-bold min-w-[90px]">
+                          {week}<br/>
+                          <span className="text-xs font-normal">Jornadas<br/>STR<br/>Productos</span>
+                        </th>
+                        <th className="border p-2 text-center font-bold min-w-[90px]">
+                          {week}<br/>
+                          <span className="text-xs font-normal">Jornadas<br/>No<br/>Facturables<br/>Availability</span>
+                        </th>
+                        <th className="border p-2 text-center font-bold min-w-[90px]">
+                          {week}<br/>
+                          <span className="text-xs font-normal">Jornadas<br/>No<br/>Facturables<br/>Management</span>
+                        </th>
+                        <th className="border p-2 text-center font-bold min-w-[90px]">
+                          {week}<br/>
+                          <span className="text-xs font-normal">Jornadas<br/>No<br/>Facturables<br/>SAM</span>
+                        </th>
+                        <th className="border p-2 text-center font-bold min-w-[110px]">
+                          {week}<br/>
+                          <span className="text-xs font-normal">Jornadas<br/>Facturables<br/>Otros<br/>(Internal<br/>Activities, etc.)</span>
+                        </th>
+                        <th className="border p-2 text-center font-bold min-w-[90px]">
+                          {week}<br/>
+                          <span className="text-xs font-normal">Jornadas<br/>No<br/>Disponibles</span>
+                        </th>
+                        <th className="border p-2 text-center font-bold min-w-[90px]">
+                          {week}<br/>
+                          <span className="text-xs font-normal">Total Días<br/>Laborables</span>
+                        </th>
                       </React.Fragment>
                     ))}
                   </tr>
@@ -744,12 +768,12 @@ const StaffingReport: React.FC<StaffingReportProps> = ({ squadLeadName, squadPer
                 <tbody>
                   {staffingData.map(person => (
                     <tr key={person.personId}>
-                      <td className="border p-2">{person.personCode}</td>
-                      <td className="border p-2">{person.personName}</td>
-                      <td className="border p-2">{person.categoria}</td>
-                      <td className="border p-2">{person.grupo}</td>
-                      <td className="border p-2">{person.oficina}</td>
-                      <td className="border p-2">{person.squadLead}</td>
+                      <td className="border p-2 text-center">{person.personCode}</td>
+                      <td className="border p-2 text-left">{person.personName}</td>
+                      <td className="border p-2 text-center">{person.categoria}</td>
+                      <td className="border p-2 text-center">{person.grupo}</td>
+                      <td className="border p-2 text-center">{person.oficina}</td>
+                      <td className="border p-2 text-center">{person.squadLead}</td>
                       {Object.keys(person.weeklyData).map((weekKey) => {
                         const weekData = person.weeklyData[weekKey];
                         return (
@@ -761,7 +785,7 @@ const StaffingReport: React.FC<StaffingReportProps> = ({ squadLeadName, squadPer
                             <td className="border p-1 text-center">{weekData.jornadasNoFacturablesSAM.toFixed(2)}</td>
                             <td className="border p-1 text-center">{weekData.jornadasFacturablesOtros.toFixed(2)}</td>
                             <td className="border p-1 text-center">{weekData.jornadasNoDisponibles.toFixed(2)}</td>
-                            <td className="border p-1 text-center">{weekData.totalDiasLaborables.toFixed(2)}</td>
+                            <td className="border p-1 text-center font-bold">{weekData.totalDiasLaborables.toFixed(2)}</td>
                           </React.Fragment>
                         );
                       })}
