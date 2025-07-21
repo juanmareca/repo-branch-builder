@@ -88,9 +88,9 @@ export default function SquadAssignments({ userRole, userData }: { userRole?: st
   // Get current squad lead name
   const currentSquadLeadName = userData?.name;
   
-  // Filter persons for current squad lead
+  // Filter persons for current squad lead and include the squad lead themselves
   const squadPersons = allPersons.filter(person => 
-    person.squad_lead === currentSquadLeadName
+    person.squad_lead === currentSquadLeadName || person.nombre === currentSquadLeadName
   );
 
   useEffect(() => {
@@ -135,7 +135,10 @@ export default function SquadAssignments({ userRole, userData }: { userRole?: st
       
       // The persons filtering is now handled in useEffect
       
-      if (projectsData) setProjects(projectsData);
+      if (projectsData) {
+        console.log('Proyectos cargados:', projectsData.length);
+        setProjects(projectsData);
+      }
       if (assignmentsData) {
         // Create a mapping of project IDs to colors for consistency
         const projectColorMap = new Map<string, string>();
