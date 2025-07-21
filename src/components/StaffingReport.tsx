@@ -550,11 +550,11 @@ const StaffingReport: React.FC<StaffingReportProps> = ({ squadLeadName, squadPer
                 <tbody>
                   {staffingData.map(person => (
                     <tr key={person.personId}>
-                      <td className="p-2 text-center bg-gray-200">{person.personCode}</td>
-                      <td className="p-2 text-left bg-gray-200">{person.personName}</td>
-                      <td className="p-2 text-center bg-gray-200">{person.categoria}</td>
-                      <td className="p-2 text-center bg-gray-200">{person.grupo}</td>
-                      <td className="p-2 text-center bg-gray-200">{person.oficina}</td>
+                      <td className="border p-2 text-center bg-gray-200">{person.personCode}</td>
+                      <td className="border p-2 text-left bg-gray-200">{person.personName}</td>
+                      <td className="border p-2 text-center bg-gray-200">{person.categoria}</td>
+                      <td className="border p-2 text-center bg-gray-200">{person.grupo}</td>
+                      <td className="border p-2 text-center bg-gray-200">{person.oficina}</td>
                       <td className="border p-2 text-center">{person.squadLead}</td>
                       {Object.keys(person.weeklyData).map((weekKey) => {
                         const weekData = person.weeklyData[weekKey];
