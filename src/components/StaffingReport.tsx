@@ -463,29 +463,33 @@ const StaffingReport: React.FC<StaffingReportProps> = ({ squadLeadName, squadPer
             <div className="overflow-x-auto">
               <table className="w-full border-collapse border text-xs">
                 <thead>
-                  {/* PRIMERA CABECERA: Información personal + Nombres de semanas */}
-                  <tr className="bg-blue-600 text-white">
+                  {/* PRIMERA CABECERA: Celdas vacías para info personal + Nombres de semanas */}
+                  <tr>
+                    {/* Celdas vacías SIN fondo, SIN bordes, SIN texto para info personal */}
+                    <th className="min-w-[80px]"></th>
+                    <th className="min-w-[200px]"></th>
+                    <th className="min-w-[120px]"></th>
+                    <th className="min-w-[80px]"></th>
+                    <th className="min-w-[80px]"></th>
+                    <th className="min-w-[150px]"></th>
+                    {/* Nombres de semanas con estilo */}
+                    {Object.keys(staffingData[0].weeklyData).map(week => (
+                      <th key={week} className="border p-2 text-center font-bold min-w-[720px] bg-blue-500 text-white" colSpan={8}>
+                        {week}
+                      </th>
+                    ))}
+                  </tr>
+                  
+                  {/* SEGUNDA CABECERA: Info personal + Detalles de jornadas */}
+                  <tr className="bg-blue-400 text-white">
+                    {/* AQUÍ van los textos de información personal */}
                     <th className="border p-3 text-center font-bold min-w-[80px]">Código</th>
                     <th className="border p-3 text-center font-bold min-w-[200px]">Nombre Persona</th>
                     <th className="border p-3 text-center font-bold min-w-[120px]">Categoría</th>
                     <th className="border p-3 text-center font-bold min-w-[80px]">Grupo</th>
                     <th className="border p-3 text-center font-bold min-w-[80px]">Oficina</th>
                     <th className="border p-3 text-center font-bold min-w-[150px]">Squad Lead</th>
-                    {Object.keys(staffingData[0].weeklyData).map(week => (
-                      <th key={week} className="border p-2 text-center font-bold min-w-[720px] bg-blue-500" colSpan={8}>
-                        {week}
-                      </th>
-                    ))}
-                  </tr>
-                  
-                  {/* SEGUNDA CABECERA: Vacías para info personal + Detalles de jornadas */}
-                  <tr className="bg-blue-400 text-white">
-                    <th className="border p-2 text-center font-bold"></th>
-                    <th className="border p-2 text-center font-bold"></th>
-                    <th className="border p-2 text-center font-bold"></th>
-                    <th className="border p-2 text-center font-bold"></th>
-                    <th className="border p-2 text-center font-bold"></th>
-                    <th className="border p-2 text-center font-bold"></th>
+                    {/* Detalles de jornadas */}
                     {Object.keys(staffingData[0].weeklyData).map(week => (
                       <React.Fragment key={`${week}-details`}>
                         <th className="border p-1 text-center font-bold min-w-[90px] text-xs">
