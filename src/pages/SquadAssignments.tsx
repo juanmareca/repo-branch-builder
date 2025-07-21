@@ -63,9 +63,11 @@ export default function SquadAssignments() {
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [holidays, setHolidays] = useState<Holiday[]>([]);
   const [offices, setOffices] = useState<string[]>([]);
+  const [countries, setCountries] = useState<string[]>([]);
+  const [communities, setCommunities] = useState<string[]>([]);
   
   const currentDate = new Date();
-  const months = Array.from({ length: 6 }, (_, i) => addMonths(currentDate, i));
+  const months = Array.from({ length: 3 }, (_, i) => addMonths(currentDate, i));
 
   useEffect(() => {
     fetchData();
@@ -107,7 +109,32 @@ export default function SquadAssignments() {
         }));
         setAssignments(assignmentsWithColors);
       }
-      if (holidaysData) setHolidays(holidaysData);
+      
+      if (holidaysData) {
+        setHolidays(holidaysData);
+        
+        // Extract countries and communities from holidays data
+        const allLocations = [...new Set(holidaysData.map(h => h.comunidad_autonoma))];
+        
+        // Define Spanish communities
+        const spanishCommunities = [
+          'Andalucía', 'Aragón', 'Asturias', 'Baleares', 'Canarias', 'Cantabria',
+          'Castilla La Mancha', 'Castilla y Leon', 'Cataluña', 'Extremadura',
+          'Galicia', 'La Rioja', 'Madrid', 'Murcia', 'Navarra', 'País Vasco', 'Valencia'
+        ];
+        
+        // Separate countries (non-Spanish locations) and communities
+        const countryList = allLocations
+          .filter(loc => loc && loc !== 'NACIONAL' && !spanishCommunities.includes(loc))
+          .sort();
+        
+        const communityList = allLocations
+          .filter(loc => loc && spanishCommunities.includes(loc))
+          .sort();
+        
+        setCountries(countryList);
+        setCommunities(communityList);
+      }
       
     } catch (error) {
       console.error('Error fetching data:', error);
@@ -363,18 +390,37 @@ export default function SquadAssignments() {
               </div>
 
               <div>
-                <Label htmlFor="office">Oficina/Comunidad</Label>
+                <Label htmlFor="office">Calendario de Festivos</Label>
                 <Select value={selectedOffice} onValueChange={setSelectedOffice}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Usar oficina por defecto" />
+                    <SelectValue placeholder="Seleccionar calendario de festivos..." />
                   </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="default">Por defecto</SelectItem>
-                    {offices.map(office => (
-                      <SelectItem key={office} value={office}>
-                        {office}
-                      </SelectItem>
-                    ))}
+                  <SelectContent className="z-50 bg-background">
+                    <SelectItem value="default">Usar calendario por defecto</SelectItem>
+                    {countries.length > 0 && (
+                      <>
+                        <div className="px-2 py-1 text-xs font-semibold text-muted-foreground">
+                          PAÍSES
+                        </div>
+                        {countries.map(country => (
+                          <SelectItem key={country} value={country}>
+                            {country}
+                          </SelectItem>
+                        ))}
+                      </>
+                    )}
+                    {communities.length > 0 && (
+                      <>
+                        <div className="px-2 py-1 text-xs font-semibold text-muted-foreground">
+                          COMUNIDADES AUTÓNOMAS
+                        </div>
+                        {communities.map(community => (
+                          <SelectItem key={community} value={community}>
+                            {community}
+                          </SelectItem>
+                        ))}
+                      </>
+                    )}
                   </SelectContent>
                 </Select>
               </div>
@@ -490,6 +536,93 @@ export default function SquadAssignments() {
                     </div>
                   </div>
                 )}
+              </CardContent>
+            </Card>
+
+            {/* Daily Task List */}
+            <Card className="mb-6">
+              <CardHeader>
+                <CardTitle>Lista de Tareas por Día</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {(() => {
+                  const allDays = months.flatMap(month => {
+                    const monthStart = startOfMonth(month);
+                    const monthEnd = endOfMonth(month);
+                    return eachDayOfInterval({ start: monthStart, end: monthEnd });
+                  });
+
+                  const daysWithTasks = allDays.filter(day => {
+                    const dayAssignments = getPersonAssignments(selectedPerson, day);
+                    const isHolidayDay = isHoliday(day, personOffice);
+                    const isWeekendDay = isWeekend(day);
+                    return dayAssignments.length > 0 || isHolidayDay || isWeekendDay;
+                  });
+
+                  if (daysWithTasks.length === 0) {
+                    return (
+                      <p className="text-muted-foreground text-center py-4">
+                        No hay asignaciones para mostrar en el período seleccionado.
+                      </p>
+                    );
+                  }
+
+                  return (
+                    <div className="space-y-3 max-h-96 overflow-y-auto">
+                      {daysWithTasks.map(day => {
+                        const dayAssignments = getPersonAssignments(selectedPerson, day);
+                        const isHolidayDay = isHoliday(day, personOffice);
+                        const isWeekendDay = isWeekend(day);
+                        const holidayName = getHolidayName(day, personOffice);
+
+                        return (
+                          <div key={format(day, 'yyyy-MM-dd')} className="border rounded-lg p-3 bg-muted/30">
+                            <div className="font-medium text-sm mb-2">
+                              {format(day, 'EEEE, dd/MM/yyyy', { locale: es })}
+                            </div>
+                            
+                            <div className="space-y-1 text-xs">
+                              {isWeekendDay && (
+                                <div className="flex items-center gap-2">
+                                  <div className="w-3 h-3 bg-yellow-200 rounded"></div>
+                                  <span className="text-yellow-700">Fin de semana</span>
+                                </div>
+                              )}
+                              
+                              {isHolidayDay && (
+                                <div className="flex items-center gap-2">
+                                  <div className="w-3 h-3 bg-red-200 rounded"></div>
+                                  <span className="text-red-700">
+                                    Festivo: {holidayName} ({personOffice || 'Nacional'})
+                                  </span>
+                                </div>
+                              )}
+                              
+                              {dayAssignments.map(assignment => {
+                                const project = projects.find(p => p.id === assignment.project_id);
+                                return (
+                                  <div key={assignment.id} className="flex items-center gap-2">
+                                    <div className={cn("w-3 h-3 rounded", assignment.project_color)}></div>
+                                    <span className="text-foreground">
+                                      {project?.codigo_inicial} - {assignment.hours_allocated}% de dedicación
+                                    </span>
+                                  </div>
+                                );
+                              })}
+                              
+                              {!isWeekendDay && !isHolidayDay && dayAssignments.length === 0 && (
+                                <div className="flex items-center gap-2">
+                                  <div className="w-3 h-3 bg-green-200 rounded"></div>
+                                  <span className="text-green-700">Día laborable disponible</span>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  );
+                })()}
               </CardContent>
             </Card>
 
