@@ -90,7 +90,7 @@ const REGIONS_DATA = {
   'Melilla': { 
     code: 'ML', 
     apiCode: 'ES-ML',
-    image: null // Pendiente de imagen
+    image: '/lovable-uploads/a460b088-965d-41eb-ac65-cf50b8966a68.png'
   },
   'Murcia': {
     code: 'MC', 
