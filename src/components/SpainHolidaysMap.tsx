@@ -454,10 +454,10 @@ export default function SpainHolidaysMap() {
         </div>
 
         {/* Panel de resultados */}
-        <div className="h-full">
+        <div className="h-full flex flex-col">
           {selectedRegion ? (
-            <Card className="h-full">
-              <CardHeader>
+            <Card className="h-full flex flex-col">
+              <CardHeader className="flex-shrink-0">
                 <CardTitle className="flex items-center gap-2">
                   <Calendar className="h-5 w-5" />
                   Festivos en {selectedRegion}
@@ -471,10 +471,10 @@ export default function SpainHolidaysMap() {
                   </Badge>
                 </div>
               </CardHeader>
-              <CardContent className="space-y-6 h-[calc(100%-120px)] overflow-y-auto">
+              <CardContent className="flex-1 flex flex-col gap-4 overflow-hidden">
                 {/* Festivos Nacionales */}
-                <div>
-                  <h4 className="font-semibold text-lg mb-3 flex items-center gap-2">
+                <div className="flex flex-col flex-1 min-h-0">
+                  <h4 className="font-semibold text-lg mb-3 flex items-center gap-2 flex-shrink-0">
                     <Badge variant="default" className="bg-blue-500">
                       Nacional
                     </Badge>
@@ -482,7 +482,7 @@ export default function SpainHolidaysMap() {
                       ({filteredHolidays.national.length})
                     </span>
                   </h4>
-                   <div className="space-y-2 max-h-48 overflow-y-auto">
+                   <div className="space-y-2 overflow-y-auto flex-1">
                     {filteredHolidays.national.length > 0 ? (
                        filteredHolidays.national.map((holiday, index) => {
                          const formattedHoliday = formatHolidayOneLine(holiday);
@@ -504,8 +504,8 @@ export default function SpainHolidaysMap() {
                 </div>
 
                 {/* Festivos Regionales */}
-                <div>
-                  <h4 className="font-semibold text-lg mb-3 flex items-center gap-2">
+                <div className="flex flex-col flex-1 min-h-0">
+                  <h4 className="font-semibold text-lg mb-3 flex items-center gap-2 flex-shrink-0">
                     <Badge variant="outline" className="border-orange-500 text-orange-700">
                       {selectedRegion}
                     </Badge>
@@ -513,7 +513,7 @@ export default function SpainHolidaysMap() {
                       ({filteredHolidays.regional.length})
                     </span>
                   </h4>
-                  <div className="space-y-2 max-h-48 overflow-y-auto">
+                  <div className="space-y-2 overflow-y-auto flex-1">
                     {filteredHolidays.regional.length > 0 ? (
                        filteredHolidays.regional.map((holiday, index) => {
                          const formattedHoliday = formatHolidayOneLine(holiday);
