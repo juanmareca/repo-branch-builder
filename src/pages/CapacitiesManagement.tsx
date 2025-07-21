@@ -1221,8 +1221,8 @@ export default function CapacitiesManagement() {
                           {employee.person_name.toUpperCase()}
                         </h3>
                         <p className="text-sm text-gray-600">
-                          {Object.keys({...employee.sap_modules, ...employee.sap_implementation}).length} capacidades disponibles ({Object.values({...employee.sap_modules, ...employee.sap_implementation}).filter(level => ['Alto', 'Experto'].includes(level)).length} con experiencia) - 
-                          {Math.round((Object.values({...employee.sap_modules, ...employee.sap_implementation}).filter(level => ['Alto', 'Experto'].includes(level)).length / Object.keys({...employee.sap_modules, ...employee.sap_implementation}).length) * 100) || 0}%
+                          {Object.keys({...employee.sap_modules, ...employee.sap_implementation}).length} capacidades disponibles ({Object.values({...employee.sap_modules, ...employee.sap_implementation}).filter(level => level && level !== 'Nulo' && level !== 'No' && level !== 'Pre-A1').length} con experiencia o conocimiento) - 
+                          {Math.round((Object.values({...employee.sap_modules, ...employee.sap_implementation}).filter(level => level && level !== 'Nulo' && level !== 'No' && level !== 'Pre-A1').length / Object.keys({...employee.sap_modules, ...employee.sap_implementation}).length) * 100) || 0}%
                         </p>
                       </div>
                     </div>

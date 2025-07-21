@@ -738,11 +738,11 @@ const TeamCapabilities: React.FC<TeamCapabilitiesProps> = ({
                     {(() => {
                       const totalCapacities = ALL_SKILLS.length;
                       const experiencedCapacities = Object.values(personCapacities).flat().filter(c => 
-                        c.level !== 'Nulo' && c.level !== 'No'
+                        c.level !== 'Nulo' && c.level !== 'No' && c.level !== 'Pre-A1'
                       ).length;
                       const percentage = totalCapacities > 0 ? Math.round((experiencedCapacities / totalCapacities) * 100) : 0;
                       
-                      return `${totalCapacities} capacidades disponibles (${experiencedCapacities} con experiencia) - ${percentage}%`;
+                      return `${totalCapacities} capacidades disponibles (${experiencedCapacities} con experiencia o conocimiento) - ${percentage}%`;
                     })()}
                   </p>
                 </div>
