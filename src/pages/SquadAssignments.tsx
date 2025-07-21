@@ -335,7 +335,8 @@ export default function SquadAssignments({ userRole, userData }: { userRole?: st
               >
                 <div className="relative">
                   {format(day, 'd')}
-                  {dayAssignments.length > 0 && (
+                  {/* Solo mostrar asignaciones en días laborables */}
+                  {dayAssignments.length > 0 && !isWeekendDay && !isHolidayDay && (
                     <div className="text-xs mt-1">
                       {dayAssignments.map((assignment, index) => (
                         <div
@@ -595,7 +596,7 @@ export default function SquadAssignments({ userRole, userData }: { userRole?: st
                       return (
                         <div key={`legend-${assignment.id}`} className="flex items-center gap-2">
                           <div className={cn("w-4 h-4 rounded", assignment.project_color)}></div>
-                          <span className="text-sm">{project?.codigo_inicial}</span>
+                          <span className="text-sm">{project?.denominacion || project?.codigo_inicial}</span>
                         </div>
                       );
                     })}
