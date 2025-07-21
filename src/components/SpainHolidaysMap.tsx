@@ -15,7 +15,7 @@ const REGIONS_DATA = {
   'Andalucía': { 
     code: 'AN', 
     apiCode: 'ES-AN',
-    image: '/lovable-uploads/acabfdf3-b391-4e0d-b764-82e6c102790e.png'
+    image: '/lovable-uploads/310be605-60a2-4f59-98a8-c110a9eb9ee9.png'
   },
   'Aragón': { 
     code: 'AR', 
