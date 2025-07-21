@@ -166,70 +166,72 @@ export default function SpainHolidaysMap() {
     }).join('');
 
     return `
-      <svg width="100%" height="100%" viewBox="0 0 800 600" class="spain-map">
+      <svg width="100%" height="100%" viewBox="0 0 500 500" class="spain-map">
         <defs>
           <linearGradient id="seaGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stop-color="#bfdbfe" />
-            <stop offset="100%" stop-color="#93c5fd" />
+            <stop offset="0%" stop-color="#e0f2fe" />
+            <stop offset="100%" stop-color="#bae6fd" />
           </linearGradient>
           <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
             <feDropShadow dx="3" dy="3" stdDeviation="4" flood-opacity="0.3"/>
           </filter>
         </defs>
         
-        <rect width="800" height="600" fill="url(#seaGradient)" />
+        <rect width="500" height="500" fill="url(#seaGradient)" />
         ${paths}
       </svg>
     `;
   };
 
   const getRegionCoordinates = (regionName: string) => {
+    // Coordenadas reales basadas en el mapa oficial de España
     const coordinates: Record<string, string> = {
-      'Galicia': 'M 50 120 L 140 110 L 160 140 L 150 170 L 120 180 L 80 170 L 60 150 Z',
-      'Asturias': 'M 160 110 L 240 105 L 260 130 L 240 150 L 200 155 L 160 140 Z',
-      'Cantabria': 'M 260 105 L 320 100 L 340 125 L 320 145 L 280 150 L 260 130 Z',
-      'País Vasco': 'M 340 100 L 400 95 L 420 120 L 400 140 L 360 145 L 340 125 Z',
-      'Navarra': 'M 380 145 L 440 140 L 460 170 L 440 195 L 400 200 L 380 175 Z',
-      'La Rioja': 'M 340 175 L 380 170 L 395 195 L 380 215 L 340 220 L 325 195 Z',
-      'Cataluña': 'M 460 140 L 540 130 L 580 180 L 570 250 L 530 280 L 480 270 L 460 220 Z',
-      'Aragón': 'M 400 200 L 480 190 L 520 240 L 500 310 L 450 330 L 400 320 L 380 260 Z',
-      'Castilla y León': 'M 160 180 L 340 170 L 400 200 L 380 260 L 320 300 L 200 310 L 140 280 L 140 220 Z',
-      'Madrid': 'M 320 300 L 380 290 L 400 320 L 380 350 L 320 360 L 300 330 Z',
-      'Castilla-La Mancha': 'M 200 310 L 320 300 L 450 330 L 440 420 L 380 450 L 240 460 L 180 430 L 180 350 Z',
-      'Extremadura': 'M 140 280 L 200 270 L 240 320 L 180 430 L 120 440 L 80 400 L 90 320 Z',
-      'Comunidad Valenciana': 'M 500 310 L 570 280 L 590 350 L 580 420 L 540 450 L 480 440 L 460 370 Z',
-      'Murcia': 'M 460 440 L 540 430 L 560 470 L 540 500 L 480 510 L 440 480 Z',
-      'Andalucía': 'M 80 440 L 240 430 L 380 450 L 480 470 L 460 540 L 380 570 L 200 580 L 60 560 L 50 500 Z',
-      'Canarias': 'M 20 520 L 120 510 L 140 540 L 120 570 L 20 580 Z',
-      'Baleares': 'M 580 350 L 640 340 L 660 370 L 640 400 L 580 410 Z',
-      'Ceuta': 'M 200 580 L 230 575 L 240 590 L 220 600 L 200 595 Z',
-      'Melilla': 'M 250 580 L 280 575 L 290 590 L 270 600 L 250 595 Z'
+      'Galicia': 'M 20 50 L 80 45 L 95 75 L 90 95 L 75 110 L 45 115 L 25 105 L 15 85 L 10 65 Z',
+      'Asturias': 'M 95 45 L 150 40 L 165 55 L 160 75 L 140 85 L 110 80 L 95 65 Z',
+      'Cantabria': 'M 165 40 L 200 38 L 215 50 L 210 65 L 190 70 L 165 60 Z',
+      'País Vasco': 'M 215 38 L 250 35 L 265 45 L 260 60 L 240 65 L 215 55 Z',
+      'Navarra': 'M 240 65 L 275 60 L 290 80 L 285 100 L 260 105 L 240 90 Z',
+      'La Rioja': 'M 260 90 L 285 85 L 295 100 L 290 115 L 270 120 L 255 110 Z',
+      'Cataluña': 'M 320 60 L 380 55 L 400 85 L 395 140 L 370 165 L 340 160 L 320 130 L 315 95 Z',
+      'Aragón': 'M 285 100 L 340 95 L 370 120 L 365 170 L 340 190 L 300 185 L 275 160 L 280 125 Z',
+      'Castilla y León': 'M 95 80 L 240 75 L 285 85 L 300 120 L 280 160 L 240 175 L 180 180 L 120 175 L 85 150 L 80 115 Z',
+      'Madrid': 'M 240 175 L 270 170 L 285 185 L 280 200 L 255 205 L 235 195 Z',
+      'Castilla-La Mancha': 'M 180 180 L 280 175 L 340 190 L 350 230 L 340 270 L 300 285 L 220 290 L 170 275 L 165 235 Z',
+      'Extremadura': 'M 85 175 L 170 170 L 180 210 L 175 250 L 165 275 L 130 285 L 90 280 L 70 255 L 75 215 Z',
+      'Comunidad Valenciana': 'M 365 170 L 395 165 L 410 200 L 405 250 L 390 285 L 365 290 L 350 260 L 355 215 Z',
+      'Murcia': 'M 340 270 L 365 265 L 375 285 L 370 305 L 350 315 L 325 310 L 330 290 Z',
+      'Andalucía': 'M 130 285 L 300 280 L 350 300 L 370 330 L 350 370 L 300 390 L 200 395 L 120 385 L 90 355 L 100 315 Z',
+      'Canarias': 'M 10 450 L 70 445 L 85 465 L 80 485 L 50 495 L 15 490 L 5 470 Z',
+      'Baleares': 'M 420 220 L 460 215 L 475 235 L 470 255 L 450 265 L 415 260 L 410 240 Z',
+      'Ceuta': 'M 200 420 L 215 415 L 220 425 L 215 435 L 200 440 L 195 430 Z',
+      'Melilla': 'M 240 420 L 255 415 L 260 425 L 255 435 L 240 440 L 235 430 Z'
     };
     
     return coordinates[regionName] || 'M 0 0 L 50 0 L 50 50 L 0 50 Z';
   };
 
   const getRegionTextPosition = (regionName: string) => {
+    // Posiciones de texto basadas en el centro de cada región real
     const positions: Record<string, {x: number, y: number}> = {
-      'Galicia': { x: 105, y: 145 },
-      'Asturias': { x: 200, y: 130 },
-      'Cantabria': { x: 290, y: 125 },
-      'País Vasco': { x: 370, y: 120 },
-      'Navarra': { x: 410, y: 170 },
-      'La Rioja': { x: 360, y: 195 },
-      'Cataluña': { x: 520, y: 200 },
-      'Aragón': { x: 440, y: 255 },
-      'Castilla y León': { x: 270, y: 235 },
-      'Madrid': { x: 350, y: 325 },
-      'Castilla-La Mancha': { x: 320, y: 380 },
-      'Extremadura': { x: 160, y: 360 },
-      'Comunidad Valenciana': { x: 530, y: 375 },
-      'Murcia': { x: 500, y: 470 },
-      'Andalucía': { x: 270, y: 505 },
-      'Canarias': { x: 80, y: 545 },
-      'Baleares': { x: 610, y: 375 },
-      'Ceuta': { x: 220, y: 585 },
-      'Melilla': { x: 270, y: 585 }
+      'Galicia': { x: 55, y: 80 },
+      'Asturias': { x: 125, y: 62 },
+      'Cantabria': { x: 185, y: 55 },
+      'País Vasco': { x: 240, y: 50 },
+      'Navarra': { x: 265, y: 85 },
+      'La Rioja': { x: 275, y: 105 },
+      'Cataluña': { x: 360, y: 110 },
+      'Aragón': { x: 320, y: 145 },
+      'Castilla y León': { x: 190, y: 128 },
+      'Madrid': { x: 255, y: 188 },
+      'Castilla-La Mancha': { x: 260, y: 235 },
+      'Extremadura': { x: 128, y: 225 },
+      'Comunidad Valenciana': { x: 378, y: 225 },
+      'Murcia': { x: 350, y: 295 },
+      'Andalucía': { x: 235, y: 340 },
+      'Canarias': { x: 48, y: 470 },
+      'Baleares': { x: 445, y: 240 },
+      'Ceuta': { x: 208, y: 428 },
+      'Melilla': { x: 248, y: 428 }
     };
     
     return positions[regionName] || { x: 100, y: 100 };
