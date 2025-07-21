@@ -624,7 +624,7 @@ const TeamCapabilities: React.FC<TeamCapabilitiesProps> = ({
     return Object.entries(groups).filter(([_, caps]) => caps.length > 0);
   };
 
-  // Función para formatear títulos de módulos financieros, controlling y otros
+  // Función para formatear títulos de módulos financieros, controlling, tesorería y otros
   const formatFinancialModuleTitle = (skill: string) => {
     const cleanedSkill = skill.replace('Módulo SAP - ', '').replace('Implantación SAP - ', '');
     
@@ -649,6 +649,14 @@ const TeamCapabilities: React.FC<TeamCapabilitiesProps> = ({
       return { line1: "(CO-PC) Controlling", line2: "Product Costing" };
     } else if (cleanedSkill.includes('CO-PCA')) {
       return { line1: "(CO-PCA) Controlling", line2: "Profit Center Accounting" };
+    }
+    // Casos especiales para módulos de tesorería
+    else if (cleanedSkill.includes('TR-CM')) {
+      return { line1: "(TR-CM) Treasury", line2: "Cash Management" };
+    } else if (cleanedSkill.includes('TR-TM') && !cleanedSkill.includes('TR-TRM')) {
+      return { line1: "(TR-TM) Treasury", line2: "Treasury Management" };
+    } else if (cleanedSkill.includes('TR-TRM')) {
+      return { line1: "(TR-TRM) Treasury", line2: "Treasury and Risk Management" };
     }
     // Casos especiales para otros módulos
     else if (cleanedSkill.includes('(RE-FX)')) {
