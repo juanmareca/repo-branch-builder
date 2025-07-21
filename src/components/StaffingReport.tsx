@@ -325,14 +325,14 @@ const StaffingReport: React.FC<StaffingReportProps> = ({ squadLeadName, squadPer
 
     ws['!cols'] = colWidths;
 
-    // =================== ESTILOS SÚPER PROFESIONALES ===================
+    // =================== ESTILOS SÚPER PROFESIONALES Y HERMOSOS ===================
     
-    // Título principal - SÚPER IMPACTANTE
+    // Título principal - IMPACTO MÁXIMO
     const titleStyle = {
       font: { 
         bold: true, 
         color: { rgb: "FFFFFF" }, 
-        size: 16, 
+        size: 18, 
         name: "Calibri" 
       },
       fill: { fgColor: { rgb: "1F4E79" } }, // Azul corporativo oscuro
@@ -356,10 +356,17 @@ const StaffingReport: React.FC<StaffingReportProps> = ({ squadLeadName, squadPer
         size: 12, 
         name: "Calibri" 
       },
-      alignment: { horizontal: "left", vertical: "center" }
+      fill: { fgColor: { rgb: "F2F2F2" } }, // Fondo gris muy claro
+      alignment: { horizontal: "left", vertical: "center" },
+      border: {
+        top: { style: "thin", color: { rgb: "CCCCCC" } },
+        bottom: { style: "thin", color: { rgb: "CCCCCC" } },
+        left: { style: "thin", color: { rgb: "CCCCCC" } },
+        right: { style: "thin", color: { rgb: "CCCCCC" } }
+      }
     };
 
-    // Headers principales - MUY ELEGANTE
+    // Headers principales - SÚPER ELEGANTE
     const headerMainStyle = {
       font: { 
         bold: true, 
@@ -367,71 +374,72 @@ const StaffingReport: React.FC<StaffingReportProps> = ({ squadLeadName, squadPer
         size: 11, 
         name: "Calibri" 
       },
-      fill: { fgColor: { rgb: "4472C4" } }, // Azul profesional
+      fill: { fgColor: { rgb: "4472C4" } }, // Azul profesional brillante
       alignment: { 
         horizontal: "center", 
         vertical: "center", 
         wrapText: true 
       },
       border: {
-        top: { style: "thin", color: { rgb: "000000" } },
-        bottom: { style: "thin", color: { rgb: "000000" } },
-        left: { style: "thin", color: { rgb: "000000" } },
-        right: { style: "thin", color: { rgb: "000000" } }
+        top: { style: "medium", color: { rgb: "000000" } },
+        bottom: { style: "medium", color: { rgb: "000000" } },
+        left: { style: "medium", color: { rgb: "000000" } },
+        right: { style: "medium", color: { rgb: "000000" } }
       }
     };
 
-    // Headers de semanas - DESTACADOS
+    // Headers de semanas - DESTACADOS EN AZUL MEDIO
     const headerWeekStyle = {
       font: { 
         bold: true, 
         color: { rgb: "FFFFFF" }, 
-        size: 10, 
+        size: 11, 
         name: "Calibri" 
       },
-      fill: { fgColor: { rgb: "5B9BD5" } }, // Azul medio
+      fill: { fgColor: { rgb: "5B9BD5" } }, // Azul medio vibrante
       alignment: { 
         horizontal: "center", 
         vertical: "center", 
         wrapText: true 
       },
       border: {
-        top: { style: "thin", color: { rgb: "000000" } },
-        bottom: { style: "thin", color: { rgb: "000000" } },
-        left: { style: "thin", color: { rgb: "000000" } },
-        right: { style: "thin", color: { rgb: "000000" } }
+        top: { style: "medium", color: { rgb: "000000" } },
+        bottom: { style: "medium", color: { rgb: "000000" } },
+        left: { style: "medium", color: { rgb: "000000" } },
+        right: { style: "medium", color: { rgb: "000000" } }
       }
     };
 
-    // Sub-headers detallados - ELEGANTES
+    // Sub-headers detallados - AZUL CLARO HERMOSO
     const headerDetailStyle = {
       font: { 
         bold: true, 
-        color: { rgb: "000000" }, 
-        size: 9, 
+        color: { rgb: "1F4E79" }, 
+        size: 10, 
         name: "Calibri" 
       },
-      fill: { fgColor: { rgb: "B4C6E7" } }, // Azul claro
+      fill: { fgColor: { rgb: "B4C6E7" } }, // Azul claro elegante
       alignment: { 
         horizontal: "center", 
         vertical: "center", 
         wrapText: true 
       },
       border: {
-        top: { style: "thin", color: { rgb: "000000" } },
-        bottom: { style: "thin", color: { rgb: "000000" } },
-        left: { style: "thin", color: { rgb: "000000" } },
-        right: { style: "thin", color: { rgb: "000000" } }
+        top: { style: "thin", color: { rgb: "1F4E79" } },
+        bottom: { style: "thin", color: { rgb: "1F4E79" } },
+        left: { style: "thin", color: { rgb: "1F4E79" } },
+        right: { style: "thin", color: { rgb: "1F4E79" } }
       }
     };
 
-    // Datos personales - PROFESIONAL
+    // Datos personales - PROFESIONAL Y ELEGANTE
     const dataPersonalStyle = {
       font: { 
         size: 10, 
         name: "Calibri",
         color: { rgb: "000000" }
       },
+      fill: { fgColor: { rgb: "F8F9FA" } }, // Fondo gris muy suave
       alignment: { 
         horizontal: "left", 
         vertical: "center" 
@@ -444,103 +452,123 @@ const StaffingReport: React.FC<StaffingReportProps> = ({ squadLeadName, squadPer
       }
     };
 
-    // =================== APLICAR ESTILOS ===================
+    // =================== APLICAR ESTILOS A TODAS LAS CELDAS ===================
     
-    // Título
-    if (ws['A1']) ws['A1'].s = titleStyle;
+    // Título principal (fila 1)
+    const titleCell = XLSX.utils.encode_cell({ r: 0, c: 0 });
+    if (!ws[titleCell]) ws[titleCell] = { v: titleRow[0] };
+    ws[titleCell].s = titleStyle;
     
-    // Subtítulos
-    if (ws['A2']) ws['A2'].s = subtitleStyle;
-    if (ws['A3']) ws['A3'].s = subtitleStyle;
+    // Subtítulos (filas 2 y 3)
+    const periodCell = XLSX.utils.encode_cell({ r: 1, c: 0 });
+    if (!ws[periodCell]) ws[periodCell] = { v: periodRow[0] };
+    ws[periodCell].s = subtitleStyle;
+    
+    const generatedCell = XLSX.utils.encode_cell({ r: 2, c: 0 });
+    if (!ws[generatedCell]) ws[generatedCell] = { v: generatedRow[0] };
+    ws[generatedCell].s = subtitleStyle;
 
-    // Headers principales (fila 5)
+    // Headers principales (fila 5) - APLICAR ESTILOS PERFECTOS
     for (let col = 0; col < headerRow1.length; col++) {
       const cellRef = XLSX.utils.encode_cell({ r: 4, c: col });
-      if (ws[cellRef]) {
-        if (col < 6) {
-          ws[cellRef].s = headerMainStyle;
-        } else {
-          ws[cellRef].s = headerWeekStyle;
-        }
+      if (!ws[cellRef]) ws[cellRef] = { v: headerRow1[col] || '' };
+      
+      if (col < 6) {
+        // Columnas de información personal
+        ws[cellRef].s = headerMainStyle;
+      } else {
+        // Columnas de semanas
+        ws[cellRef].s = headerWeekStyle;
       }
     }
 
-    // Sub-headers (fila 6)
+    // Sub-headers (fila 6) - PERFECTOS Y HERMOSOS
     for (let col = 0; col < headerRow2.length; col++) {
       const cellRef = XLSX.utils.encode_cell({ r: 5, c: col });
-      if (ws[cellRef]) {
-        if (col < 6) {
-          ws[cellRef].s = headerMainStyle;
-        } else {
-          ws[cellRef].s = headerDetailStyle;
-        }
+      if (!ws[cellRef]) ws[cellRef] = { v: headerRow2[col] || '' };
+      
+      if (col < 6) {
+        // Columnas de información personal (vacías pero con estilo)
+        ws[cellRef].s = headerMainStyle;
+      } else {
+        // Detalles de semanas
+        ws[cellRef].s = headerDetailStyle;
       }
     }
 
-    // Datos con colores temáticos HERMOSOS
-    for (let row = 6; row < 6 + dataRows.length; row++) {
+    // Datos con colores temáticos ESPECTACULARES
+    for (let row = 0; row < dataRows.length; row++) {
       for (let col = 0; col < headerRow1.length; col++) {
-        const cellRef = XLSX.utils.encode_cell({ r: row, c: col });
-        if (ws[cellRef]) {
-          if (col < 6) {
-            // Datos personales
-            ws[cellRef].s = dataPersonalStyle;
-          } else {
-            // Datos numéricos con colores temáticos PRECIOSOS
-            const colIndex = (col - 6) % 8;
-            let fillColor = "FFFFFF";
-            let fontColor = "000000";
-            let isBold = false;
-            
-            switch(colIndex) {
-              case 0: // Facturables Proyecto
-                fillColor = "D5E8D4"; // Verde suave
-                break;
-              case 1: // STR Productos  
-                fillColor = "DAE8FC"; // Azul suave
-                break;
-              case 2: // Availability
-                fillColor = "FFF2CC"; // Amarillo suave
-                break;
-              case 3: // Management
-                fillColor = "E1D5E7"; // Morado suave
-                break;
-              case 4: // SAM
-                fillColor = "F8CECC"; // Rojo suave
-                break;
-              case 5: // Otros
-                fillColor = "D4EDDA"; // Verde menta suave
-                break;
-              case 6: // No Disponibles
-                fillColor = "F8F9FA"; // Gris muy suave
-                break;
-              case 7: // Total Días Laborables
-                fillColor = "E9ECEF"; // Gris
-                isBold = true;
-                fontColor = "495057";
-                break;
-            }
-            
-            ws[cellRef].s = {
-              font: { 
-                size: 9, 
-                name: "Calibri",
-                bold: isBold,
-                color: { rgb: fontColor }
-              },
-              fill: { fgColor: { rgb: fillColor } },
-              alignment: { 
-                horizontal: "center", 
-                vertical: "center" 
-              },
-              border: {
-                top: { style: "thin", color: { rgb: "D0D0D0" } },
-                bottom: { style: "thin", color: { rgb: "D0D0D0" } },
-                left: { style: "thin", color: { rgb: "D0D0D0" } },
-                right: { style: "thin", color: { rgb: "D0D0D0" } }
-              }
-            };
+        const cellRef = XLSX.utils.encode_cell({ r: 6 + row, c: col });
+        const cellValue = dataRows[row][col];
+        
+        if (!ws[cellRef]) ws[cellRef] = { v: cellValue || '' };
+        
+        if (col < 6) {
+          // Datos personales con fondo suave
+          ws[cellRef].s = dataPersonalStyle;
+        } else {
+          // Datos numéricos con colores temáticos HERMOSOS
+          const colIndex = (col - 6) % 8;
+          let fillColor = "FFFFFF";
+          let fontColor = "000000";
+          let isBold = false;
+          
+          switch(colIndex) {
+            case 0: // Facturables Proyecto
+              fillColor = "D5E8D4"; // Verde elegante
+              fontColor = "2E7D32";
+              break;
+            case 1: // STR Productos  
+              fillColor = "BBDEFB"; // Azul suave
+              fontColor = "1565C0";
+              break;
+            case 2: // Availability
+              fillColor = "FFF9C4"; // Amarillo suave
+              fontColor = "F57F17";
+              break;
+            case 3: // Management
+              fillColor = "E1BEE7"; // Morado elegante
+              fontColor = "7B1FA2";
+              break;
+            case 4: // SAM
+              fillColor = "FFCDD2"; // Rojo suave
+              fontColor = "C62828";
+              break;
+            case 5: // Otros
+              fillColor = "C8E6C9"; // Verde menta
+              fontColor = "388E3C";
+              break;
+            case 6: // No Disponibles
+              fillColor = "F5F5F5"; // Gris neutro
+              fontColor = "757575";
+              break;
+            case 7: // Total Días Laborables
+              fillColor = "CFD8DC"; // Gris azulado
+              fontColor = "37474F";
+              isBold = true;
+              break;
           }
+          
+          ws[cellRef].s = {
+            font: { 
+              size: 10, 
+              name: "Calibri",
+              bold: isBold,
+              color: { rgb: fontColor }
+            },
+            fill: { fgColor: { rgb: fillColor } },
+            alignment: { 
+              horizontal: "center", 
+              vertical: "center" 
+            },
+            border: {
+              top: { style: "thin", color: { rgb: "BDBDBD" } },
+              bottom: { style: "thin", color: { rgb: "BDBDBD" } },
+              left: { style: "thin", color: { rgb: "BDBDBD" } },
+              right: { style: "thin", color: { rgb: "BDBDBD" } }
+            }
+          };
         }
       }
     }
