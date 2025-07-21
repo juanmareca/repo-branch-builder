@@ -137,10 +137,22 @@ export default function SquadAssignments({ userRole, userData }: { userRole?: st
       
       if (projectsData) setProjects(projectsData);
       if (assignmentsData) {
-        const assignmentsWithColors = assignmentsData.map((assignment, index) => ({
-          ...assignment,
-          project_color: PROJECT_COLORS[index % PROJECT_COLORS.length]
-        }));
+        // Create a mapping of project IDs to colors for consistency
+        const projectColorMap = new Map<string, string>();
+        let colorIndex = 0;
+        
+        const assignmentsWithColors = assignmentsData.map((assignment) => {
+          if (!projectColorMap.has(assignment.project_id)) {
+            projectColorMap.set(assignment.project_id, PROJECT_COLORS[colorIndex % PROJECT_COLORS.length]);
+            colorIndex++;
+          }
+          
+          return {
+            ...assignment,
+            project_color: projectColorMap.get(assignment.project_id)
+          };
+        });
+        
         setAssignments(assignmentsWithColors);
       }
       
