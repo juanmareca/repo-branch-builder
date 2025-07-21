@@ -87,11 +87,15 @@ const App = () => {
         <Sonner />
         <BrowserRouter>
           <Routes>
-            <Route path="/" element={<Index />} />
+            <Route path="/" element={
+              userRole === 'admin' ? <Navigate to="/admin" replace /> : 
+              userRole === 'squad_lead' ? <Navigate to="/squad-dashboard" replace /> :
+              <Index />
+            } />
             
             {/* Admin Routes */}
             <Route path="/admin" element={userRole === 'admin' ? <AdminDashboard /> : <Navigate to="/" replace />} />
-            <Route path="/holidays" element={<HolidaysManagement />} />
+            <Route path="/holidays" element={userRole === 'admin' ? <HolidaysManagement /> : <Navigate to="/" replace />} />
             <Route path="/backups" element={userRole === 'admin' ? <BackupsManagement /> : <Navigate to="/" replace />} />
             <Route path="/audit-logs" element={userRole === 'admin' ? <AuditLogs /> : <Navigate to="/" replace />} />
             <Route path="/capacities" element={userRole === 'admin' ? <CapacitiesManagement /> : <Navigate to="/" replace />} />
