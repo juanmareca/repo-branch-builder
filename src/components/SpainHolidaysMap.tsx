@@ -349,9 +349,9 @@ export default function SpainHolidaysMap() {
           </div>
 
           {/* Sidebar */}
-          <div className={`w-96 bg-white/95 backdrop-blur-lg rounded-2xl shadow-2xl border border-white/20 transition-all duration-300 ${
+          <div className={`w-96 bg-white/95 backdrop-blur-lg rounded-2xl shadow-2xl border border-white/20 transition-all duration-300 flex flex-col ${
             !sidebarOpen ? 'transform translate-x-full opacity-0 pointer-events-none' : ''
-          }`}>
+          }`} style={{ height: 'calc(100vh - 240px)' }}>
             {/* Header del sidebar */}
             <div className="p-6 border-b border-gray-200 flex justify-between items-center">
               <div>
@@ -376,9 +376,9 @@ export default function SpainHolidaysMap() {
             </div>
             
             {/* Contenido del sidebar */}
-            <div className="p-6 h-full overflow-y-auto pb-24">
+            <div className="flex-1 overflow-y-auto p-6" style={{ maxHeight: 'calc(100vh - 280px)' }}>
               {selectedRegion ? (
-                <div className="space-y-6">
+                <div className="space-y-4">
                   {isLoading && (
                     <div className="text-center py-8">
                       <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
@@ -396,15 +396,15 @@ export default function SpainHolidaysMap() {
                     <>
                       {/* Festivos Nacionales */}
                       {filteredNationalHolidays.length > 0 && (
-                        <div>
-                          <h3 className="text-lg font-semibold text-red-600 mb-3 pb-2 border-b-2 border-red-200">
+                        <div className="mb-4">
+                          <h3 className="text-base font-semibold text-red-600 mb-2 pb-1 border-b border-red-200">
                             Festivos Nacionales
                           </h3>
-                          <div className="space-y-2">
+                          <div className="space-y-1">
                             {filteredNationalHolidays.map((holiday, index) => (
-                              <div key={index} className="p-3 bg-red-50 border-l-4 border-red-500 rounded-lg text-sm hover:bg-red-100 transition-all hover:transform hover:translate-x-1">
-                                <div className="font-semibold text-gray-900">{formatDate(holiday.date)}</div>
-                                <div className="text-gray-700 mt-1">{holiday.festivo}</div>
+                              <div key={index} className="p-2 bg-red-50 border-l-3 border-red-500 rounded text-xs hover:bg-red-100 transition-all">
+                                <div className="font-medium text-gray-900 leading-tight">{formatDate(holiday.date)}</div>
+                                <div className="text-gray-700 mt-0.5 leading-tight">{holiday.festivo}</div>
                               </div>
                             ))}
                           </div>
@@ -413,15 +413,15 @@ export default function SpainHolidaysMap() {
                       
                       {/* Festivos Regionales */}
                       {filteredRegionalHolidays.length > 0 && (
-                        <div>
-                          <h3 className="text-lg font-semibold text-blue-600 mb-3 pb-2 border-b-2 border-blue-200">
+                        <div className="mb-4">
+                          <h3 className="text-base font-semibold text-blue-600 mb-2 pb-1 border-b border-blue-200">
                             Festivos de {selectedRegion}
                           </h3>
-                          <div className="space-y-2">
+                          <div className="space-y-1">
                             {filteredRegionalHolidays.map((holiday, index) => (
-                              <div key={index} className="p-3 bg-blue-50 border-l-4 border-blue-500 rounded-lg text-sm hover:bg-blue-100 transition-all hover:transform hover:translate-x-1">
-                                <div className="font-semibold text-gray-900">{formatDate(holiday.date)}</div>
-                                <div className="text-gray-700 mt-1">{holiday.festivo}</div>
+                              <div key={index} className="p-2 bg-blue-50 border-l-3 border-blue-500 rounded text-xs hover:bg-blue-100 transition-all">
+                                <div className="font-medium text-gray-900 leading-tight">{formatDate(holiday.date)}</div>
+                                <div className="text-gray-700 mt-0.5 leading-tight">{holiday.festivo}</div>
                               </div>
                             ))}
                           </div>
