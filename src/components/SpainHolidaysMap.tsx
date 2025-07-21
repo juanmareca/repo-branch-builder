@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import spainCompleteMap from '../assets/spain-complete-map.png';
+import melillaMap from '../assets/melilla-map.png';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Badge } from './ui/badge';
 import { Button } from './ui/button';
@@ -91,7 +92,7 @@ const REGIONS_DATA = {
   'Melilla': { 
     code: 'ML', 
     apiCode: 'ES-ML',
-    image: '/lovable-uploads/a460b088-965d-41eb-ac65-cf50b8966a68.png'
+    image: melillaMap
   },
   'Murcia': {
     code: 'MC', 
@@ -400,17 +401,17 @@ export default function SpainHolidaysMap() {
         </CardContent>
       </Card>
 
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 h-[600px]">
         {/* Mapa de España */}
-        <div className="xl:col-span-1">
-          <Card>
+        <div className="xl:col-span-1 h-full">
+          <Card className="h-full flex flex-col">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <MapPin className="h-5 w-5" />
                 Comunidades Autónomas
               </CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="flex-1 overflow-y-auto">
               <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-6 rounded-xl">
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                   {Object.entries(REGIONS_DATA).map(([regionName, regionData]) => (
