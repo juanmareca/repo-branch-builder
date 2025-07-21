@@ -764,10 +764,10 @@ const TeamCapabilities: React.FC<TeamCapabilitiesProps> = ({
                     <CardContent className="p-4">
                       <div className={cn(
                         "grid gap-2",
-                        category === 'Idiomas' 
+                        category === 'Idiomas' || category === 'Industrias'
                           ? "grid-cols-[repeat(auto-fit,minmax(120px,1fr))]"
                           : ""
-                      )} style={category !== 'Idiomas' ? { 
+                      )} style={category !== 'Idiomas' && category !== 'Industrias' ? { 
                         gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))'
                       } : undefined}>
                         {categoryCapacities.map((capacity) => {
@@ -1090,7 +1090,7 @@ const TeamCapabilities: React.FC<TeamCapabilitiesProps> = ({
                                   <Badge 
                                     variant="outline" 
                                     className={cn(
-                                      category === 'Idiomas' 
+                                      category === 'Idiomas' || category === 'Industrias'
                                         ? "text-xs px-1 py-0.5 min-w-0 h-5 leading-tight font-medium" 
                                         : "text-xs px-2 py-1",
                                       getLevelColor(currentLevel, category === 'Industrias')
