@@ -1002,7 +1002,7 @@ const TeamCapabilities: React.FC<TeamCapabilitiesProps> = ({
             className="flex items-center gap-2"
           >
             <FileText className="h-4 w-4" />
-            Exportar PDF
+            Exportar CV del equipo completo en PDF
           </Button>
           
           {isEditing ? (
