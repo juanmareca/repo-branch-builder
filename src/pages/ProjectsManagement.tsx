@@ -225,15 +225,39 @@ const ProjectsManagement = () => {
       setLoading(true);
       console.log('🔄 Cargando todos los proyectos...');
       
-      const { data, error } = await supabase
-        .from('projects')
-        .select('*')
-        .order('denominacion', { ascending: true }); // Sin límite para obtener todos los proyectos
-
-      if (error) throw error;
+      let allProjects: Project[] = [];
+      let hasMore = true;
+      let from = 0;
+      const batchSize = 1000;
       
-      console.log('✅ Proyectos cargados:', data?.length);
-      setProjects(data || []);
+      while (hasMore) {
+        console.log(`📦 Cargando lote desde ${from} hasta ${from + batchSize - 1}`);
+        
+        const { data, error } = await supabase
+          .from('projects')
+          .select('*')
+          .order('denominacion', { ascending: true })
+          .range(from, from + batchSize - 1);
+
+        if (error) throw error;
+        
+        if (data && data.length > 0) {
+          allProjects = [...allProjects, ...data];
+          from += batchSize;
+          
+          // Si el lote es menor que batchSize, hemos llegado al final
+          if (data.length < batchSize) {
+            hasMore = false;
+          }
+          
+          console.log(`📊 Lote cargado: ${data.length} proyectos. Total acumulado: ${allProjects.length}`);
+        } else {
+          hasMore = false;
+        }
+      }
+      
+      console.log('✅ Proyectos cargados:', allProjects.length);
+      setProjects(allProjects);
     } catch (error: any) {
       toast({
         title: "Error al cargar proyectos",
