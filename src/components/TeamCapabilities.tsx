@@ -33,33 +33,44 @@ const ALL_SKILLS = [
   'Idiomas - Francés',
   'Idiomas - Inglés',
   'Idiomas - Portugués',
-  'Implantación SAP - SAP S4 HANA Mix&Match',
-  'Implantación SAP - SAP S4HANA Brownfield',
+  
+  // Módulos FINANCIEROS
+  'Módulo SAP - (FI-GL) Financials - General Ledger',
+  'Módulo SAP - (FI-AP) Financials - Accounts Payable',
+  'Módulo SAP - (FI-AR) Financials - Accounts Receivable',
+  'Módulo SAP - (FI-AA) Financials - Assets Accounting',
+  'Módulo SAP - (FI-Taxes) - SII / DRC',
+  
+  // Módulos TESORERÍA
+  'Módulo SAP - (TR-CM) Treasury - Cash Management',
+  'Módulo SAP - (TR-TM) Treasury Management',
+  'Módulo SAP - (TR-TRM) Treasury and Risk Management',
+  
+  // Módulos CONTROLLING
+  'Módulo SAP - (CO-CCA) Controlling - Cost Center Accounting',
+  'Módulo SAP - (CO-PA (MA) Controlling – Profitability Analysis (por Margen de Contribución)',
+  'Módulo SAP - (CO-PC) Controlling - Product Costing',
+  'Módulo SAP - (CO-PCA) Controlling - Profit Center Accounting',
+  
+  // Otros Módulos
+  'Módulo SAP - (RE-FX) SAP Flexible Real Estate',
+  'Módulo SAP - (SAP BRIM) Billing and Revenue Innovation Management',
+  'Módulo SAP - (SAP GRC) Governance, Risk and Compliance',
+  'Módulo SAP - SAP. Ledgers S4',
+  'Módulo SAP - SAP. Monedas S4',
+  
+  // Implantaciones SAP
   'Implantación SAP - SAP S4HANA Greenfield',
+  'Implantación SAP - SAP S4HANA Brownfield',
+  'Implantación SAP - SAP S4 HANA Mix&Match',
+  
   'Industrias - Automotion',
   'Industrias - Manufacturing',
   'Industrias - Oil & Gas',
   'Industrias - Pharma',
   'Industrias - Services',
   'Industrias - Telecom',
-  'Industrias - Utilities',
-  'Módulo SAP - (CO-CCA) Controlling - Cost Center Accounting',
-  'Módulo SAP - (CO-PA (MA) Controlling – Profitability Analysis (por Margen de Contribución)',
-  'Módulo SAP - (CO-PC) Controlling - Product Costing',
-  'Módulo SAP - (CO-PCA) Controlling - Profit Center Accounting',
-  'Módulo SAP - (FI-AA) Financials - Assets Accounting',
-  'Módulo SAP - (FI-AP) Financials - Accounts Payable',
-  'Módulo SAP - (FI-AR) Financials - Accounts Receivable',
-  'Módulo SAP - (FI-GL) Financials - General Ledger',
-  'Módulo SAP - (FI-Taxes) - SII / DRC',
-  'Módulo SAP - (RE-FX) SAP Flexible Real Estate',
-  'Módulo SAP - (SAP BRIM) Billing and Revenue Innovation Management',
-  'Módulo SAP - (SAP GRC) Governance, Risk and Compliance',
-  'Módulo SAP - (TR-CM) Treasury - Cash Management',
-  'Módulo SAP - (TR-TM) Treasury Management',
-  'Módulo SAP - (TR-TRM) Treasury and Risk Management',
-  'Módulo SAP - SAP. Ledgers S4',
-  'Módulo SAP - SAP. Monedas S4'
+  'Industrias - Utilities'
 ];
 
 const LEVEL_OPTIONS = ['Nulo', 'Pre-A1', 'Básico', 'Medio', 'Alto', 'Experto'];
