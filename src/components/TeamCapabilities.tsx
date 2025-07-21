@@ -624,7 +624,7 @@ const TeamCapabilities: React.FC<TeamCapabilitiesProps> = ({
     return Object.entries(groups).filter(([_, caps]) => caps.length > 0);
   };
 
-  // Función para formatear títulos de módulos financieros y controlling
+  // Función para formatear títulos de módulos financieros, controlling y otros
   const formatFinancialModuleTitle = (skill: string) => {
     const cleanedSkill = skill.replace('Módulo SAP - ', '').replace('Implantación SAP - ', '');
     
@@ -649,6 +649,14 @@ const TeamCapabilities: React.FC<TeamCapabilitiesProps> = ({
       return { line1: "(CO-PC) Controlling", line2: "Product Costing" };
     } else if (cleanedSkill.includes('CO-PCA')) {
       return { line1: "(CO-PCA) Controlling", line2: "Profit Center Accounting" };
+    }
+    // Casos especiales para otros módulos
+    else if (cleanedSkill.includes('(RE-FX)')) {
+      return { line1: "(RE-FX)", line2: "SAP Flexible Real Estate" };
+    } else if (cleanedSkill.includes('(SAP BRIM)')) {
+      return { line1: "(SAP BRIM)", line2: "Billing and Revenue Innovation Management" };
+    } else if (cleanedSkill.includes('(SAP GRC)')) {
+      return { line1: "(SAP GRC)", line2: "Governance, Risk and Compliance" };
     }
     
     // Para otros módulos, retornar el texto original
@@ -830,11 +838,11 @@ const TeamCapabilities: React.FC<TeamCapabilitiesProps> = ({
                                   const editKey = `${capacity.person_name}-${capacity.skill}`;
                                   const currentLevel = editedCapacities[editKey] || capacity.level;
                                   
-                                  return (
-                                    <div
-                                      key={editKey}
-                                      className="p-3 border rounded-lg hover:shadow-sm transition-shadow group"
-                                    >
+                                   return (
+                                     <div
+                                       key={editKey}
+                                       className="p-2 border rounded-lg hover:shadow-sm transition-shadow group"
+                                     >
                                       <div className="flex items-start justify-between gap-2 mb-2">
                                         <div className="flex-1 min-w-0">
                                            <div className="flex items-center gap-2">
