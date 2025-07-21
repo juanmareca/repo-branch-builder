@@ -684,6 +684,9 @@ const TeamCapabilities: React.FC<TeamCapabilitiesProps> = ({
     // Ocultar si es idioma con "Pre-A1"
     if (capacity.skill.startsWith('Idiomas -') && capacity.level === 'Pre-A1') return true;
     
+    // Ocultar si es industria con "No"
+    if (capacity.skill.startsWith('Industrias -') && capacity.level === 'No') return true;
+    
     return false;
   };
 
