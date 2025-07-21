@@ -1204,167 +1204,162 @@ export default function CapacitiesManagement() {
 
         {/* Content based on view mode */}
         {viewMode === 'table' ? (
-          /* Compact Table like Reference */
-          <Card>
-            <CardContent className="p-0">
-              <div className="overflow-x-auto">
-                <div className="min-w-full">
-                  {/* Header */}
-                  <div className="grid grid-cols-5 gap-1 p-2 bg-slate-100 border-b font-bold text-sm">
-                    <div className="bg-slate-200 p-2 text-center rounded font-semibold">EMPLEADO</div>
-                    <div className="bg-yellow-200 p-2 text-center rounded font-semibold">Módulos SAP e IMPLANTACIONES</div>
-                    <div className="bg-blue-200 p-2 text-center rounded font-semibold">IDIOMAS</div>
-                    <div className="bg-green-200 p-2 text-center rounded font-semibold">INDUSTRIAS</div>
-                    <div className="bg-slate-200 p-2 text-center rounded font-semibold">ACCIONES</div>
-                  </div>
-                  
-                  {/* Data Rows */}
-                  {currentEmployees.map((employee, index) => (
-                    <div key={employee.id} className="grid grid-cols-5 gap-1 p-2 border-b hover:bg-gray-50">
-                      {/* Employee Name */}
-                      <div className="p-2 text-sm font-medium flex items-center">
-                        <span className="text-xs text-gray-500 mr-2">{startIndex + index + 1}.</span>
-                        {employee.person_name}
+          /* Modern Card Layout similar to Reference */
+          <div className="space-y-6">
+            {currentEmployees.map((employee, index) => (
+              <Card key={employee.id} className="overflow-hidden">
+                <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50 border-b">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                        <span className="text-blue-600 font-bold text-sm">
+                          {employee.person_name.split(' ').map(n => n[0]).join('').slice(0, 2)}
+                        </span>
                       </div>
-                      
-                      {/* SAP Modules & Implementation */}
-                      <div className="p-2 space-y-1">
+                      <div>
+                        <h3 className="text-lg font-bold text-blue-800">
+                          {employee.person_name.toUpperCase()}
+                        </h3>
+                        <p className="text-sm text-gray-600">
+                          {Object.keys({...employee.sap_modules, ...employee.sap_implementation}).length} capacidades disponibles ({Object.values({...employee.sap_modules, ...employee.sap_implementation}).filter(level => ['Alto', 'Experto'].includes(level)).length} con experiencia) - 
+                          {Math.round((Object.values({...employee.sap_modules, ...employee.sap_implementation}).filter(level => ['Alto', 'Experto'].includes(level)).length / Object.keys({...employee.sap_modules, ...employee.sap_implementation}).length) * 100) || 0}%
+                        </p>
+                      </div>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleDeleteEmployee(employee.person_name)}
+                      className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </CardHeader>
+                
+                <CardContent className="p-6">
+                  {/* Módulos SAP e Implantaciones */}
+                  {(Object.keys(employee.sap_modules).length > 0 || Object.keys(employee.sap_implementation).length > 0) && (
+                    <div className="mb-6">
+                      <div className="flex items-center gap-2 mb-3">
+                        <Zap className="h-4 w-4 text-gray-600" />
+                        <h4 className="font-semibold text-gray-800">Módulos SAP e Implantaciones</h4>
+                        <span className="text-sm text-gray-500">
+                          {Object.keys({...employee.sap_modules, ...employee.sap_implementation}).length} capacidades
+                        </span>
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
                         {/* SAP Modules */}
                         {Object.entries(employee.sap_modules).map(([skill, level]) => (
-                          <div key={skill} className="flex items-center gap-2 text-xs">
-                            <span 
-                              className={cn(
-                                "px-2 py-1 rounded text-white font-medium min-w-[80px] text-center",
-                                level === 'Básico' && "bg-yellow-500",
-                                level === 'Medio' && "bg-orange-500", 
-                                level === 'Alto' && "bg-blue-500",
-                                level === 'Experto' && "bg-green-600",
-                                level === 'Nulo' && "bg-red-500"
-                              )}
-                            >
-                              {skill}
-                            </span>
-                            <span 
-                              className={cn(
-                                "px-2 py-1 rounded text-white font-medium",
-                                level === 'Básico' && "bg-yellow-600",
-                                level === 'Medio' && "bg-orange-600",
-                                level === 'Alto' && "bg-blue-600", 
-                                level === 'Experto' && "bg-green-700",
-                                level === 'Nulo' && "bg-red-600"
-                              )}
-                            >
-                              {level}
-                            </span>
+                          <div key={skill} className="bg-white border rounded-lg p-3 shadow-sm hover:shadow-md transition-shadow">
+                            <div className="flex items-center justify-between">
+                              <div className="flex-1">
+                                <h5 className="font-medium text-sm text-gray-900 mb-1">{skill}</h5>
+                                <Badge 
+                                  className={cn(
+                                    "text-xs font-medium",
+                                    level === 'Básico' && "bg-yellow-100 text-yellow-800 border-yellow-300",
+                                    level === 'Medio' && "bg-orange-100 text-orange-800 border-orange-300",
+                                    level === 'Alto' && "bg-green-100 text-green-800 border-green-300",
+                                    level === 'Experto' && "bg-purple-100 text-purple-800 border-purple-300",
+                                    level === 'Nulo' && "bg-gray-100 text-gray-800 border-gray-300"
+                                  )}
+                                >
+                                  {level}
+                                </Badge>
+                              </div>
+                            </div>
                           </div>
                         ))}
                         
                         {/* SAP Implementation */}
                         {Object.entries(employee.sap_implementation).map(([skill, level]) => (
-                          <div key={skill} className="flex items-center gap-2 text-xs">
-                            <span 
-                              className={cn(
-                                "px-2 py-1 rounded text-white font-medium min-w-[80px] text-center",
-                                level === 'Básico' && "bg-red-400",
-                                level === 'Medio' && "bg-orange-400",
-                                level === 'Alto' && "bg-blue-400", 
-                                level === 'Experto' && "bg-green-400",
-                                level === 'Nulo' && "bg-red-400"
-                              )}
-                            >
-                              {skill}
-                            </span>
-                            <span 
-                              className={cn(
-                                "px-2 py-1 rounded text-white font-medium",
-                                level === 'Básico' && "bg-red-500",
-                                level === 'Medio' && "bg-orange-500",
-                                level === 'Alto' && "bg-blue-500",
-                                level === 'Experto' && "bg-green-500", 
-                                level === 'Nulo' && "bg-red-500"
-                              )}
-                            >
-                              {level}
-                            </span>
+                          <div key={skill} className="bg-blue-50 border border-blue-200 rounded-lg p-3 shadow-sm hover:shadow-md transition-shadow">
+                            <div className="flex items-center justify-between">
+                              <div className="flex-1">
+                                <h5 className="font-medium text-sm text-blue-900 mb-1">{skill}</h5>
+                                <Badge 
+                                  className={cn(
+                                    "text-xs font-medium",
+                                    level === 'Básico' && "bg-yellow-100 text-yellow-800 border-yellow-300",
+                                    level === 'Medio' && "bg-orange-100 text-orange-800 border-orange-300",
+                                    level === 'Alto' && "bg-green-100 text-green-800 border-green-300",
+                                    level === 'Experto' && "bg-purple-100 text-purple-800 border-purple-300",
+                                    level === 'Nulo' && "bg-gray-100 text-gray-800 border-gray-300"
+                                  )}
+                                >
+                                  {level}
+                                </Badge>
+                              </div>
+                            </div>
                           </div>
                         ))}
-                      </div>
-                      
-                      {/* Languages */}
-                      <div className="p-2 space-y-1">
-                        {Object.entries(employee.languages).map(([skill, level]) => (
-                          <div key={skill} className="flex items-center gap-2 text-xs">
-                            <span 
-                              className={cn(
-                                "px-2 py-1 rounded text-white font-medium min-w-[60px] text-center",
-                                level === 'B1' && "bg-yellow-500",
-                                level === 'Básico' && "bg-yellow-500",
-                                level === 'Bilingüe' && "bg-green-600",
-                                level === 'Nulo' && "bg-gray-500",
-                                !['B1', 'Básico', 'Bilingüe', 'Nulo'].includes(level) && "bg-blue-500"
-                              )}
-                            >
-                              {skill}
-                            </span>
-                            <span 
-                              className={cn(
-                                "px-2 py-1 rounded text-white font-medium",
-                                level === 'B1' && "bg-yellow-600",
-                                level === 'Básico' && "bg-yellow-600", 
-                                level === 'Bilingüe' && "bg-green-700",
-                                level === 'Nulo' && "bg-gray-600",
-                                !['B1', 'Básico', 'Bilingüe', 'Nulo'].includes(level) && "bg-blue-600"
-                              )}
-                            >
-                              {level}
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-                      
-                      {/* Industries */}
-                      <div className="p-2 space-y-1">
-                        {Object.entries(employee.industries).map(([skill, level]) => (
-                          <div key={skill} className="flex items-center gap-2 text-xs">
-                            <span 
-                              className={cn(
-                                "px-2 py-1 rounded text-white font-medium min-w-[80px] text-center",
-                                level === 'Sí' && "bg-green-500",
-                                level === 'No' && "bg-red-500"
-                              )}
-                            >
-                              {skill}
-                            </span>
-                            <span 
-                              className={cn(
-                                "px-2 py-1 rounded text-white font-medium",
-                                level === 'Sí' && "bg-green-600",
-                                level === 'No' && "bg-red-600"
-                              )}
-                            >
-                              {level}
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-                      
-                      {/* Actions */}
-                      <div className="p-2 flex items-center justify-center">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleDeleteEmployee(employee.person_name)}
-                          className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
                       </div>
                     </div>
-                  ))}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+                  )}
+
+                  {/* Idiomas */}
+                  {Object.keys(employee.languages).length > 0 && (
+                    <div className="mb-6">
+                      <div className="flex items-center gap-2 mb-3">
+                        <span className="text-lg">🌐</span>
+                        <h4 className="font-semibold text-gray-800">Idiomas</h4>
+                      </div>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                        {Object.entries(employee.languages).map(([skill, level]) => (
+                          <div key={skill} className="bg-green-50 border border-green-200 rounded-lg p-3 shadow-sm">
+                            <div className="text-center">
+                              <h5 className="font-medium text-sm text-green-900 mb-1">{skill}</h5>
+                              <Badge 
+                                className={cn(
+                                  "text-xs font-medium",
+                                  level === 'B1' && "bg-yellow-100 text-yellow-800",
+                                  level === 'Básico' && "bg-yellow-100 text-yellow-800",
+                                  level === 'Bilingüe' && "bg-green-100 text-green-800",
+                                  level === 'Nulo' && "bg-gray-100 text-gray-800",
+                                  !['B1', 'Básico', 'Bilingüe', 'Nulo'].includes(level) && "bg-blue-100 text-blue-800"
+                                )}
+                              >
+                                {level}
+                              </Badge>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Industrias */}
+                  {Object.keys(employee.industries).length > 0 && (
+                    <div>
+                      <div className="flex items-center gap-2 mb-3">
+                        <span className="text-lg">🏭</span>
+                        <h4 className="font-semibold text-gray-800">Industrias</h4>
+                      </div>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                        {Object.entries(employee.industries).map(([skill, level]) => (
+                          <div key={skill} className="bg-orange-50 border border-orange-200 rounded-lg p-3 shadow-sm">
+                            <div className="text-center">
+                              <h5 className="font-medium text-sm text-orange-900 mb-1">{skill}</h5>
+                              <Badge 
+                                className={cn(
+                                  "text-xs font-medium",
+                                  level === 'Sí' && "bg-green-100 text-green-800",
+                                  level === 'No' && "bg-red-100 text-red-800"
+                                )}
+                              >
+                                {level}
+                              </Badge>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            ))}
+          </div>
         ) : (
           /* Card View */
           <div className="columns-1 md:columns-2 lg:columns-3 xl:columns-4 gap-6">
