@@ -65,7 +65,7 @@ const REGIONS_DATA = {
   'Comunidad Valenciana': { 
     code: 'VC', 
     apiCode: 'ES-VC',
-    image: null // Pendiente de imagen
+    image: '/lovable-uploads/6520a74d-7e6a-4118-82e9-b4b6b5d25f2e.png'
   },
   'Extremadura': { 
     code: 'EX', 
