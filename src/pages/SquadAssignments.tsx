@@ -494,11 +494,12 @@ export default function SquadAssignments({ userRole, userData }: { userRole?: st
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-7 gap-4">
-              <div>
+            {/* Primera línea: Miembro, Calendario, Fechas */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+              <div className="lg:col-span-1">
                 <Label htmlFor="person">Seleccionar Miembro del Equipo</Label>
                 <Select value={selectedPerson} onValueChange={setSelectedPerson}>
-                  <SelectTrigger>
+                  <SelectTrigger className="w-full">
                     <SelectValue placeholder="Seleccionar persona..." />
                   </SelectTrigger>
                   <SelectContent>
@@ -515,7 +516,7 @@ export default function SquadAssignments({ userRole, userData }: { userRole?: st
                 <Label htmlFor="office">Calendario de Festivos</Label>
                 <Select value={selectedOffice} onValueChange={setSelectedOffice}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Seleccionar calendario de festivos..." />
+                    <SelectValue placeholder="Seleccionar calendario..." />
                   </SelectTrigger>
                   <SelectContent className="z-50 bg-background">
                     <SelectItem value="default">Usar calendario por defecto</SelectItem>
@@ -564,25 +565,19 @@ export default function SquadAssignments({ userRole, userData }: { userRole?: st
                   onChange={(e) => setEndDate(e.target.value)}
                 />
               </div>
+            </div>
 
-              <div>
-                <Label htmlFor="percentage">Porcentaje (10-100%)</Label>
-                <Input
-                  type="number"
-                  min="1"
-                  max="100"
-                  value={percentage}
-                  onChange={(e) => setPercentage(e.target.value)}
-                />
-              </div>
-
+            {/* Segunda línea: Proyecto, Porcentaje, Tipo */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
               <div>
                 <Label htmlFor="project">Proyecto</Label>
                 <Dialog open={showProjectSearch} onOpenChange={setShowProjectSearch}>
                   <DialogTrigger asChild>
-                    <Button variant="outline" className="w-full justify-start">
-                      {selectedProjectName || "Seleccionar proyecto..."}
-                      <Search className="ml-2 h-4 w-4" />
+                    <Button variant="outline" className="w-full justify-start text-left">
+                      <div className="truncate">
+                        {selectedProjectName || "Seleccionar proyecto..."}
+                      </div>
+                      <Search className="ml-2 h-4 w-4 flex-shrink-0" />
                     </Button>
                   </DialogTrigger>
                   <DialogContent className="max-w-lg">
@@ -622,6 +617,17 @@ export default function SquadAssignments({ userRole, userData }: { userRole?: st
                     </div>
                   </DialogContent>
                 </Dialog>
+              </div>
+
+              <div>
+                <Label htmlFor="percentage">Porcentaje (1-100%)</Label>
+                <Input
+                  type="number"
+                  min="1"
+                  max="100"
+                  value={percentage}
+                  onChange={(e) => setPercentage(e.target.value)}
+                />
               </div>
 
               <div>
