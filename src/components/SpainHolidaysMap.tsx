@@ -80,7 +80,7 @@ const REGIONS_DATA = {
   'La Rioja': { 
     code: 'RI', 
     apiCode: 'ES-RI',
-    image: '/lovable-uploads/f1109839-35ce-4bd2-919d-be3b8d15076c.png'
+    image: '/lovable-uploads/f81a073b-dc6b-4f0f-b008-4647345dd28c.png'
   },
   'Madrid': { 
     code: 'MD', 
