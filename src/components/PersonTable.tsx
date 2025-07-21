@@ -183,7 +183,7 @@ const PersonTable: React.FC<PersonTableProps> = ({ persons, onEditPerson }) => {
                 />
               </th>
               <th 
-                className="px-6 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider bg-muted cursor-pointer hover:bg-muted/80 select-none relative group"
+                className="px-3 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider bg-muted cursor-pointer hover:bg-muted/80 select-none relative group"
                 onClick={() => handleSort('nombre')}
               >
                 <div className="flex items-center justify-between">
@@ -196,7 +196,7 @@ const PersonTable: React.FC<PersonTableProps> = ({ persons, onEditPerson }) => {
                 />
               </th>
               <th 
-                className="px-6 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider bg-muted cursor-pointer hover:bg-muted/80 select-none relative group"
+                className="px-3 py-2 text-center text-xs font-medium text-muted-foreground uppercase tracking-wider bg-muted cursor-pointer hover:bg-muted/80 select-none relative group"
                 onClick={() => handleSort('cex')}
               >
                 <div className="flex items-center justify-between">
@@ -209,7 +209,7 @@ const PersonTable: React.FC<PersonTableProps> = ({ persons, onEditPerson }) => {
                 />
               </th>
               <th 
-                className="px-6 py-2 text-center text-xs font-medium text-muted-foreground uppercase tracking-wider bg-muted cursor-pointer hover:bg-muted/80 select-none relative group"
+                className="px-3 py-2 text-center text-xs font-medium text-muted-foreground uppercase tracking-wider bg-muted cursor-pointer hover:bg-muted/80 select-none relative group"
                 onClick={() => handleSort('num_pers')}
               >
                 <div className="flex items-center justify-between">
@@ -222,7 +222,7 @@ const PersonTable: React.FC<PersonTableProps> = ({ persons, onEditPerson }) => {
                 />
               </th>
               <th 
-                className="px-6 py-2 text-center text-xs font-medium text-muted-foreground uppercase tracking-wider bg-muted cursor-pointer hover:bg-muted/80 select-none relative group"
+                className="px-3 py-2 text-center text-xs font-medium text-muted-foreground uppercase tracking-wider bg-muted cursor-pointer hover:bg-muted/80 select-none relative group"
                 onClick={() => handleSort('fecha_incorporacion')}
               >
                 <div className="flex items-center justify-between">
@@ -235,7 +235,7 @@ const PersonTable: React.FC<PersonTableProps> = ({ persons, onEditPerson }) => {
                 />
               </th>
               <th 
-                className="px-6 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider bg-muted cursor-pointer hover:bg-muted/80 select-none relative group"
+                className="px-3 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider bg-muted cursor-pointer hover:bg-muted/80 select-none relative group"
                 onClick={() => handleSort('mail_empresa')}
               >
                 <div className="flex items-center justify-between">
@@ -248,7 +248,7 @@ const PersonTable: React.FC<PersonTableProps> = ({ persons, onEditPerson }) => {
                 />
               </th>
               <th 
-                className="px-6 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider bg-muted cursor-pointer hover:bg-muted/80 select-none relative group"
+                className="px-3 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider bg-muted cursor-pointer hover:bg-muted/80 select-none relative group"
                 onClick={() => handleSort('grupo')}
               >
                 <div className="flex items-center justify-between">
@@ -261,7 +261,7 @@ const PersonTable: React.FC<PersonTableProps> = ({ persons, onEditPerson }) => {
                 />
               </th>
               <th 
-                className="px-6 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider bg-muted cursor-pointer hover:bg-muted/80 select-none relative group"
+                className="px-3 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider bg-muted cursor-pointer hover:bg-muted/80 select-none relative group"
                 onClick={() => handleSort('categoria')}
               >
                 <div className="flex items-center justify-between">
@@ -274,7 +274,7 @@ const PersonTable: React.FC<PersonTableProps> = ({ persons, onEditPerson }) => {
                 />
               </th>
               <th 
-                className="px-6 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider bg-muted cursor-pointer hover:bg-muted/80 select-none relative group"
+                className="px-3 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider bg-muted cursor-pointer hover:bg-muted/80 select-none relative group"
                 onClick={() => handleSort('oficina')}
               >
                 <div className="flex items-center justify-between">
@@ -302,7 +302,7 @@ const PersonTable: React.FC<PersonTableProps> = ({ persons, onEditPerson }) => {
                 >
                   {index + 1}
                 </td>
-                <td className={`px-6 py-2 whitespace-nowrap ${getFontSizeClass()}`}>
+                <td className={`px-3 py-2 whitespace-nowrap ${getFontSizeClass()}`}>
                   <div className="flex items-center">
                     <div className="flex-shrink-0 h-8 w-8 bg-primary/10 rounded-full flex items-center justify-center">
                       <User className="w-4 h-4 text-primary" />
@@ -312,13 +312,13 @@ const PersonTable: React.FC<PersonTableProps> = ({ persons, onEditPerson }) => {
                     </div>
                   </div>
                 </td>
-                <td className={`px-6 py-2 whitespace-nowrap text-foreground text-center ${getFontSizeClass()}`}>
+                <td className={`px-3 py-2 whitespace-nowrap text-foreground text-center ${getFontSizeClass()}`}>
                   {person.cex}
                 </td>
-                <td className={`px-6 py-2 whitespace-nowrap text-foreground text-center ${getFontSizeClass()}`}>
+                <td className={`px-3 py-2 whitespace-nowrap text-foreground text-center ${getFontSizeClass()}`}>
                   {person.num_pers}
                 </td>
-                <td className={`px-6 py-2 whitespace-nowrap text-foreground text-center ${getFontSizeClass()}`}>
+                <td className={`px-3 py-2 whitespace-nowrap text-foreground text-center ${getFontSizeClass()}`}>
                   <div className="flex items-center">
                     <Calendar className="w-4 h-4 text-muted-foreground mr-2" />
                     {(() => {
@@ -346,7 +346,7 @@ const PersonTable: React.FC<PersonTableProps> = ({ persons, onEditPerson }) => {
                     })()}
                   </div>
                 </td>
-                <td className={`px-6 py-2 whitespace-nowrap text-foreground ${getFontSizeClass()}`}>
+                <td className={`px-3 py-2 whitespace-nowrap text-foreground ${getFontSizeClass()}`}>
                   <div className="flex items-center">
                     <Mail className="w-4 h-4 text-muted-foreground mr-2" />
                     <a href={`mailto:${person.mail_empresa}`} className="text-primary hover:text-primary/80">
@@ -354,15 +354,15 @@ const PersonTable: React.FC<PersonTableProps> = ({ persons, onEditPerson }) => {
                     </a>
                   </div>
                 </td>
-                <td className={`px-6 py-2 whitespace-nowrap text-foreground ${getFontSizeClass()}`}>
+                <td className={`px-3 py-2 whitespace-nowrap text-foreground ${getFontSizeClass()}`}>
                   {person.grupo}
                 </td>
-                <td className={`px-6 py-2 whitespace-nowrap text-foreground ${getFontSizeClass()}`}>
+                <td className={`px-3 py-2 whitespace-nowrap text-foreground ${getFontSizeClass()}`}>
                   <span className="px-2 py-1 text-xs font-medium bg-secondary text-secondary-foreground rounded-full">
                     {person.categoria}
                   </span>
                 </td>
-                <td className={`px-6 py-2 whitespace-nowrap text-foreground ${getFontSizeClass()}`}>
+                <td className={`px-3 py-2 whitespace-nowrap text-foreground ${getFontSizeClass()}`}>
                   <div className="flex items-center">
                     <MapPin className="w-4 h-4 text-muted-foreground mr-2" />
                     {person.oficina}
