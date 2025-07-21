@@ -15,6 +15,7 @@ import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { useSquadData } from '@/hooks/useSquadData';
 import AssignmentSummary from '@/components/AssignmentSummary';
+import StaffingReport from '@/components/StaffingReport';
 
 interface Assignment {
   id: string;
@@ -961,6 +962,12 @@ export default function SquadAssignments({ userRole, userData }: { userRole?: st
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Informe de Staffing */}
+      <StaffingReport 
+        squadLeadName={currentSquadLeadName || ''}
+        squadPersons={squadPersons}
+      />
     </div>
   );
 }
