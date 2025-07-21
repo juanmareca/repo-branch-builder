@@ -10,13 +10,8 @@ import { useToast } from '@/hooks/use-toast';
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 
-// Mapeo de comunidades autónomas con códigos e imágenes
+// Mapeo de comunidades autónomas con códigos e imágenes (ordenado alfabéticamente)
 const REGIONS_DATA = {
-  'Galicia': { 
-    code: 'GA', 
-    apiCode: 'ES-GA',
-    image: '/lovable-uploads/9248ae02-50fd-4e04-bedf-d317fe99cc29.png'
-  },
   'Andalucía': { 
     code: 'AN', 
     apiCode: 'ES-AN',
@@ -65,17 +60,22 @@ const REGIONS_DATA = {
   'Ceuta': { 
     code: 'CE', 
     apiCode: 'ES-CE',
-    image: '/lovable-uploads/e3a40e37-1407-4bff-88a4-da2404014924.png'
+    image: null // Pendiente de imagen
   },
   'Comunidad Valenciana': { 
     code: 'VC', 
     apiCode: 'ES-VC',
-    image: '/lovable-uploads/54b12f06-d668-4202-880e-32785d0f7135.png'
+    image: null // Pendiente de imagen
   },
   'Extremadura': { 
     code: 'EX', 
     apiCode: 'ES-EX',
     image: '/lovable-uploads/56ab5837-860f-4258-b028-2f368322e0bd.png'
+  },
+  'Galicia': { 
+    code: 'GA', 
+    apiCode: 'ES-GA',
+    image: '/lovable-uploads/9248ae02-50fd-4e04-bedf-d317fe99cc29.png'
   },
   'La Rioja': { 
     code: 'RI', 
@@ -90,12 +90,12 @@ const REGIONS_DATA = {
   'Melilla': { 
     code: 'ML', 
     apiCode: 'ES-ML',
-    image: '/lovable-uploads/accb8fc7-f554-4ddf-a697-a3614ca17891.png'
+    image: null // Pendiente de imagen
   },
   'Murcia': {
     code: 'MC', 
     apiCode: 'ES-MC',
-    image: '/lovable-uploads/acabfdf3-b391-4e0d-b764-82e6c102790e.png'
+    image: null // Pendiente de imagen
   },
   'Navarra': { 
     code: 'NC', 
@@ -186,6 +186,11 @@ export default function SpainHolidaysMap() {
       month: 'long',
       day: 'numeric'
     });
+  };
+
+  const formatHolidayOneLine = (holiday: Holiday) => {
+    const formattedDate = formatDate(holiday.date);
+    return `${holiday.localName} - ${formattedDate}`;
   };
 
   const handleRegionClick = useCallback((regionName: string) => {
@@ -398,7 +403,7 @@ export default function SpainHolidaysMap() {
                   {Object.entries(REGIONS_DATA).map(([regionName, regionData]) => (
                     <div
                       key={regionName}
-                      className={`relative group cursor-pointer transition-all duration-300 transform hover:scale-150 hover:z-10 rounded-lg overflow-hidden border-2 ${
+                      className={`relative group cursor-pointer transition-all duration-300 transform hover:scale-200 hover:z-10 rounded-lg overflow-hidden border-2 ${
                         selectedRegion === regionName 
                           ? 'border-yellow-400 ring-2 ring-yellow-300 scale-105' 
                           : 'border-gray-200 hover:border-gray-300'
@@ -481,8 +486,7 @@ export default function SpainHolidaysMap() {
                     {filteredHolidays.national.length > 0 ? (
                        filteredHolidays.national.map((holiday, index) => (
                          <div key={index} className="p-2 bg-blue-50 border-blue-200 border rounded-lg">
-                           <div className="font-medium text-blue-900 text-sm">{holiday.localName}</div>
-                           <div className="text-xs text-blue-700">{formatDate(holiday.date)}</div>
+                           <div className="font-medium text-blue-900 text-sm">{formatHolidayOneLine(holiday)}</div>
                          </div>
                       ))
                     ) : (
@@ -506,13 +510,9 @@ export default function SpainHolidaysMap() {
                   <div className="space-y-2 max-h-48 overflow-y-auto">
                     {filteredHolidays.regional.length > 0 ? (
                        filteredHolidays.regional.map((holiday, index) => (
-                         <Card 
-                           key={index} 
-                           className="p-3 bg-orange-50 border-orange-200"
-                         >
-                           <div className="font-medium text-orange-900">{holiday.localName}</div>
-                           <div className="text-sm text-orange-700">{formatDate(holiday.date)}</div>
-                         </Card>
+                         <div key={index} className="p-2 bg-orange-50 border-orange-200 border rounded-lg">
+                           <div className="font-medium text-orange-900 text-sm">{formatHolidayOneLine(holiday)}</div>
+                         </div>
                        ))
                     ) : (
                       <p className="text-sm text-muted-foreground italic">
