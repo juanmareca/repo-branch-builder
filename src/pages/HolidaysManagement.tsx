@@ -47,6 +47,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
 import HolidaysUpload from '@/components/FileUpload/HolidaysUpload';
+import SpainHolidaysMap from '@/components/SpainHolidaysMap';
 import * as XLSX from 'xlsx';
 
 interface Holiday {
@@ -152,7 +153,7 @@ const HolidaysManagement = () => {
       try {
         const parsed = JSON.parse(savedColumns);
         // Filter out any obsolete columns
-        const validKeys: (keyof Holiday)[] = ['date', 'festivo', 'pais', 'origen'];
+        const validKeys: (keyof Holiday)[] = ['date', 'festivo', 'pais', 'comunidad_autonoma', 'origen'];
         return parsed.filter((col: ColumnConfig) => validKeys.includes(col.key));
       } catch (error) {
         console.error('Error parsing saved columns config:', error);
@@ -162,7 +163,8 @@ const HolidaysManagement = () => {
     return [
       { key: 'date', label: 'FECHA', visible: true, width: 150, minWidth: 120, resizable: true },
       { key: 'festivo', label: 'FESTIVO', visible: true, width: 250, minWidth: 200, resizable: true },
-      { key: 'pais', label: 'PAÍS / COMUNIDAD', visible: true, width: 200, minWidth: 160, resizable: true },
+      { key: 'pais', label: 'PAÍS', visible: true, width: 150, minWidth: 120, resizable: true },
+      { key: 'comunidad_autonoma', label: 'COMUNIDAD', visible: true, width: 180, minWidth: 150, resizable: true },
       { key: 'origen', label: 'ORIGEN', visible: false, width: 120, minWidth: 100, resizable: true }
     ];
   };
@@ -177,7 +179,7 @@ const HolidaysManagement = () => {
 
   // Clean up obsolete columns configuration on component mount
   useEffect(() => {
-    const validKeys: (keyof Holiday)[] = ['date', 'festivo', 'pais', 'origen'];
+    const validKeys: (keyof Holiday)[] = ['date', 'festivo', 'pais', 'comunidad_autonoma', 'origen'];
     const hasObsoleteColumns = columns.some(col => !validKeys.includes(col.key));
     
     if (hasObsoleteColumns) {
@@ -1077,15 +1079,25 @@ const HolidaysManagement = () => {
                               )}
                               style={{ width: column.width }}
                             >
-                              <div className="space-y-1">
-                                <div className="font-medium text-foreground text-sm leading-tight" style={{ fontSize: `${fontSize}px` }}>
-                                  {holiday.pais}
-                                </div>
-                                {holiday.comunidad_autonoma && holiday.comunidad_autonoma !== 'NACIONAL' && (
-                                  <div className="text-xs text-muted-foreground leading-tight" style={{ fontSize: `${fontSize - 2}px` }}>
-                                    {holiday.comunidad_autonoma}
-                                  </div>
-                                )}
+                              <div className="font-medium text-foreground text-sm leading-tight" style={{ fontSize: `${fontSize}px` }}>
+                                {holiday.pais}
+                              </div>
+                            </td>
+                          );
+                        }
+                        
+                        if (column.key === 'comunidad_autonoma') {
+                          return (
+                            <td 
+                              key={column.key}
+                              className={cn(
+                                "p-3 border-r border-gray-200",
+                                holiday.origen === 'Administrador' ? "bg-red-50" : "bg-white"
+                              )}
+                              style={{ width: column.width }}
+                            >
+                              <div className="font-medium text-foreground text-sm leading-tight" style={{ fontSize: `${fontSize}px` }}>
+                                {holiday.comunidad_autonoma || 'NACIONAL'}
                               </div>
                             </td>
                           );
@@ -1209,8 +1221,19 @@ const HolidaysManagement = () => {
                <ChevronsRight className="h-4 w-4" />
              </Button>
            </div>
-         </div>
+          </div>
 
+          {/* Mapa interactivo de España */}
+          <Card className="mt-8">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                Mapa Interactivo de Festivos por Comunidades Autónomas
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <SpainHolidaysMap holidays={holidays} />
+            </CardContent>
+          </Card>
 
       </div>
     </div>
