@@ -25,12 +25,12 @@ const REGIONS_DATA = {
   'Aragón': { 
     code: 'AR', 
     apiCode: 'ES-AR', 
-    image: null // Pendiente de imagen
+    image: '/lovable-uploads/3e1f7e1f-f12b-484d-954a-06311df0f9b2.png'
   },
   'Asturias': { 
     code: 'AS', 
     apiCode: 'ES-AS',
-    image: null // Pendiente de imagen
+    image: '/lovable-uploads/4cb208f1-f6e5-44e5-8bac-a01e74b4dcad.png'
   },
   'Baleares': { 
     code: 'IB', 
@@ -45,7 +45,7 @@ const REGIONS_DATA = {
   'Cantabria': { 
     code: 'CB', 
     apiCode: 'ES-CB',
-    image: null // Pendiente de imagen
+    image: '/lovable-uploads/d7fcf4b2-cf30-45e9-8579-051f16c92596.png'
   },
   'Castilla-La Mancha': { 
     code: 'CM', 
@@ -55,12 +55,12 @@ const REGIONS_DATA = {
   'Castilla y León': { 
     code: 'CL', 
     apiCode: 'ES-CL',
-    image: null // Pendiente de imagen
+    image: '/lovable-uploads/f5e7b7f0-c358-428e-aaf8-f1e9850d6569.png'
   },
   'Cataluña': { 
     code: 'CT', 
     apiCode: 'ES-CT',
-    image: null // Pendiente de imagen
+    image: '/lovable-uploads/186aa1d4-67f9-49eb-bd76-2a9ba5ad53f9.png'
   },
   'Ceuta': { 
     code: 'CE', 
@@ -75,17 +75,17 @@ const REGIONS_DATA = {
   'Extremadura': { 
     code: 'EX', 
     apiCode: 'ES-EX',
-    image: null // Pendiente de imagen
+    image: '/lovable-uploads/56ab5837-860f-4258-b028-2f368322e0bd.png'
   },
   'La Rioja': { 
     code: 'RI', 
     apiCode: 'ES-RI',
-    image: null // Pendiente de imagen
+    image: '/lovable-uploads/ba8ced52-2bfc-492b-9e12-a940338dd40b.png'
   },
   'Madrid': { 
     code: 'MD', 
     apiCode: 'ES-MD',
-    image: null // Pendiente de imagen
+    image: '/lovable-uploads/accb8fc7-f554-4ddf-a697-a3614ca17891.png'
   },
   'Melilla': { 
     code: 'ML', 
@@ -100,12 +100,12 @@ const REGIONS_DATA = {
   'Navarra': { 
     code: 'NC', 
     apiCode: 'ES-NC',
-    image: null // Pendiente de imagen
+    image: '/lovable-uploads/71852a14-27c0-4b58-847b-b8567deb52cf.png'
   },
   'País Vasco': { 
     code: 'PV', 
     apiCode: 'ES-PV',
-    image: null // Pendiente de imagen
+    image: '/lovable-uploads/fef2faae-f1af-4150-996e-224409e1b154.png'
   }
 };
 
