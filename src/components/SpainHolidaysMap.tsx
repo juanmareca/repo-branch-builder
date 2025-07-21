@@ -35,7 +35,7 @@ const REGIONS_DATA = {
   'Canarias': { 
     code: 'CN', 
     apiCode: 'ES-CN',
-    image: null // Pendiente de imagen
+    image: '/lovable-uploads/45f15320-667d-4ab9-b502-e7871b4aa798.png'
   },
   'Cantabria': { 
     code: 'CB', 
