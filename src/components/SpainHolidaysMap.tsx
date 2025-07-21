@@ -555,7 +555,7 @@ const SpainHolidaysMap: React.FC<SpainHolidaysMapProps> = ({ holidays }) => {
                   Selecciona una comunidad autónoma
                 </p>
                 <p className="text-sm text-gray-500">
-                  Haz click en cualquier comunidad del mapa para ver sus festivos en {selectedMonth === 'all' ? selectedYear : `${MONTHS_CHRONOLOGICAL.find(m => m.value === selectedMonth)?.label} ${selectedYear}`}
+                  Selecciona con el ratón cualquier comunidad del mapa para ver sus festivos en {selectedMonth === 'all' ? selectedYear : `${MONTHS_CHRONOLOGICAL.find(m => m.value === selectedMonth)?.label} ${selectedYear}`}
                 </p>
               </div>
             </div>
