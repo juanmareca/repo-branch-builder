@@ -311,6 +311,17 @@ export default function SpainHolidaysMap() {
     }
 
     const doc = new jsPDF();
+    const pageHeight = doc.internal.pageSize.height;
+    const marginBottom = 20;
+    
+    // Función para verificar si necesitamos nueva página
+    const checkNewPage = (currentY: number, lineHeight: number = 8) => {
+      if (currentY + lineHeight > pageHeight - marginBottom) {
+        doc.addPage();
+        return 30; // Reset Y position para nueva página
+      }
+      return currentY;
+    };
     
     // Título
     doc.setFontSize(18);
@@ -320,12 +331,14 @@ export default function SpainHolidaysMap() {
     
     // Festivos nacionales
     if (filteredHolidays.national.length > 0) {
+      yPosition = checkNewPage(yPosition, 14);
       doc.setFontSize(14);
       doc.text('Festivos Nacionales:', 20, yPosition);
       yPosition += 10;
       
       doc.setFontSize(10);
       filteredHolidays.national.forEach(holiday => {
+        yPosition = checkNewPage(yPosition);
         doc.text(`• ${formatDate(holiday.date)} - ${holiday.localName}`, 25, yPosition);
         yPosition += 8;
       });
@@ -334,6 +347,7 @@ export default function SpainHolidaysMap() {
     
     // Festivos regionales
     if (filteredHolidays.regional.length > 0) {
+      yPosition = checkNewPage(yPosition, 14);
       doc.setFontSize(14);
       const regionTitle = selectedRegion === 'España' ? 'Festivos Regionales:' : `Festivos de ${selectedRegion}:`;
       doc.text(regionTitle, 20, yPosition);
@@ -349,6 +363,7 @@ export default function SpainHolidaysMap() {
                 key => REGIONS_DATA[key as keyof typeof REGIONS_DATA].apiCode === county
               );
               if (regionName) {
+                yPosition = checkNewPage(yPosition);
                 doc.text(`• ${formatDate(holiday.date)} - ${holiday.localName} (${regionName})`, 25, yPosition);
                 yPosition += 8;
               }
@@ -357,6 +372,7 @@ export default function SpainHolidaysMap() {
         });
       } else {
         filteredHolidays.regional.forEach(holiday => {
+          yPosition = checkNewPage(yPosition);
           doc.text(`• ${formatDate(holiday.date)} - ${holiday.localName}`, 25, yPosition);
           yPosition += 8;
         });
