@@ -692,122 +692,230 @@ const SquadLeadHolidaysManagement = () => {
            </Card>
          )}
 
-        {/* Table Controls */}
-        <Card className="mb-6">
-          <CardContent className="p-4">
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-              <div className="flex items-center gap-4">
-                <div className="flex items-center gap-2">
-                  <Type className="h-4 w-4 text-muted-foreground" />
-                  <Slider
-                    value={[fontSize]}
-                    onValueChange={(value) => setFontSize(value[0])}
-                    min={10}
-                    max={16}
-                    step={1}
-                    className="w-20"
-                  />
-                  <span className="text-xs text-muted-foreground">{fontSize}px</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <label className="text-sm text-muted-foreground">Filas por página:</label>
-                  <Select value={itemsPerPage.toString()} onValueChange={(value) => setItemsPerPage(Number(value))}>
-                    <SelectTrigger className="w-20">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="25">25</SelectItem>
-                      <SelectItem value="50">50</SelectItem>
-                      <SelectItem value="100">100</SelectItem>
-                      <SelectItem value="200">200</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <SpainHolidaysMap />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+        {/* Table Controls - Records per page selector */}
+        <div className="flex items-center gap-4 mb-4 p-3 bg-gray-50 rounded-lg border">
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-muted-foreground">Registros por página:</span>
+            <Select value={itemsPerPage.toString()} onValueChange={(value) => setItemsPerPage(Number(value))}>
+              <SelectTrigger className="w-20">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="25">25</SelectItem>
+                <SelectItem value="50">50</SelectItem>
+                <SelectItem value="100">100</SelectItem>
+                <SelectItem value="200">200</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
 
-        {/* Data Table */}
+        {/* Font Size Control */}
+        <div className="flex items-center gap-4 mb-4 p-3 bg-gray-50 rounded-lg border">
+          <div className="flex items-center gap-2">
+            <Type className="h-4 w-4 text-muted-foreground" />
+            <span className="text-sm font-medium text-muted-foreground">Tamaño de fuente:</span>
+          </div>
+          
+          <div className="flex items-center gap-3">
+            <span className="text-xs font-arial" style={{ fontSize: '8px' }}>A</span>
+            <Slider
+              value={[fontSize]}
+              onValueChange={(value) => setFontSize(value[0])}
+              max={20}
+              min={8}
+              step={1}
+              className="w-32"
+            />
+            <span className="text-lg font-arial" style={{ fontSize: '16px' }}>A</span>
+            <span className="text-xs text-muted-foreground ml-2 min-w-[35px]">{fontSize}px</span>
+          </div>
+        </div>
+
+        {/* Records info and Pagination - Above table */}
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-4">
+          <span className="text-sm text-muted-foreground">
+            Mostrando {startIndex + 1} a {Math.min(endIndex, filteredHolidays.length)} de {filteredHolidays.length} registros
+          </span>
+          
+          {/* Pagination Controls */}
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentPage(1)}
+              disabled={currentPage === 1}
+            >
+              <ChevronsLeft className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentPage(currentPage - 1)}
+              disabled={currentPage === 1}
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            <span className="text-sm px-4">
+              Página {currentPage} de {totalPages}
+            </span>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentPage(currentPage + 1)}
+              disabled={currentPage === totalPages}
+            >
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentPage(totalPages)}
+              disabled={currentPage === totalPages}
+            >
+              <ChevronsRight className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+
+        {/* Enhanced Table */}
         <Card>
           <CardContent className="p-0">
-            <div className="overflow-x-auto">
+            <div className="h-[600px] overflow-auto border rounded-lg" style={{ fontSize: `${fontSize}px` }}>
               <table className="w-full">
-                <thead>
-                  <tr className="border-b bg-muted/50">
-                    {columns.filter(col => col.visible).map((col) => (
-                      <th
-                        key={col.key}
-                        className="relative text-left py-3 px-4 font-medium text-muted-foreground cursor-pointer hover:bg-muted/80 select-none"
+                {/* Header fijo */}
+                <thead className="sticky top-0 z-50">
+                  <tr>
+                     <th 
+                       className="sticky left-0 z-60 bg-blue-50 border-r border-gray-200 p-3 text-center font-semibold"
+                       style={{ width: 64 }}
+                     >
+                       <span style={{ fontSize: `${fontSize}px` }}>ÍNDICE</span>
+                     </th>
+                    {columns.filter(col => col.visible).map((column) => (
+                      <th 
+                        key={column.key}
+                        className="bg-blue-50 border-b border-gray-200 relative"
                         style={{ 
-                          width: col.width,
-                          minWidth: col.minWidth,
-                          fontSize: `${fontSize}px`
+                          width: column.width,
+                          minWidth: column.minWidth,
+                          maxWidth: column.width
                         }}
-                        onClick={() => handleSort(col.key)}
                       >
-                        <div className="flex items-center justify-between">
-                          <span>{col.label}</span>
-                          {getSortIcon(col.key)}
-                        </div>
-                        {col.resizable && (
+                        <div className="flex items-center p-3">
+                          {/* Área de ordenación */}
+                          <div 
+                            className="flex-1 cursor-pointer hover:bg-blue-100 flex items-center justify-center gap-1 py-1 px-2 rounded"
+                            onClick={() => handleSort(column.key)}
+                            title="Click para ordenar"
+                           >
+                             <span style={{ fontSize: `${fontSize}px` }}>{column.label}</span>
+                             {getSortIcon(column.key)}
+                          </div>
+                          
+                          {/* Handle de redimensionamiento */}
                           <div
-                            className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-primary/50"
-                            onMouseDown={(e) => handleMouseDown(e, col.key)}
+                            className="absolute right-0 top-0 w-2 h-full cursor-col-resize bg-blue-400 opacity-0 hover:opacity-100 transition-opacity z-20"
+                            onMouseDown={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              handleMouseDown(e, column.key);
+                            }}
+                            title="Arrastrar para redimensionar"
                           />
-                        )}
+                        </div>
                       </th>
                     ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {currentHolidays.map((holiday) => (
-                    <tr 
-                      key={holiday.id}
-                      className="border-b hover:bg-muted/20 transition-colors"
-                    >
-                      {columns.filter(col => col.visible).map((col) => (
-                        <td
-                          key={col.key}
-                          className="py-3 px-4"
-                          style={{ 
-                            width: col.width,
-                            minWidth: col.minWidth,
-                            fontSize: `${fontSize}px`
-                          }}
-                        >
-                          {col.key === 'date' ? (
-                            <span className="font-medium">
-                              {format(new Date(holiday[col.key]), 'dd/MM/yyyy')}
-                            </span>
-                          ) : col.key === 'origen' ? (
-                            <Badge 
-                              variant={holiday[col.key] === 'Sistema' ? 'default' : 'secondary'}
-                              className="text-xs"
-                            >
-                              {holiday[col.key]}
-                            </Badge>
-                          ) : (
-                            <span>{holiday[col.key]}</span>
+                   </tr>
+               </thead>
+                 
+                 {/* Body */}
+                 <tbody>
+                   {currentHolidays.map((holiday, index) => (
+                     <tr key={holiday.id} className={`hover:bg-gray-50 border-b border-gray-100 ${
+                       holiday.origen === 'Administrador' ? 'bg-red-50 hover:bg-red-100 dark:bg-red-950/20 dark:hover:bg-red-900/30' : ''
+                     }`}>
+                       {/* Columna índice fija */}
+                        <td 
+                          className={cn(
+                            "sticky left-0 z-10 font-medium text-center border-r border-gray-200 p-3",
+                            holiday.origen === 'Administrador' ? "bg-red-50" : "bg-white"
                           )}
+                          style={{ width: 64 }}
+                        >
+                          <span className="font-arial" style={{ fontSize: `${fontSize}px` }}>
+                            {startIndex + index + 1}
+                          </span>
                         </td>
-                      ))}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-              
-              {filteredHolidays.length === 0 && (
-                <div className="text-center py-8 text-muted-foreground">
-                  No se encontraron festivos que coincidan con los filtros aplicados.
-                </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
+
+                      {columns.filter(col => col.visible).map((column) => {
+                        
+                        if (column.key === 'date') {
+                          return (
+                            <td 
+                              key={column.key}
+                              className={cn(
+                                "p-3 border-r border-gray-200",
+                                holiday.origen === 'Administrador' ? "bg-red-50" : "bg-white"
+                              )}
+                              style={{ width: column.width }}
+                            >
+                              <div className="text-sm font-medium text-foreground" style={{ fontSize: `${fontSize}px` }}>
+                                {format(new Date(holiday.date), 'dd/MM/yyyy')}
+                              </div>
+                            </td>
+                          );
+                        }
+
+                        if (column.key === 'origen') {
+                          return (
+                            <td 
+                              key={column.key}
+                              className={cn(
+                                "p-3 border-r border-gray-200",
+                                holiday.origen === 'Administrador' ? "bg-red-50" : "bg-white"
+                              )}
+                              style={{ width: column.width }}
+                            >
+                              <Badge 
+                                variant={holiday.origen === 'Sistema' ? 'default' : 'secondary'}
+                                className="text-xs"
+                                style={{ fontSize: `${Math.max(fontSize - 2, 8)}px` }}
+                              >
+                                {holiday.origen}
+                              </Badge>
+                            </td>
+                          );
+                        }
+
+                        return (
+                          <td 
+                            key={column.key}
+                            className={cn(
+                              "p-3 border-r border-gray-200",
+                              holiday.origen === 'Administrador' ? "bg-red-50" : "bg-white"
+                            )}
+                            style={{ width: column.width }}
+                          >
+                            <div className="text-sm" style={{ fontSize: `${fontSize}px` }}>
+                              {holiday[column.key]}
+                            </div>
+                          </td>
+                        );
+                      })}
+                     </tr>
+                   ))}
+                 </tbody>
+               </table>
+               
+               {filteredHolidays.length === 0 && (
+                 <div className="text-center py-8 text-muted-foreground">
+                   No se encontraron festivos que coincidan con los filtros aplicados.
+                 </div>
+               )}
+             </div>
+           </CardContent>
+         </Card>
 
         {/* Pagination */}
         {totalPages > 1 && (
