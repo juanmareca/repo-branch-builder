@@ -823,11 +823,49 @@ const HolidaysManagement = () => {
                       </div>
                     )}
                   </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        )}
+                 ))}
+               </div>
+               <div className="mt-4 flex items-center space-x-2">
+                 <Checkbox 
+                   id="save-default"
+                   checked={isDefaultViewSaved}
+                   onCheckedChange={(checked) => {
+                     if (checked) {
+                       localStorage.setItem('holidays-columns-config', JSON.stringify(columns));
+                       setIsDefaultViewSaved(true);
+                       toast({
+                         title: "Configuración guardada",
+                         description: "Esta configuración se aplicará por defecto cuando vuelvas a entrar",
+                       });
+                     } else {
+                       setIsDefaultViewSaved(false);
+                     }
+                   }}
+                 />
+                 <label htmlFor="save-default" className="text-sm text-muted-foreground">
+                   Guardar como vista por defecto
+                 </label>
+                 <Button 
+                   variant="outline" 
+                   size="sm" 
+                   className="ml-4"
+                   onClick={() => {
+                     // Clear localStorage to ensure clean state
+                     localStorage.removeItem('holidays-columns-config');
+                     setColumns(getInitialColumns());
+                     setIsDefaultViewSaved(false);
+                     toast({
+                       title: "Configuración reseteada",
+                       description: "Se ha limpiado la configuración guardada y aplicado la configuración por defecto",
+                     });
+                   }}
+                 >
+                   Resetear
+                 </Button>
+               </div>
+             </CardContent>
+           </Card>
+         )}
 
         {/* Records per page selector */}
         <div className="flex items-center gap-4 mb-4 p-3 bg-gray-50 rounded-lg border">

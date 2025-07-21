@@ -97,26 +97,46 @@ export default function CapacitiesManagement() {
   const [showFilters, setShowFilters] = useState(false);
   const [showColumns, setShowColumns] = useState(false);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [isDefaultViewSaved, setIsDefaultViewSaved] = useState(false);
   
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(999999);
   
+  // Column management with persistence
+  const getInitialColumns = (): ColumnConfig[] => {
+    const savedColumns = localStorage.getItem('capacities-columns-config');
+    if (savedColumns) {
+      try {
+        return JSON.parse(savedColumns);
+      } catch (error) {
+        console.error('Error parsing saved columns config:', error);
+      }
+    }
+    // Default configuration
+    return [
+      { key: 'person_name', label: 'Empleado', visible: true, width: 200, minWidth: 150, resizable: true },
+      { key: 'sap_modules', label: 'Módulos SAP', visible: true, width: 300, minWidth: 200, resizable: true },
+      { key: 'sap_implementation', label: 'Implantación SAP', visible: true, width: 300, minWidth: 200, resizable: true },
+      { key: 'languages', label: 'Idiomas', visible: true, width: 250, minWidth: 180, resizable: true },
+      { key: 'industries', label: 'Industrias', visible: true, width: 250, minWidth: 180, resizable: true },
+      { key: 'evaluation_date', label: 'Fecha Evaluación', visible: true, width: 150, minWidth: 120, resizable: true }
+    ];
+  };
+
   // Column management
-  const [columns, setColumns] = useState<ColumnConfig[]>([
-    { key: 'person_name', label: 'Empleado', visible: true, width: 200, minWidth: 150, resizable: true },
-    { key: 'sap_modules', label: 'Módulos SAP', visible: true, width: 300, minWidth: 200, resizable: true },
-    { key: 'sap_implementation', label: 'Implantación SAP', visible: true, width: 300, minWidth: 200, resizable: true },
-    { key: 'languages', label: 'Idiomas', visible: true, width: 250, minWidth: 180, resizable: true },
-    { key: 'industries', label: 'Industrias', visible: true, width: 250, minWidth: 180, resizable: true },
-    { key: 'evaluation_date', label: 'Fecha Evaluación', visible: true, width: 150, minWidth: 120, resizable: true }
-  ]);
+  const [columns, setColumns] = useState<ColumnConfig[]>(getInitialColumns());
   
   const [resizing, setResizing] = useState<{ columnKey: string; startX: number; startWidth: number } | null>(null);
   const [draggedColumn, setDraggedColumn] = useState<string | null>(null);
   
   const navigate = useNavigate();
   const { toast } = useToast();
+
+  // Save columns configuration to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem('capacities-columns-config', JSON.stringify(columns));
+  }, [columns]);
 
   // Form state
   const [formData, setFormData] = useState({
@@ -1075,7 +1095,22 @@ export default function CapacitiesManagement() {
                 ))}
               </div>
               <div className="mt-4 flex items-center space-x-2">
-                <Checkbox id="save-default" />
+                <Checkbox 
+                  id="save-default"
+                  checked={isDefaultViewSaved}
+                  onCheckedChange={(checked) => {
+                    if (checked) {
+                      localStorage.setItem('capacities-columns-config', JSON.stringify(columns));
+                      setIsDefaultViewSaved(true);
+                      toast({
+                        title: "Configuración guardada",
+                        description: "Esta configuración se aplicará por defecto cuando vuelvas a entrar",
+                      });
+                    } else {
+                      setIsDefaultViewSaved(false);
+                    }
+                  }}
+                />
                 <label htmlFor="save-default" className="text-sm text-muted-foreground">
                   Guardar como vista por defecto
                 </label>
@@ -1084,7 +1119,14 @@ export default function CapacitiesManagement() {
                   size="sm" 
                   className="ml-4"
                   onClick={() => {
-                    setColumns(prev => prev.map(col => ({ ...col, visible: true })));
+                    // Clear localStorage to ensure clean state
+                    localStorage.removeItem('capacities-columns-config');
+                    setColumns(getInitialColumns());
+                    setIsDefaultViewSaved(false);
+                    toast({
+                      title: "Configuración reseteada",
+                      description: "Se ha limpiado la configuración guardada y aplicado la configuración por defecto",
+                    });
                   }}
                 >
                   Resetear
