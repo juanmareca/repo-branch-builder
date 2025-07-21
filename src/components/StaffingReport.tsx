@@ -12,7 +12,7 @@ import { es } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import * as XLSX from 'xlsx';
+import ExcelJS from 'exceljs';
 
 interface StaffingReportProps {
   squadLeadName: string;
@@ -215,42 +215,214 @@ const StaffingReport: React.FC<StaffingReportProps> = ({ squadLeadName, squadPer
     }
   };
 
-  const exportToExcel = () => {
+  const exportToExcel = async () => {
     if (staffingData.length === 0) return;
+
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet('Informe Staffing');
 
     const weeks = Object.keys(staffingData[0].weeklyData);
     
-    // Crear workbook
-    const wb = XLSX.utils.book_new();
-    
-    // =================== DATOS LIMPIOS Y SIMPLES ===================
+    // =================== TÍTULOS Y METADATOS ===================
     
     const titleText = `INFORME DE STAFFING - ${squadLeadName.toUpperCase()}`;
     const periodText = `Período: ${format(startDate!, 'dd/MM/yyyy')} - ${format(endDate!, 'dd/MM/yyyy')}`;
     const generatedText = `Generado: ${format(new Date(), 'dd/MM/yyyy HH:mm')}`;
     
-    // Headers principales
-    const mainHeaders = ['Código empleado', 'Nombre Persona', 'Categoría', 'Grupo', 'Oficina', 'Squad Lead'];
+    worksheet.addRow([titleText]);
+    worksheet.addRow([periodText]);
+    worksheet.addRow([generatedText]);
+    worksheet.addRow([]);
+
+    // =================== PRIMERA FILA DE HEADERS ===================
     
-    // Primera fila de headers: info personal + nombres de semanas
-    const headerRow1 = [...mainHeaders];
-    weeks.forEach(week => {
-      headerRow1.push(week, '', '', '', '', '', '', ''); // Una vez la semana + 7 vacías para merge
+    const headerRow1 = ['', '', '', '', '', ''];
+    weeks.forEach((week, index) => {
+      const weekNumber = String(index + 1).padStart(2, '0');
+      
+      // Calcular fechas de la semana
+      const weekIntervals = eachWeekOfInterval(
+        { start: startDate!, end: endDate! },
+        { weekStartsOn: 1 }
+      );
+      const weekStart = weekIntervals[index];
+      let actualWeekStart = weekStart;
+      
+      if (weekStart < startDate!) {
+        actualWeekStart = startDate!;
+      }
+      
+      const weekEnd = endOfWeek(weekStart, { weekStartsOn: 1 });
+      let actualWeekEnd = weekEnd;
+      
+      if (weekEnd > endDate!) {
+        actualWeekEnd = endDate!;
+      }
+      
+      const dateRange = `(${format(actualWeekStart, 'dd/MM/yyyy')} - ${format(actualWeekEnd, 'dd/MM/yyyy')})`;
+      
+      headerRow1.push(`SEMANA ${weekNumber} ${dateRange}`);
+      // Agregar 7 celdas vacías para el merge
+      for (let i = 0; i < 7; i++) {
+        headerRow1.push('');
+      }
     });
+
+    const row1 = worksheet.addRow(headerRow1);
     
-    // Segunda fila de headers: vacías para info + detalles por semana
-    const headerRow2 = ['', '', '', '', '', ''];
+    // Estilo para la primera fila de semanas
+    let colIndex = 7;
+    weeks.forEach(() => {
+      const cell = row1.getCell(colIndex);
+      cell.fill = {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: { argb: 'FF3B82F6' } // azul
+      };
+      cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+      cell.alignment = { horizontal: 'center', vertical: 'middle' };
+      cell.border = {
+        top: { style: 'thin' },
+        left: { style: 'thin' },
+        bottom: { style: 'thin' },
+        right: { style: 'thin' }
+      };
+      
+      // Merge de la semana (8 columnas)
+      worksheet.mergeCells(row1.number, colIndex, row1.number, colIndex + 7);
+      colIndex += 8;
+    });
+
+    // =================== SEGUNDA FILA DE HEADERS ===================
+    
+    const headerRow2 = ['Código', 'Nombre Persona', 'Categoría', 'Grupo', 'Oficina', 'Squad Lead'];
     weeks.forEach(() => {
       headerRow2.push(
-        'Facturables Proyecto', 'STR Productos', 'No Fact. Availability',
-        'No Fact. Management', 'No Fact. SAM', 'Fact. Otros (Internal)',
-        'No Disponibles', 'Total Días Lab.'
+        'Jornadas Facturables Proyecto',
+        'Jornadas STR Productos', 
+        'Jornadas No Fact. Availability',
+        'Jornadas No Fact. Management',
+        'Jornadas No Fact. SAM',
+        'Jornadas Fact. Otros (Internal)',
+        'Jornadas No Disponibles',
+        'Total Días Lab.'
       );
     });
 
-    // Datos de personas
-    const dataRows = staffingData.map(person => {
-      const row = [
+    const row2 = worksheet.addRow(headerRow2);
+    
+    // Estilos para info personal (azul oscuro)
+    for (let i = 1; i <= 6; i++) {
+      const cell = row2.getCell(i);
+      cell.fill = {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: { argb: 'FF1E3A8A' } // azul oscuro
+      };
+      cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+      cell.alignment = { horizontal: 'center', vertical: 'middle' };
+      cell.border = {
+        top: { style: 'thin' },
+        left: { style: 'thin' },
+        bottom: { style: 'thin' },
+        right: { style: 'thin' }
+      };
+    }
+    
+    // Estilos para jornadas con colores diferenciados
+    colIndex = 7;
+    weeks.forEach(() => {
+      // Verde para facturables (2 columnas)
+      for (let i = 0; i < 2; i++) {
+        const cell = row2.getCell(colIndex + i);
+        cell.fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: { argb: 'FF059669' } // verde
+        };
+        cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+        cell.alignment = { horizontal: 'center', vertical: 'middle' };
+        cell.border = {
+          top: { style: 'thin' },
+          left: { style: 'thin' },
+          bottom: { style: 'thin' },
+          right: { style: 'thin' }
+        };
+      }
+      
+      // Naranja claro para no facturables (3 columnas)
+      for (let i = 2; i < 5; i++) {
+        const cell = row2.getCell(colIndex + i);
+        cell.fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: { argb: 'FFFCD34D' } // naranja claro
+        };
+        cell.font = { bold: true, color: { argb: 'FF374151' } };
+        cell.alignment = { horizontal: 'center', vertical: 'middle' };
+        cell.border = {
+          top: { style: 'thin' },
+          left: { style: 'thin' },
+          bottom: { style: 'thin' },
+          right: { style: 'thin' }
+        };
+      }
+      
+      // Verde claro para otros (1 columna)
+      const cellOtros = row2.getCell(colIndex + 5);
+      cellOtros.fill = {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: { argb: 'FF86EFAC' } // verde claro
+      };
+      cellOtros.font = { bold: true, color: { argb: 'FF374151' } };
+      cellOtros.alignment = { horizontal: 'center', vertical: 'middle' };
+      cellOtros.border = {
+        top: { style: 'thin' },
+        left: { style: 'thin' },
+        bottom: { style: 'thin' },
+        right: { style: 'thin' }
+      };
+      
+      // Rojo para no disponibles (1 columna)
+      const cellNoDisp = row2.getCell(colIndex + 6);
+      cellNoDisp.fill = {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: { argb: 'FFEF4444' } // rojo
+      };
+      cellNoDisp.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+      cellNoDisp.alignment = { horizontal: 'center', vertical: 'middle' };
+      cellNoDisp.border = {
+        top: { style: 'thin' },
+        left: { style: 'thin' },
+        bottom: { style: 'thin' },
+        right: { style: 'thin' }
+      };
+      
+      // Azul para total días (1 columna)
+      const cellTotal = row2.getCell(colIndex + 7);
+      cellTotal.fill = {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: { argb: 'FF60A5FA' } // azul claro
+      };
+      cellTotal.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+      cellTotal.alignment = { horizontal: 'center', vertical: 'middle' };
+      cellTotal.border = {
+        top: { style: 'thin' },
+        left: { style: 'thin' },
+        bottom: { style: 'thin' },
+        right: { style: 'thin' }
+      };
+      
+      colIndex += 8;
+    });
+
+    // =================== DATOS DE PERSONAS ===================
+    
+    staffingData.forEach(person => {
+      const rowData = [
         person.personCode,
         person.personName,
         person.categoria,
@@ -261,7 +433,7 @@ const StaffingReport: React.FC<StaffingReportProps> = ({ squadLeadName, squadPer
       
       weeks.forEach(week => {
         const weekData = person.weeklyData[week];
-        row.push(
+        rowData.push(
           weekData.jornadasFacturablesProyecto.toFixed(2),
           weekData.jornadasSTRProductos.toFixed(2),
           weekData.jornadasNoFacturablesAvailability.toFixed(2),
@@ -273,67 +445,74 @@ const StaffingReport: React.FC<StaffingReportProps> = ({ squadLeadName, squadPer
         );
       });
       
-      return row;
-    });
-
-    // =================== CREAR WORKSHEET ===================
-    
-    const allData = [
-      [titleText],
-      [periodText],
-      [generatedText],
-      [],
-      headerRow1,
-      headerRow2,
-      ...dataRows
-    ];
-    
-    const ws = XLSX.utils.aoa_to_sheet(allData);
-
-    // =================== CONFIGURAR ANCHOS ===================
-    
-    const colWidths = [
-      { wch: 12 }, { wch: 35 }, { wch: 20 }, { wch: 15 }, { wch: 12 }, { wch: 25 }
-    ];
-    weeks.forEach(() => {
-      for (let i = 0; i < 8; i++) colWidths.push({ wch: 12 });
-    });
-    ws['!cols'] = colWidths;
-
-    // =================== MERGE CELLS ===================
-    
-    const merges = [];
-    
-    // Merge título 
-    merges.push({ s: { r: 0, c: 0 }, e: { r: 0, c: Math.min(headerRow1.length - 1, 20) } });
-    
-    // Merge semanas en primera fila de headers
-    let currentCol = 6;
-    weeks.forEach(() => {
-      if (currentCol + 7 < headerRow1.length) {
-        merges.push({ s: { r: 4, c: currentCol }, e: { r: 4, c: currentCol + 7 } });
+      const dataRow = worksheet.addRow(rowData);
+      
+      // Aplicar fondo gris a las primeras 5 columnas (sin Squad Lead)
+      for (let i = 1; i <= 5; i++) {
+        const cell = dataRow.getCell(i);
+        cell.fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: { argb: 'FFE5E7EB' } // gris claro
+        };
+        cell.border = {
+          top: { style: 'thin', color: { argb: 'FFFFFFFF' } },
+          left: { style: 'thin', color: { argb: 'FFFFFFFF' } },
+          bottom: { style: 'thin', color: { argb: 'FFFFFFFF' } },
+          right: { style: 'thin', color: { argb: 'FFFFFFFF' } }
+        };
+        cell.alignment = { horizontal: 'center', vertical: 'middle' };
       }
-      currentCol += 8;
+      
+      // Squad Lead y datos numéricos con borde normal
+      for (let i = 6; i <= rowData.length; i++) {
+        const cell = dataRow.getCell(i);
+        cell.border = {
+          top: { style: 'thin' },
+          left: { style: 'thin' },
+          bottom: { style: 'thin' },
+          right: { style: 'thin' }
+        };
+        cell.alignment = { horizontal: 'center', vertical: 'middle' };
+      }
     });
+
+    // =================== AJUSTAR ANCHOS DE COLUMNA ===================
     
-    ws['!merges'] = merges;
+    worksheet.getColumn(1).width = 12; // Código
+    worksheet.getColumn(2).width = 35; // Nombre
+    worksheet.getColumn(3).width = 20; // Categoría
+    worksheet.getColumn(4).width = 15; // Grupo
+    worksheet.getColumn(5).width = 12; // Oficina
+    worksheet.getColumn(6).width = 25; // Squad Lead
+    
+    // Columnas de jornadas
+    for (let i = 7; i <= 6 + weeks.length * 8; i++) {
+      worksheet.getColumn(i).width = 12;
+    }
 
     // =================== FREEZE PANES ===================
     
-    ws['!freeze'] = { xSplit: 6, ySplit: 6 };
+    worksheet.views = [
+      { state: 'frozen', xSplit: 6, ySplit: 6 }
+    ];
 
-    // =================== AGREGAR AL WORKBOOK ===================
-    
-    XLSX.utils.book_append_sheet(wb, ws, 'Informe Staffing');
-    
     // =================== EXPORTAR ===================
     
     const fileName = `staffing_${squadLeadName.toLowerCase().replace(/[^a-z0-9]/g, '_')}_${format(startDate!, 'yyyyMMdd')}_${format(endDate!, 'yyyyMMdd')}.xlsx`;
-    XLSX.writeFile(wb, fileName);
+    
+    const buffer = await workbook.xlsx.writeBuffer();
+    const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = fileName;
+    a.click();
+    window.URL.revokeObjectURL(url);
 
     toast({
-      title: "Excel básico generado",
-      description: `Sin colores, pero al menos funciona: ${fileName}`,
+      title: "Excel profesional generado",
+      description: `Con formato completo: ${fileName}`,
     });
   };
 
