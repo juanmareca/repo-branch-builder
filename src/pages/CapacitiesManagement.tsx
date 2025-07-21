@@ -230,19 +230,47 @@ export default function CapacitiesManagement() {
 
   const fetchCapacities = async () => {
     try {
-      const { data, error } = await supabase
-        .from('capacities')
-        .select('*')
+      setLoading(true);
+      console.log('🔄 Cargando todas las capacidades...');
+      
+      let allCapacities: Capacity[] = [];
+      let hasMore = true;
+      let from = 0;
+      const batchSize = 1000;
+      
+      while (hasMore) {
+        console.log(`📦 Cargando lote desde ${from} hasta ${from + batchSize - 1}`);
         
-        .order('person_name', { ascending: true });
+        const { data, error } = await supabase
+          .from('capacities')
+          .select('*')
+          .order('person_name', { ascending: true })
+          .range(from, from + batchSize - 1);
 
-      if (error) throw error;
-      setCapacities(data || []);
-    } catch (error) {
+        if (error) throw error;
+        
+        if (data && data.length > 0) {
+          allCapacities = [...allCapacities, ...data];
+          from += batchSize;
+          
+          // Si el lote es menor que batchSize, hemos llegado al final
+          if (data.length < batchSize) {
+            hasMore = false;
+          }
+          
+          console.log(`📊 Lote cargado: ${data.length} capacidades. Total acumulado: ${allCapacities.length}`);
+        } else {
+          hasMore = false;
+        }
+      }
+      
+      console.log('✅ Capacidades cargadas:', allCapacities.length);
+      setCapacities(allCapacities);
+    } catch (error: any) {
       console.error('Error fetching capacities:', error);
       toast({
-        title: "Error",
-        description: "No se pudieron cargar las capacidades",
+        title: "Error al cargar capacidades",
+        description: error.message,
         variant: "destructive",
       });
     } finally {

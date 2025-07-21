@@ -192,17 +192,46 @@ const HolidaysManagement = () => {
 
   const fetchHolidays = async () => {
     try {
-      const { data, error } = await supabase
-        .from('holidays')
-        .select('*')
-        .order('date', { ascending: true });
+      setLoading(true);
+      console.log('🔄 Cargando todos los festivos...');
+      
+      let allHolidays: Holiday[] = [];
+      let hasMore = true;
+      let from = 0;
+      const batchSize = 1000;
+      
+      while (hasMore) {
+        console.log(`📦 Cargando lote desde ${from} hasta ${from + batchSize - 1}`);
+        
+        const { data, error } = await supabase
+          .from('holidays')
+          .select('*')
+          .order('date', { ascending: true })
+          .range(from, from + batchSize - 1);
 
-      if (error) throw error;
-      setHolidays(data || []);
-    } catch (error) {
+        if (error) throw error;
+        
+        if (data && data.length > 0) {
+          allHolidays = [...allHolidays, ...data];
+          from += batchSize;
+          
+          // Si el lote es menor que batchSize, hemos llegado al final
+          if (data.length < batchSize) {
+            hasMore = false;
+          }
+          
+          console.log(`📊 Lote cargado: ${data.length} festivos. Total acumulado: ${allHolidays.length}`);
+        } else {
+          hasMore = false;
+        }
+      }
+      
+      console.log('✅ Festivos cargados:', allHolidays.length);
+      setHolidays(allHolidays);
+    } catch (error: any) {
       toast({
-        title: "Error",
-        description: "No se pudieron cargar los festivos",
+        title: "Error al cargar festivos",
+        description: error.message,
         variant: "destructive",
       });
     } finally {

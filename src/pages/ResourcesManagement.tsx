@@ -182,15 +182,39 @@ const ResourcesManagement = () => {
       setLoading(true);
       console.log('🔄 Cargando todos los recursos...');
       
-      const { data, error } = await supabase
-        .from('persons')
-        .select('*')
-        .order('nombre', { ascending: true });
-
-      if (error) throw error;
+      let allResources: Person[] = [];
+      let hasMore = true;
+      let from = 0;
+      const batchSize = 1000;
       
-      console.log('✅ Recursos cargados:', data?.length);
-      setResources(data || []);
+      while (hasMore) {
+        console.log(`📦 Cargando lote desde ${from} hasta ${from + batchSize - 1}`);
+        
+        const { data, error } = await supabase
+          .from('persons')
+          .select('*')
+          .order('nombre', { ascending: true })
+          .range(from, from + batchSize - 1);
+
+        if (error) throw error;
+        
+        if (data && data.length > 0) {
+          allResources = [...allResources, ...data];
+          from += batchSize;
+          
+          // Si el lote es menor que batchSize, hemos llegado al final
+          if (data.length < batchSize) {
+            hasMore = false;
+          }
+          
+          console.log(`📊 Lote cargado: ${data.length} recursos. Total acumulado: ${allResources.length}`);
+        } else {
+          hasMore = false;
+        }
+      }
+      
+      console.log('✅ Recursos cargados:', allResources.length);
+      setResources(allResources);
     } catch (error: any) {
       toast({
         title: "Error al cargar recursos",
