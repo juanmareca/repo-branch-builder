@@ -382,9 +382,9 @@ export default function SpainHolidaysMap() {
         </CardContent>
       </Card>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
         {/* Mapa de España */}
-        <div className="lg:col-span-2">
+        <div className="xl:col-span-1">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -394,11 +394,11 @@ export default function SpainHolidaysMap() {
             </CardHeader>
             <CardContent>
               <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-6 rounded-xl">
-                <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                   {Object.entries(REGIONS_DATA).map(([regionName, regionData]) => (
                     <div
                       key={regionName}
-                      className={`relative group cursor-pointer transition-all duration-300 transform hover:scale-105 rounded-lg overflow-hidden border-2 ${
+                      className={`relative group cursor-pointer transition-all duration-300 transform hover:scale-150 hover:z-10 rounded-lg overflow-hidden border-2 ${
                         selectedRegion === regionName 
                           ? 'border-yellow-400 ring-2 ring-yellow-300 scale-105' 
                           : 'border-gray-200 hover:border-gray-300'
@@ -477,13 +477,13 @@ export default function SpainHolidaysMap() {
                       ({filteredHolidays.national.length})
                     </span>
                   </h4>
-                  <div className="space-y-3 max-h-48 overflow-y-auto">
+                   <div className="space-y-2 max-h-48 overflow-y-auto">
                     {filteredHolidays.national.length > 0 ? (
-                      filteredHolidays.national.map((holiday, index) => (
-                        <Card key={index} className="p-3 bg-blue-50 border-blue-200">
-                          <div className="font-medium text-blue-900">{holiday.localName}</div>
-                          <div className="text-sm text-blue-700">{formatDate(holiday.date)}</div>
-                        </Card>
+                       filteredHolidays.national.map((holiday, index) => (
+                         <div key={index} className="p-2 bg-blue-50 border-blue-200 border rounded-lg">
+                           <div className="font-medium text-blue-900 text-sm">{holiday.localName}</div>
+                           <div className="text-xs text-blue-700">{formatDate(holiday.date)}</div>
+                         </div>
                       ))
                     ) : (
                       <p className="text-sm text-muted-foreground italic">
@@ -503,7 +503,7 @@ export default function SpainHolidaysMap() {
                       ({filteredHolidays.regional.length})
                     </span>
                   </h4>
-                  <div className="space-y-3 max-h-48 overflow-y-auto">
+                  <div className="space-y-2 max-h-48 overflow-y-auto">
                     {filteredHolidays.regional.length > 0 ? (
                        filteredHolidays.regional.map((holiday, index) => (
                          <Card 
