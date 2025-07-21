@@ -8,6 +8,7 @@ import { Brain, Star, Award, Loader2, Users, Info, Edit, Save, X, Building2, Glo
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useToast } from '@/hooks/use-toast';
 import jsPDF from 'jspdf';
+import { useSquadData } from '../hooks/useSquadData';
 
 interface Capacity {
   id: string;
@@ -76,6 +77,7 @@ const TeamCapabilities: React.FC<TeamCapabilitiesProps> = ({
   const [editedCapacities, setEditedCapacities] = useState<{[key: string]: string}>({});
   const [saving, setSaving] = useState(false);
   const { toast } = useToast();
+  const { refetch } = useSquadData();
 
   // Obtener todos los miembros del equipo incluyendo al squad lead actual
   const getAllTeamMembers = () => {
@@ -583,7 +585,7 @@ const TeamCapabilities: React.FC<TeamCapabilitiesProps> = ({
         if (error) throw error;
       }
 
-      // Refrescar datos
+      // Refrescar datos completos para actualizar el currículum
       const allMembers = getAllTeamMembers();
       const { data, error } = await supabase
         .from('capacities')
@@ -593,9 +595,18 @@ const TeamCapabilities: React.FC<TeamCapabilitiesProps> = ({
         .order('skill');
 
       if (error) throw error;
+      
+      // Actualizar capacidades
       setCapacities(data || []);
+      
+      // Forzar recálculo del currículum actualizando el estado
       setIsEditing(false);
       setEditedCapacities({});
+      
+      // También refrescar los datos de personas si es necesario
+      if (refetch) {
+        await refetch();
+      }
 
       toast({
         title: "Capacidades actualizadas",
