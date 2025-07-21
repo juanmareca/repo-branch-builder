@@ -10,121 +10,102 @@ import { useToast } from '@/hooks/use-toast';
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 
-// Mapeo de comunidades autónomas con códigos y coordenadas para el SVG
+// Mapeo de comunidades autónomas con códigos e imágenes
 const REGIONS_DATA = {
+  'Galicia': { 
+    code: 'GA', 
+    apiCode: 'ES-GA',
+    image: '/lovable-uploads/9248ae02-50fd-4e04-bedf-d317fe99cc29.png'
+  },
   'Andalucía': { 
     code: 'AN', 
-    color: '#FF6B6B',
     apiCode: 'ES-AN',
-    path: 'M 100 320 L 220 320 L 220 380 L 180 400 L 120 400 L 100 380 Z'
+    image: null // Pendiente de imagen
   },
   'Aragón': { 
     code: 'AR', 
-    color: '#4ECDC4',
     apiCode: 'ES-AR', 
-    path: 'M 180 180 L 240 180 L 240 220 L 200 240 L 180 220 Z'
+    image: null // Pendiente de imagen
   },
   'Asturias': { 
     code: 'AS', 
-    color: '#45B7D1',
     apiCode: 'ES-AS',
-    path: 'M 80 120 L 140 120 L 140 160 L 80 160 Z'
+    image: null // Pendiente de imagen
   },
   'Baleares': { 
     code: 'IB', 
-    color: '#96CEB4',
     apiCode: 'ES-IB',
-    path: 'M 320 280 L 360 280 L 360 320 L 320 320 Z'
+    image: null // Pendiente de imagen
   },
   'Canarias': { 
     code: 'CN', 
-    color: '#FFEAA7',
     apiCode: 'ES-CN',
-    path: 'M 20 450 L 120 450 L 120 490 L 20 490 Z'
+    image: null // Pendiente de imagen
   },
   'Cantabria': { 
     code: 'CB', 
-    color: '#DDA0DD',
     apiCode: 'ES-CB',
-    path: 'M 140 120 L 180 120 L 180 160 L 140 160 Z'
+    image: null // Pendiente de imagen
   },
   'Castilla-La Mancha': { 
     code: 'CM', 
-    color: '#F39C12',
     apiCode: 'ES-CM',
-    path: 'M 140 220 L 200 220 L 200 280 L 140 280 Z'
+    image: null // Pendiente de imagen
   },
   'Castilla y León': { 
     code: 'CL', 
-    color: '#E74C3C',
     apiCode: 'ES-CL',
-    path: 'M 80 160 L 180 160 L 180 220 L 80 220 Z'
+    image: null // Pendiente de imagen
   },
   'Cataluña': { 
     code: 'CT', 
-    color: '#9B59B6',
     apiCode: 'ES-CT',
-    path: 'M 240 140 L 300 140 L 300 200 L 240 200 Z'
+    image: null // Pendiente de imagen
   },
   'Ceuta': { 
     code: 'CE', 
-    color: '#1ABC9C',
     apiCode: 'ES-CE',
-    path: 'M 140 420 L 160 420 L 160 440 L 140 440 Z'
+    image: null // Pendiente de imagen
   },
   'Comunidad Valenciana': { 
     code: 'VC', 
-    color: '#3498DB',
     apiCode: 'ES-VC',
-    path: 'M 200 240 L 260 240 L 260 320 L 200 320 Z'
+    image: null // Pendiente de imagen
   },
   'Extremadura': { 
     code: 'EX', 
-    color: '#2ECC71',
     apiCode: 'ES-EX',
-    path: 'M 80 240 L 140 240 L 140 320 L 80 320 Z'
-  },
-  'Galicia': { 
-    code: 'GA', 
-    color: '#E67E22',
-    apiCode: 'ES-GA',
-    path: 'M 20 120 L 80 120 L 80 200 L 20 200 Z'
+    image: null // Pendiente de imagen
   },
   'La Rioja': { 
     code: 'RI', 
-    color: '#8E44AD',
     apiCode: 'ES-RI',
-    path: 'M 160 160 L 200 160 L 200 180 L 160 180 Z'
+    image: null // Pendiente de imagen
   },
   'Madrid': { 
     code: 'MD', 
-    color: '#E91E63',
     apiCode: 'ES-MD',
-    path: 'M 160 200 L 200 200 L 200 240 L 160 240 Z'
+    image: null // Pendiente de imagen
   },
   'Melilla': { 
     code: 'ML', 
-    color: '#FF9800',
     apiCode: 'ES-ML',
-    path: 'M 180 420 L 200 420 L 200 440 L 180 440 Z'
+    image: null // Pendiente de imagen
   },
-  'Murcia': { 
+  'Murcia': {
     code: 'MC', 
-    color: '#795548',
     apiCode: 'ES-MC',
-    path: 'M 200 280 L 240 280 L 240 320 L 200 320 Z'
+    image: null // Pendiente de imagen
   },
   'Navarra': { 
     code: 'NC', 
-    color: '#607D8B',
     apiCode: 'ES-NC',
-    path: 'M 180 140 L 220 140 L 220 180 L 180 180 Z'
+    image: null // Pendiente de imagen
   },
   'País Vasco': { 
     code: 'PV', 
-    color: '#009688',
     apiCode: 'ES-PV',
-    path: 'M 140 140 L 180 140 L 180 180 L 140 180 Z'
+    image: null // Pendiente de imagen
   }
 };
 
@@ -413,43 +394,52 @@ export default function SpainHolidaysMap() {
             </CardHeader>
             <CardContent>
               <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-6 rounded-xl">
-                <svg
-                  viewBox="0 0 400 520"
-                  className="w-full h-auto max-h-96"
-                  style={{ filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.1))' }}
-                >
+                <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
                   {Object.entries(REGIONS_DATA).map(([regionName, regionData]) => (
-                    <g key={regionName}>
-                      <path
-                        d={regionData.path}
-                        fill={selectedRegion === regionName ? '#FFD700' : regionData.color}
-                        stroke="#fff"
-                        strokeWidth="2"
-                        className="cursor-pointer transition-all duration-300 hover:brightness-110"
-                        style={{
-                          filter: hoveredRegion === regionName ? 'brightness(1.2)' : 'none',
-                          transform: selectedRegion === regionName ? 'scale(1.05)' : 'scale(1)',
-                          transformOrigin: 'center'
-                        }}
-                        onClick={() => handleRegionClick(regionName)}
-                        onMouseEnter={() => setHoveredRegion(regionName)}
-                        onMouseLeave={() => setHoveredRegion(null)}
-                      />
-                      {/* Tooltip */}
-                      {hoveredRegion === regionName && (
-                        <text
-                          x="200"
-                          y="30"
-                          textAnchor="middle"
-                          className="fill-gray-800 text-sm font-semibold"
-                          style={{ pointerEvents: 'none' }}
-                        >
-                          {regionName}
-                        </text>
+                    <div
+                      key={regionName}
+                      className={`relative group cursor-pointer transition-all duration-300 transform hover:scale-105 rounded-lg overflow-hidden border-2 ${
+                        selectedRegion === regionName 
+                          ? 'border-yellow-400 ring-2 ring-yellow-300 scale-105' 
+                          : 'border-gray-200 hover:border-gray-300'
+                      }`}
+                      onClick={() => handleRegionClick(regionName)}
+                      onMouseEnter={() => setHoveredRegion(regionName)}
+                      onMouseLeave={() => setHoveredRegion(null)}
+                    >
+                      {regionData.image ? (
+                        <img
+                          src={regionData.image}
+                          alt={regionName}
+                          className="w-full h-20 object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-20 bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
+                          <span className="text-xs text-gray-500 text-center px-1">
+                            {regionName}
+                          </span>
+                        </div>
                       )}
-                    </g>
+                      
+                      {/* Overlay con nombre */}
+                      <div className="absolute bottom-0 left-0 right-0 bg-black bg-opacity-70 text-white p-1">
+                        <p className="text-xs font-medium text-center truncate">
+                          {regionName}
+                        </p>
+                      </div>
+
+                      {/* Indicador de selección */}
+                      {selectedRegion === regionName && (
+                        <div className="absolute top-1 right-1 w-3 h-3 bg-yellow-400 rounded-full border border-white"></div>
+                      )}
+
+                      {/* Efecto hover */}
+                      <div className={`absolute inset-0 bg-black transition-opacity duration-300 ${
+                        hoveredRegion === regionName ? 'bg-opacity-20' : 'bg-opacity-0'
+                      }`}></div>
+                    </div>
                   ))}
-                </svg>
+                </div>
                 <p className="text-center text-sm text-muted-foreground mt-4">
                   Haz clic en una comunidad autónoma para ver sus festivos
                 </p>
@@ -506,13 +496,7 @@ export default function SpainHolidaysMap() {
                 {/* Festivos Regionales */}
                 <div>
                   <h4 className="font-semibold text-lg mb-3 flex items-center gap-2">
-                    <Badge 
-                      variant="outline" 
-                      style={{ 
-                        borderColor: REGIONS_DATA[selectedRegion as keyof typeof REGIONS_DATA]?.color,
-                        color: REGIONS_DATA[selectedRegion as keyof typeof REGIONS_DATA]?.color
-                      }}
-                    >
+                    <Badge variant="outline" className="border-orange-500 text-orange-700">
                       {selectedRegion}
                     </Badge>
                     <span className="text-sm text-muted-foreground">
@@ -521,19 +505,15 @@ export default function SpainHolidaysMap() {
                   </h4>
                   <div className="space-y-3 max-h-48 overflow-y-auto">
                     {filteredHolidays.regional.length > 0 ? (
-                      filteredHolidays.regional.map((holiday, index) => (
-                        <Card 
-                          key={index} 
-                          className="p-3" 
-                          style={{ 
-                            backgroundColor: `${REGIONS_DATA[selectedRegion as keyof typeof REGIONS_DATA]?.color}20`,
-                            borderColor: REGIONS_DATA[selectedRegion as keyof typeof REGIONS_DATA]?.color 
-                          }}
-                        >
-                          <div className="font-medium text-gray-900">{holiday.localName}</div>
-                          <div className="text-sm text-gray-700">{formatDate(holiday.date)}</div>
-                        </Card>
-                      ))
+                       filteredHolidays.regional.map((holiday, index) => (
+                         <Card 
+                           key={index} 
+                           className="p-3 bg-orange-50 border-orange-200"
+                         >
+                           <div className="font-medium text-orange-900">{holiday.localName}</div>
+                           <div className="text-sm text-orange-700">{formatDate(holiday.date)}</div>
+                         </Card>
+                       ))
                     ) : (
                       <p className="text-sm text-muted-foreground italic">
                         No hay festivos regionales para este período
