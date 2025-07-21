@@ -525,19 +525,19 @@ const StaffingReport: React.FC<StaffingReportProps> = ({ squadLeadName, squadPer
                         <th className="border p-1 text-center font-bold min-w-[90px] text-xs bg-green-600 text-white">
                           Jornadas<br/>STR<br/>Productos
                         </th>
-                        <th className="border p-1 text-center font-bold min-w-[90px] text-xs bg-red-500 text-white">
+                        <th className="border p-1 text-center font-bold min-w-[90px] text-xs bg-orange-300 text-gray-800">
                           Jornadas<br/>No Facturables<br/>Availability
                         </th>
-                        <th className="border p-1 text-center font-bold min-w-[90px] text-xs bg-red-500 text-white">
+                        <th className="border p-1 text-center font-bold min-w-[90px] text-xs bg-orange-300 text-gray-800">
                           Jornadas<br/>No Facturables<br/>Management
                         </th>
-                        <th className="border p-1 text-center font-bold min-w-[90px] text-xs bg-red-500 text-white">
+                        <th className="border p-1 text-center font-bold min-w-[90px] text-xs bg-orange-300 text-gray-800">
                           Jornadas<br/>No Facturables<br/>SAM
                         </th>
-                        <th className="border p-1 text-center font-bold min-w-[110px] text-xs bg-yellow-500 text-white">
+                        <th className="border p-1 text-center font-bold min-w-[110px] text-xs bg-green-300 text-gray-800">
                           Jornadas<br/>Facturables<br/>Otros<br/>(Internal Activities)
                         </th>
-                        <th className="border p-1 text-center font-bold min-w-[90px] text-xs bg-gray-500 text-white">
+                        <th className="border p-1 text-center font-bold min-w-[90px] text-xs bg-red-500 text-white">
                           Jornadas<br/>No<br/>Disponibles
                         </th>
                         <th className="border p-1 text-center font-bold min-w-[90px] text-xs bg-blue-400 text-white">
