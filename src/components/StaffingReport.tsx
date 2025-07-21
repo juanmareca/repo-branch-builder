@@ -191,8 +191,8 @@ const StaffingReport: React.FC<StaffingReportProps> = ({ squadLeadName, squadPer
 
         return {
           personId,
-          personName: person?.nombre || '',
           personCode: person?.num_pers || person?.cex || '',
+          personName: person?.nombre || '',
           categoria: person?.categoria || '',
           grupo: person?.grupo || '',
           oficina: person?.oficina || '',
@@ -220,63 +220,45 @@ const StaffingReport: React.FC<StaffingReportProps> = ({ squadLeadName, squadPer
 
     const weeks = Object.keys(staffingData[0].weeklyData);
     
-    // Crear workbook y worksheet
+    // Crear workbook
     const wb = XLSX.utils.book_new();
-    const ws = XLSX.utils.aoa_to_sheet([]);
-
-    // =================== ESTRUCTURA EXACTA COMO LA IMAGEN ===================
     
-    // FILA 1: Título principal
-    const titleRow = [`INFORME DE STAFFING - ${squadLeadName.toUpperCase()}`];
+    // =================== DATOS LIMPIOS Y SIMPLES ===================
     
-    // FILA 2: Período
-    const periodRow = [`Período: ${format(startDate!, 'dd/MM/yyyy')} - ${format(endDate!, 'dd/MM/yyyy')}`];
+    const titleText = `INFORME DE STAFFING - ${squadLeadName.toUpperCase()}`;
+    const periodText = `Período: ${format(startDate!, 'dd/MM/yyyy')} - ${format(endDate!, 'dd/MM/yyyy')}`;
+    const generatedText = `Generado: ${format(new Date(), 'dd/MM/yyyy HH:mm')}`;
     
-    // FILA 3: Generado
-    const generatedRow = [`Generado: ${format(new Date(), 'dd/MM/yyyy HH:mm')}`];
+    // Headers principales
+    const mainHeaders = ['Código empleado', 'Nombre Persona', 'Categoría', 'Grupo', 'Oficina', 'Squad Lead'];
     
-    // FILA 4: Vacía
-    const emptyRow = [''];
-    
-    // FILA 5: Headers principales (Código, Nombre, etc.) + SEMANA01, SEMANA01, etc.
-    const headerRow1 = [
-      'Código empleado', 'Nombre Persona', 'Categoría', 'Grupo', 'Oficina', 'Squad Lead'
-    ];
-    
-    // FILA 6: Sub-headers (vacíos para info personal) + detalles de cada columna de semana
-    const headerRow2 = [
-      '', '', '', '', '', '' // Vacíos para las columnas de información personal
-    ];
-    
-    // Agregar headers de semanas CORRECTAMENTE como en el ejemplo
+    // Primera fila de headers: info personal + nombres de semanas
+    const headerRow1 = [...mainHeaders];
     weeks.forEach(week => {
-      // PRIMERA FILA: Solo el nombre de la semana UNA VEZ (se hará merge después)
-      headerRow1.push(week, '', '', '', '', '', '', ''); // Una para la semana, 7 vacías para merge
-      
-      // SEGUNDA FILA: Los detalles específicos de cada columna
+      headerRow1.push(week, '', '', '', '', '', '', ''); // Una vez la semana + 7 vacías para merge
+    });
+    
+    // Segunda fila de headers: vacías para info + detalles por semana
+    const headerRow2 = ['', '', '', '', '', ''];
+    weeks.forEach(() => {
       headerRow2.push(
-        'Facturables Proyecto',
-        'STR Productos', 
-        'No Fact. Availability',
-        'No Fact. Management',
-        'No Fact. SAM',
-        'Fact. Otros (Internal)',
-        'No Disponibles',
-        'Total Días Lab.'
+        'Facturables Proyecto', 'STR Productos', 'No Fact. Availability',
+        'No Fact. Management', 'No Fact. SAM', 'Fact. Otros (Internal)',
+        'No Disponibles', 'Total Días Lab.'
       );
     });
 
-    // DATOS
+    // Datos de personas
     const dataRows = staffingData.map(person => {
       const row = [
-        person.personCode || person.personId.substring(0, 8),
+        person.personCode,
         person.personName,
         person.categoria,
-        person.grupo, 
+        person.grupo,
         person.oficina,
         person.squadLead
       ];
-
+      
       weeks.forEach(week => {
         const weekData = person.weeklyData[week];
         row.push(
@@ -290,335 +272,68 @@ const StaffingReport: React.FC<StaffingReportProps> = ({ squadLeadName, squadPer
           weekData.totalDiasLaborables.toFixed(2)
         );
       });
-
+      
       return row;
     });
 
-    // =================== AGREGAR TODO AL WORKSHEET ===================
+    // =================== CREAR WORKSHEET ===================
     
-    XLSX.utils.sheet_add_aoa(ws, [titleRow], { origin: 'A1' });
-    XLSX.utils.sheet_add_aoa(ws, [periodRow], { origin: 'A2' });
-    XLSX.utils.sheet_add_aoa(ws, [generatedRow], { origin: 'A3' });
-    XLSX.utils.sheet_add_aoa(ws, [emptyRow], { origin: 'A4' });
-    XLSX.utils.sheet_add_aoa(ws, [headerRow1], { origin: 'A5' });
-    XLSX.utils.sheet_add_aoa(ws, [headerRow2], { origin: 'A6' });
-    XLSX.utils.sheet_add_aoa(ws, dataRows, { origin: 'A7' });
-
-    // =================== ESTILOS PROFESIONALES Y HERMOSOS ===================
-    
-    // Configurar anchos de columna GENEROSOS
-    const colWidths = [
-      { wch: 12 },  // Código empleado
-      { wch: 35 },  // Nombre Persona (MUY ANCHO)
-      { wch: 20 },  // Categoría
-      { wch: 15 },  // Grupo
-      { wch: 12 },  // Oficina
-      { wch: 25 },  // Squad Lead
+    const allData = [
+      [titleText],
+      [periodText],
+      [generatedText],
+      [],
+      headerRow1,
+      headerRow2,
+      ...dataRows
     ];
+    
+    const ws = XLSX.utils.aoa_to_sheet(allData);
 
-    // Columnas de semanas ANCHAS para que se vea todo
+    // =================== CONFIGURAR ANCHOS ===================
+    
+    const colWidths = [
+      { wch: 12 }, { wch: 35 }, { wch: 20 }, { wch: 15 }, { wch: 12 }, { wch: 25 }
+    ];
     weeks.forEach(() => {
-      for (let i = 0; i < 8; i++) {
-        colWidths.push({ wch: 12 }); // Todas las semanas con buen ancho
-      }
+      for (let i = 0; i < 8; i++) colWidths.push({ wch: 12 });
     });
-
     ws['!cols'] = colWidths;
 
-    // =================== ESTILOS SÚPER PROFESIONALES Y HERMOSOS ===================
+    // =================== MERGE CELLS ===================
     
-    // Título principal - IMPACTO MÁXIMO
-    const titleStyle = {
-      font: { 
-        bold: true, 
-        color: { rgb: "FFFFFF" }, 
-        size: 18, 
-        name: "Calibri" 
-      },
-      fill: { fgColor: { rgb: "1F4E79" } }, // Azul corporativo oscuro
-      alignment: { 
-        horizontal: "center", 
-        vertical: "center" 
-      },
-      border: {
-        top: { style: "medium", color: { rgb: "000000" } },
-        bottom: { style: "medium", color: { rgb: "000000" } },
-        left: { style: "medium", color: { rgb: "000000" } },
-        right: { style: "medium", color: { rgb: "000000" } }
-      }
-    };
-
-    // Subtítulos elegantes
-    const subtitleStyle = {
-      font: { 
-        bold: true, 
-        color: { rgb: "1F4E79" }, 
-        size: 12, 
-        name: "Calibri" 
-      },
-      fill: { fgColor: { rgb: "F2F2F2" } }, // Fondo gris muy claro
-      alignment: { horizontal: "left", vertical: "center" },
-      border: {
-        top: { style: "thin", color: { rgb: "CCCCCC" } },
-        bottom: { style: "thin", color: { rgb: "CCCCCC" } },
-        left: { style: "thin", color: { rgb: "CCCCCC" } },
-        right: { style: "thin", color: { rgb: "CCCCCC" } }
-      }
-    };
-
-    // Headers principales - SÚPER ELEGANTE
-    const headerMainStyle = {
-      font: { 
-        bold: true, 
-        color: { rgb: "FFFFFF" }, 
-        size: 11, 
-        name: "Calibri" 
-      },
-      fill: { fgColor: { rgb: "4472C4" } }, // Azul profesional brillante
-      alignment: { 
-        horizontal: "center", 
-        vertical: "center", 
-        wrapText: true 
-      },
-      border: {
-        top: { style: "medium", color: { rgb: "000000" } },
-        bottom: { style: "medium", color: { rgb: "000000" } },
-        left: { style: "medium", color: { rgb: "000000" } },
-        right: { style: "medium", color: { rgb: "000000" } }
-      }
-    };
-
-    // Headers de semanas - DESTACADOS EN AZUL MEDIO
-    const headerWeekStyle = {
-      font: { 
-        bold: true, 
-        color: { rgb: "FFFFFF" }, 
-        size: 11, 
-        name: "Calibri" 
-      },
-      fill: { fgColor: { rgb: "5B9BD5" } }, // Azul medio vibrante
-      alignment: { 
-        horizontal: "center", 
-        vertical: "center", 
-        wrapText: true 
-      },
-      border: {
-        top: { style: "medium", color: { rgb: "000000" } },
-        bottom: { style: "medium", color: { rgb: "000000" } },
-        left: { style: "medium", color: { rgb: "000000" } },
-        right: { style: "medium", color: { rgb: "000000" } }
-      }
-    };
-
-    // Sub-headers detallados - AZUL CLARO HERMOSO
-    const headerDetailStyle = {
-      font: { 
-        bold: true, 
-        color: { rgb: "1F4E79" }, 
-        size: 10, 
-        name: "Calibri" 
-      },
-      fill: { fgColor: { rgb: "B4C6E7" } }, // Azul claro elegante
-      alignment: { 
-        horizontal: "center", 
-        vertical: "center", 
-        wrapText: true 
-      },
-      border: {
-        top: { style: "thin", color: { rgb: "1F4E79" } },
-        bottom: { style: "thin", color: { rgb: "1F4E79" } },
-        left: { style: "thin", color: { rgb: "1F4E79" } },
-        right: { style: "thin", color: { rgb: "1F4E79" } }
-      }
-    };
-
-    // Datos personales - PROFESIONAL Y ELEGANTE
-    const dataPersonalStyle = {
-      font: { 
-        size: 10, 
-        name: "Calibri",
-        color: { rgb: "000000" }
-      },
-      fill: { fgColor: { rgb: "F8F9FA" } }, // Fondo gris muy suave
-      alignment: { 
-        horizontal: "left", 
-        vertical: "center" 
-      },
-      border: {
-        top: { style: "thin", color: { rgb: "D0D0D0" } },
-        bottom: { style: "thin", color: { rgb: "D0D0D0" } },
-        left: { style: "thin", color: { rgb: "D0D0D0" } },
-        right: { style: "thin", color: { rgb: "D0D0D0" } }
-      }
-    };
-
-    // =================== APLICAR ESTILOS A TODAS LAS CELDAS ===================
-    
-    // Título principal (fila 1)
-    const titleCell = XLSX.utils.encode_cell({ r: 0, c: 0 });
-    if (!ws[titleCell]) ws[titleCell] = { v: titleRow[0] };
-    ws[titleCell].s = titleStyle;
-    
-    // Subtítulos (filas 2 y 3)
-    const periodCell = XLSX.utils.encode_cell({ r: 1, c: 0 });
-    if (!ws[periodCell]) ws[periodCell] = { v: periodRow[0] };
-    ws[periodCell].s = subtitleStyle;
-    
-    const generatedCell = XLSX.utils.encode_cell({ r: 2, c: 0 });
-    if (!ws[generatedCell]) ws[generatedCell] = { v: generatedRow[0] };
-    ws[generatedCell].s = subtitleStyle;
-
-    // Headers principales (fila 5) - APLICAR ESTILOS PERFECTOS
-    for (let col = 0; col < headerRow1.length; col++) {
-      const cellRef = XLSX.utils.encode_cell({ r: 4, c: col });
-      if (!ws[cellRef]) ws[cellRef] = { v: headerRow1[col] || '' };
-      
-      if (col < 6) {
-        // Columnas de información personal
-        ws[cellRef].s = headerMainStyle;
-      } else {
-        // Columnas de semanas
-        ws[cellRef].s = headerWeekStyle;
-      }
-    }
-
-    // Sub-headers (fila 6) - PERFECTOS Y HERMOSOS
-    for (let col = 0; col < headerRow2.length; col++) {
-      const cellRef = XLSX.utils.encode_cell({ r: 5, c: col });
-      if (!ws[cellRef]) ws[cellRef] = { v: headerRow2[col] || '' };
-      
-      if (col < 6) {
-        // Columnas de información personal (vacías pero con estilo)
-        ws[cellRef].s = headerMainStyle;
-      } else {
-        // Detalles de semanas
-        ws[cellRef].s = headerDetailStyle;
-      }
-    }
-
-    // Datos con colores temáticos ESPECTACULARES
-    for (let row = 0; row < dataRows.length; row++) {
-      for (let col = 0; col < headerRow1.length; col++) {
-        const cellRef = XLSX.utils.encode_cell({ r: 6 + row, c: col });
-        const cellValue = dataRows[row][col];
-        
-        if (!ws[cellRef]) ws[cellRef] = { v: cellValue || '' };
-        
-        if (col < 6) {
-          // Datos personales con fondo suave
-          ws[cellRef].s = dataPersonalStyle;
-        } else {
-          // Datos numéricos con colores temáticos HERMOSOS
-          const colIndex = (col - 6) % 8;
-          let fillColor = "FFFFFF";
-          let fontColor = "000000";
-          let isBold = false;
-          
-          switch(colIndex) {
-            case 0: // Facturables Proyecto
-              fillColor = "D5E8D4"; // Verde elegante
-              fontColor = "2E7D32";
-              break;
-            case 1: // STR Productos  
-              fillColor = "BBDEFB"; // Azul suave
-              fontColor = "1565C0";
-              break;
-            case 2: // Availability
-              fillColor = "FFF9C4"; // Amarillo suave
-              fontColor = "F57F17";
-              break;
-            case 3: // Management
-              fillColor = "E1BEE7"; // Morado elegante
-              fontColor = "7B1FA2";
-              break;
-            case 4: // SAM
-              fillColor = "FFCDD2"; // Rojo suave
-              fontColor = "C62828";
-              break;
-            case 5: // Otros
-              fillColor = "C8E6C9"; // Verde menta
-              fontColor = "388E3C";
-              break;
-            case 6: // No Disponibles
-              fillColor = "F5F5F5"; // Gris neutro
-              fontColor = "757575";
-              break;
-            case 7: // Total Días Laborables
-              fillColor = "CFD8DC"; // Gris azulado
-              fontColor = "37474F";
-              isBold = true;
-              break;
-          }
-          
-          ws[cellRef].s = {
-            font: { 
-              size: 10, 
-              name: "Calibri",
-              bold: isBold,
-              color: { rgb: fontColor }
-            },
-            fill: { fgColor: { rgb: fillColor } },
-            alignment: { 
-              horizontal: "center", 
-              vertical: "center" 
-            },
-            border: {
-              top: { style: "thin", color: { rgb: "BDBDBD" } },
-              bottom: { style: "thin", color: { rgb: "BDBDBD" } },
-              left: { style: "thin", color: { rgb: "BDBDBD" } },
-              right: { style: "thin", color: { rgb: "BDBDBD" } }
-            }
-          };
-        }
-      }
-    }
-
-    // =================== FUNCIONALIDADES AVANZADAS ===================
-    
-    // Merge cells para el título (que ocupe TODA la fila y se vea espectacular)
     const merges = [];
-    merges.push({ 
-      s: { r: 0, c: 0 }, 
-      e: { r: 0, c: Math.min(headerRow1.length - 1, 25) } // Más ancho
-    });
-
-    // Merge cells para agrupar semanas visualmente (SIN PROBLEMAS)
+    
+    // Merge título 
+    merges.push({ s: { r: 0, c: 0 }, e: { r: 0, c: Math.min(headerRow1.length - 1, 20) } });
+    
+    // Merge semanas en primera fila de headers
     let currentCol = 6;
     weeks.forEach(() => {
-      if (currentCol + 7 < headerRow1.length) { // Verificar que no se salga del rango
-        merges.push({ 
-          s: { r: 4, c: currentCol }, 
-          e: { r: 4, c: currentCol + 7 } 
-        });
+      if (currentCol + 7 < headerRow1.length) {
+        merges.push({ s: { r: 4, c: currentCol }, e: { r: 4, c: currentCol + 7 } });
       }
       currentCol += 8;
     });
-
+    
     ws['!merges'] = merges;
 
-    // Congelar paneles - SÚPER ÚTIL
+    // =================== FREEZE PANES ===================
+    
     ws['!freeze'] = { xSplit: 6, ySplit: 6 };
 
-    // ¡QUITAR los filtros automáticos que están haciendo que se vea horrible!
-    // ws['!autofilter'] = { 
-    //   ref: `A6:${XLSX.utils.encode_cell({ 
-    //     r: 5 + dataRows.length, 
-    //     c: headerRow1.length - 1 
-    //   })}` 
-    // };
-
-    // Agregar al workbook
+    // =================== AGREGAR AL WORKBOOK ===================
+    
     XLSX.utils.book_append_sheet(wb, ws, 'Informe Staffing');
     
-    // Nombre de archivo inteligente
-    const fileName = `staffing_${squadLeadName.toLowerCase().replace(/[^a-z0-9]/g, '_')}_${format(startDate!, 'yyyyMMdd')}_${format(endDate!, 'yyyyMMdd')}.xlsx`;
+    // =================== EXPORTAR ===================
     
-    // Descargar
+    const fileName = `staffing_${squadLeadName.toLowerCase().replace(/[^a-z0-9]/g, '_')}_${format(startDate!, 'yyyyMMdd')}_${format(endDate!, 'yyyyMMdd')}.xlsx`;
     XLSX.writeFile(wb, fileName);
 
     toast({
-      title: "🎨 ¡OBRA MAESTRA CREADA!",
-      description: `Excel profesional generado: ${fileName}`,
+      title: "Excel básico generado",
+      description: `Sin colores, pero al menos funciona: ${fileName}`,
     });
   };
 
