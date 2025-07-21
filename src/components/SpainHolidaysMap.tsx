@@ -50,7 +50,7 @@ const REGIONS_DATA = {
   'Castilla-La Mancha': { 
     code: 'CM', 
     apiCode: 'ES-CM',
-    image: '/lovable-uploads/dce93539-da1c-4a81-9463-7dd483fd6e0b.png'
+    image: '/lovable-uploads/56d4b070-28a9-4bf9-82b5-ac486ae8230f.png'
   },
   'Castilla y León': { 
     code: 'CL', 
