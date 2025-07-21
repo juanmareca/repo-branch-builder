@@ -986,6 +986,19 @@ const SquadLeadHolidaysManagement = () => {
             </div>
           </div>
         )}
+        
+        {/* Mapa interactivo de España */}
+        <Card className="mt-8">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              Mapa Interactivo de Festivos por Comunidades Autónomas
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <SpainHolidaysMap />
+          </CardContent>
+        </Card>
+
       </div>
     </div>
     </TooltipProvider>
