@@ -406,50 +406,145 @@ const TeamCapabilities: React.FC<TeamCapabilitiesProps> = ({
     const pdf = new jsPDF();
     const pageWidth = pdf.internal.pageSize.width;
     const pageHeight = pdf.internal.pageSize.height;
-    let yPosition = 30;
-
-    // Título
-    pdf.setFontSize(20);
-    pdf.setTextColor(0, 0, 0);
+    const marginLeft = 20;
+    const marginRight = 20;
+    const contentWidth = pageWidth - marginLeft - marginRight;
+    
+    // Función para crear cabecera en cada página
+    const addHeader = () => {
+      // Fondo azul para la cabecera
+      pdf.setFillColor(41, 98, 255); // Color azul corporativo
+      pdf.rect(0, 0, pageWidth, 25, 'F');
+      
+      // Logo/Texto de Stratesys
+      pdf.setTextColor(255, 255, 255);
+      pdf.setFontSize(16);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('STRATESYS', marginLeft, 17);
+      
+      // Fecha en la cabecera
+      pdf.setFontSize(10);
+      pdf.setFont('helvetica', 'normal');
+      const today = new Date().toLocaleDateString('es-ES');
+      pdf.text(today, pageWidth - marginRight - pdf.getTextWidth(today), 17);
+    };
+    
+    // Función para crear pie de página
+    const addFooter = (pageNumber: number, totalPages: number) => {
+      // Línea divisoria
+      pdf.setDrawColor(200, 200, 200);
+      pdf.line(marginLeft, pageHeight - 20, pageWidth - marginRight, pageHeight - 20);
+      
+      // Texto del pie
+      pdf.setTextColor(100, 100, 100);
+      pdf.setFontSize(8);
+      pdf.setFont('helvetica', 'normal');
+      pdf.text('Currículum del Equipo - Confidencial', marginLeft, pageHeight - 12);
+      pdf.text(`Página ${pageNumber} de ${totalPages}`, pageWidth - marginRight - 50, pageHeight - 12);
+    };
+    
+    // Primera página - Cabecera del documento
+    addHeader();
+    
+    let yPosition = 40;
+    
+    // Título principal
+    pdf.setTextColor(41, 98, 255);
+    pdf.setFontSize(24);
+    pdf.setFont('helvetica', 'bold');
     pdf.text('Currículum del Equipo', pageWidth / 2, yPosition, { align: 'center' });
     
-    yPosition += 10;
-    pdf.setFontSize(12);
-    pdf.setTextColor(100, 100, 100);
-    pdf.text(`Fecha de generación: ${new Date().toLocaleDateString('es-ES')}`, 20, yPosition);
+    yPosition += 15;
     
+    // Subtítulo
+    pdf.setTextColor(100, 100, 100);
+    pdf.setFontSize(12);
+    pdf.setFont('helvetica', 'normal');
+    const squadText = currentSquadLeadName ? `Equipo de ${currentSquadLeadName}` : 'Equipo';
+    pdf.text(squadText, pageWidth / 2, yPosition, { align: 'center' });
+    
+    yPosition += 10;
+    pdf.text(`Fecha de generación: ${new Date().toLocaleDateString('es-ES')}`, pageWidth / 2, yPosition, { align: 'center' });
+    
+    yPosition += 30;
+    
+    // Línea divisoria
+    pdf.setDrawColor(41, 98, 255);
+    pdf.setLineWidth(0.5);
+    pdf.line(marginLeft, yPosition, pageWidth - marginRight, yPosition);
     yPosition += 20;
 
     // Generar currículums
     const completeCapacities = generateCompleteCapacities();
     const allMembers = getAllTeamMembers();
+    let pageCount = 1;
+    const totalPages = Math.ceil(allMembers.length / 2) + 1; // Estimación
 
     allMembers.forEach((personName, index) => {
       const personCapacities = completeCapacities[personName];
       const allPersonCapacities = Object.values(personCapacities).flat();
       const curriculum = generateCurriculum(personName, allPersonCapacities);
       
-      // Verificar si necesitamos una nueva página
-      if (yPosition > pageHeight - 50) {
+      // Estimar altura necesaria
+      const estimatedHeight = Math.ceil(curriculum.length / 80) * 5 + 20;
+      
+      // Si no cabe en la página actual, crear nueva página
+      if (yPosition + estimatedHeight > pageHeight - 40) {
+        addFooter(pageCount, totalPages);
         pdf.addPage();
-        yPosition = 30;
+        pageCount++;
+        addHeader();
+        yPosition = 40;
       }
       
-      // Escribir el currículum
-      pdf.setFontSize(12);
-      pdf.setTextColor(0, 0, 0);
-      const splitText = pdf.splitTextToSize(curriculum, 170);
-      pdf.text(splitText, 20, yPosition);
+      // Texto justificado con mejor formato
+      pdf.setTextColor(50, 50, 50);
+      pdf.setFontSize(11);
+      pdf.setFont('helvetica', 'normal');
       
-      yPosition += splitText.length * 5 + 15;
+      const splitText = pdf.splitTextToSize(curriculum, contentWidth);
+      
+      // Justificar texto
+      for (let lineIndex = 0; lineIndex < splitText.length; lineIndex++) {
+        const line = splitText[lineIndex];
+        
+        // No justificar la última línea o líneas cortas
+        if (lineIndex === splitText.length - 1 || line.trim().length < contentWidth * 0.7) {
+          pdf.text(line, marginLeft, yPosition);
+        } else {
+          // Justificar la línea distribuyendo espacios
+          const words = line.split(' ');
+          if (words.length > 1) {
+            const totalTextWidth = words.reduce((sum, word) => sum + pdf.getTextWidth(word), 0);
+            const totalSpaceWidth = contentWidth - totalTextWidth;
+            const spaceWidth = totalSpaceWidth / (words.length - 1);
+            
+            let xPosition = marginLeft;
+            for (let wordIndex = 0; wordIndex < words.length; wordIndex++) {
+              pdf.text(words[wordIndex], xPosition, yPosition);
+              if (wordIndex < words.length - 1) {
+                xPosition += pdf.getTextWidth(words[wordIndex]) + spaceWidth;
+              }
+            }
+          } else {
+            pdf.text(line, marginLeft, yPosition);
+          }
+        }
+        yPosition += 5;
+      }
+      
+      yPosition += 15; // Espacio entre personas
     });
+    
+    // Añadir pie de página a la última página
+    addFooter(pageCount, pageCount);
 
     // Guardar el PDF
     pdf.save(`Curriculum_Equipo_${currentSquadLeadName || 'Squad'}_${new Date().toISOString().split('T')[0]}.pdf`);
     
     toast({
       title: "PDF generado",
-      description: "El currículum del equipo se ha exportado correctamente.",
+      description: "El currículum del equipo se ha exportado correctamente con formato profesional.",
     });
   };
 
