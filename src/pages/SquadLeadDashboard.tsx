@@ -93,6 +93,8 @@ export default function SquadLeadDashboard() {
   const [isDragMode, setIsDragMode] = useState(false);
   const [dragModeCard, setDragModeCard] = useState<string | null>(null);
   const [isRightMouseDown, setIsRightMouseDown] = useState(false);
+  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+  const [dragPosition, setDragPosition] = useState({ x: 0, y: 0 });
 
   // Cargar preferencias guardadas
   useEffect(() => {
@@ -178,18 +180,64 @@ export default function SquadLeadDashboard() {
     }
   };
 
-  // Handlers para el sistema de drag con botón derecho mantenido presionado
+  // Handlers para el sistema de drag manual con botón derecho
   const handleMouseDown = (e: React.MouseEvent, cardId: string) => {
     if (e.button === 2) { // Botón derecho
       e.preventDefault();
+      const rect = e.currentTarget.getBoundingClientRect();
       setIsRightMouseDown(true);
       setIsDragMode(true);
       setDragModeCard(cardId);
+      setDraggedCard(cardId);
+      setDragOffset({
+        x: e.clientX - rect.left,
+        y: e.clientY - rect.top
+      });
+      setDragPosition({
+        x: e.clientX,
+        y: e.clientY
+      });
+    }
+  };
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (isRightMouseDown && draggedCard && dragModeCard) {
+      e.preventDefault();
+      setDragPosition({
+        x: e.clientX,
+        y: e.clientY
+      });
     }
   };
 
   const handleMouseUp = (e: React.MouseEvent) => {
-    if (e.button === 2) { // Botón derecho
+    if (e.button === 2 && isRightMouseDown && draggedCard) { // Botón derecho
+      // Encontrar la tarjeta sobre la que se soltó
+      const elementBelow = document.elementFromPoint(e.clientX, e.clientY);
+      const cardElement = elementBelow?.closest('[data-card-id]');
+      
+      if (cardElement) {
+        const targetCardId = cardElement.getAttribute('data-card-id');
+        if (targetCardId && targetCardId !== draggedCard) {
+          const newCards = [...cards];
+          const draggedIndex = newCards.findIndex(card => card.id === draggedCard);
+          const targetIndex = newCards.findIndex(card => card.id === targetCardId);
+
+          if (draggedIndex !== -1 && targetIndex !== -1) {
+            // Reordenar las tarjetas
+            const [draggedItem] = newCards.splice(draggedIndex, 1);
+            newCards.splice(targetIndex, 0, draggedItem);
+
+            setCards(newCards);
+            
+            // Guardar el nuevo orden
+            const newOrder = newCards.map(card => card.id);
+            saveOrder(newOrder);
+          }
+        }
+      }
+
+      // Resetear estados
       setIsRightMouseDown(false);
       setIsDragMode(false);
       setDragModeCard(null);
@@ -199,57 +247,6 @@ export default function SquadLeadDashboard() {
 
   const handleContextMenu = (e: React.MouseEvent) => {
     e.preventDefault(); // Evitar menú contextual siempre
-  };
-
-  const handleMouseLeave = () => {
-    // Solo resetear si no estamos arrastrando
-    if (!draggedCard && !isRightMouseDown) {
-      setIsDragMode(false);
-      setDragModeCard(null);
-    }
-  };
-
-  const handleDragStart = (e: React.DragEvent, cardId: string) => {
-    if (!isDragMode || !isRightMouseDown || dragModeCard !== cardId) {
-      e.preventDefault();
-      return;
-    }
-    setDraggedCard(cardId);
-    e.dataTransfer.effectAllowed = 'move';
-    e.dataTransfer.setData('text/html', cardId);
-  };
-
-  const handleDragOver = (e: React.DragEvent) => {
-    if (!isDragMode || !isRightMouseDown) return;
-    e.preventDefault();
-    e.dataTransfer.dropEffect = 'move';
-  };
-
-  const handleDrop = (e: React.DragEvent, targetCardId: string) => {
-    e.preventDefault();
-    
-    if (!draggedCard || draggedCard === targetCardId || !isDragMode || !isRightMouseDown) {
-      return;
-    }
-
-    const newCards = [...cards];
-    const draggedIndex = newCards.findIndex(card => card.id === draggedCard);
-    const targetIndex = newCards.findIndex(card => card.id === targetCardId);
-
-    // Reordenar las tarjetas
-    const [draggedItem] = newCards.splice(draggedIndex, 1);
-    newCards.splice(targetIndex, 0, draggedItem);
-
-    setCards(newCards);
-    
-    // Guardar el nuevo orden
-    const newOrder = newCards.map(card => card.id);
-    saveOrder(newOrder);
-  };
-
-  const handleDragEnd = () => {
-    // Solo limpiar el draggedCard, mantener el modo si aún tiene botón derecho presionado
-    setDraggedCard(null);
   };
 
   // Listener global para detectar cuando suelta el botón derecho fuera de la tarjeta
@@ -303,34 +300,40 @@ export default function SquadLeadDashboard() {
           </Button>
         </div>
 
-        {/* Dashboard Grid with Native Drag and Drop */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {/* Dashboard Grid with Manual Drag */}
+        <div 
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+          onMouseMove={handleMouseMove}
+        >
           {cards.map((card) => {
             const IconComponent = card.icon;
+            const isDragging = draggedCard === card.id;
             return (
               <div
                 key={card.id}
-                draggable={true}
+                data-card-id={card.id}
                 onContextMenu={handleContextMenu}
                 onMouseDown={(e) => handleMouseDown(e, card.id)}
                 onMouseUp={handleMouseUp}
-                onMouseLeave={handleMouseLeave}
-                onDragStart={(e) => handleDragStart(e, card.id)}
-                onDragOver={handleDragOver}
-                onDrop={(e) => handleDrop(e, card.id)}
-                onDragEnd={handleDragEnd}
                 className={`transition-all duration-200 ${
                   isDragMode && dragModeCard === card.id && isRightMouseDown
-                    ? 'cursor-move bg-yellow-400/30 ring-4 ring-yellow-400 scale-[1.05] shadow-2xl shadow-yellow-400/50 animate-pulse' 
+                    ? 'cursor-move bg-yellow-400/20 ring-2 ring-yellow-400/70 scale-[1.03] shadow-xl shadow-yellow-400/30' 
                     : 'cursor-pointer hover:scale-[1.01]'
                 } ${
-                  draggedCard === card.id ? 'opacity-70 scale-105' : ''
+                  isDragging ? 'opacity-70 scale-105 z-50' : ''
                 }`}
+                style={isDragging ? {
+                  position: 'fixed',
+                  left: dragPosition.x - dragOffset.x,
+                  top: dragPosition.y - dragOffset.y,
+                  pointerEvents: 'none',
+                  width: '320px'
+                } : {}}
               >
                 <Card 
                   className={`h-full hover:shadow-lg transition-all duration-200 ${
                     isDragMode && dragModeCard === card.id && isRightMouseDown
-                      ? 'shadow-2xl shadow-yellow-400/60 border-yellow-400 border-2 bg-gradient-to-br from-yellow-200/20 to-red-200/20' 
+                      ? 'shadow-xl shadow-yellow-400/40 border-yellow-400/80 border bg-gradient-to-br from-yellow-100/20 to-orange-100/20' 
                       : ''
                   }`}
                   onClick={() => !draggedCard && !isDragMode && handleNavigation(card.route)}
