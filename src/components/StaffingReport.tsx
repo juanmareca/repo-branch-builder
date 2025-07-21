@@ -248,23 +248,21 @@ const StaffingReport: React.FC<StaffingReportProps> = ({ squadLeadName, squadPer
       '', '', '', '', '', '' // Vacíos para las columnas de información personal
     ];
     
-    // Agregar headers de semanas
+    // Agregar headers de semanas CORRECTAMENTE como en el ejemplo
     weeks.forEach(week => {
-      // En la fila 1 de headers: repetir SEMANA0X para cada columna
-      for (let i = 0; i < 8; i++) {
-        headerRow1.push(week);
-      }
+      // PRIMERA FILA: Solo el nombre de la semana UNA VEZ (se hará merge después)
+      headerRow1.push(week, '', '', '', '', '', '', ''); // Una para la semana, 7 vacías para merge
       
-      // En la fila 2 de headers: los detalles específicos
+      // SEGUNDA FILA: Los detalles específicos de cada columna
       headerRow2.push(
-        'Jornadas Facturables Proyecto',
-        'Jornadas STR Productos',
-        'Jornadas No Facturables Availability', 
-        'Jornadas No Facturables Management',
-        'Jornadas No Facturables SAM',
-        'Jornadas Facturables Otros (Internal Activities, etc.)',
-        'Jornadas No Disponibles',
-        'Total Días Laborables'
+        'Facturables Proyecto',
+        'STR Productos', 
+        'No Fact. Availability',
+        'No Fact. Management',
+        'No Fact. SAM',
+        'Fact. Otros (Internal)',
+        'No Disponibles',
+        'Total Días Lab.'
       );
     });
 
