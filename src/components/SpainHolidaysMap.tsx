@@ -1,37 +1,135 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Badge } from './ui/badge';
 import { Button } from './ui/button';
-import { X, Calendar, MapPin } from 'lucide-react';
+import { Calendar, MapPin, Download, FileText, Printer } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
+import * as XLSX from 'xlsx';
+import jsPDF from 'jspdf';
 
-// Mapeo de comunidades autónomas con colores
-const REGIONS_MAP = {
-  'Galicia': { code: 'GA', color: '#d49ca9' },
-  'Asturias': { code: 'AS', color: '#b8d4a8' },
-  'Cantabria': { code: 'CB', color: '#a8c5e8' },
-  'País Vasco': { code: 'PV', color: '#d4a8d4' },
-  'Navarra': { code: 'NC', color: '#d4b8a8' },
-  'La Rioja': { code: 'RI', color: '#e8a8c5' },
-  'Cataluña': { code: 'CT', color: '#d4d4a8' },
-  'Aragón': { code: 'AR', color: '#a8d4a8' },
-  'Castilla y León': { code: 'CL', color: '#a8c5e8' },
-  'Madrid': { code: 'MD', color: '#e8a8e8' },
-  'Castilla-La Mancha': { code: 'CM', color: '#e8c5e8' },
-  'Extremadura': { code: 'EX', color: '#c5a8e8' },
-  'Comunidad Valenciana': { code: 'VC', color: '#d4a8a8' },
-  'Murcia': { code: 'MC', color: '#a8e8a8' },
-  'Andalucía': { code: 'AN', color: '#d4a8a8' },
-  'Canarias': { code: 'CN', color: '#a8a8e8' },
-  'Baleares': { code: 'IB', color: '#e8e8a8' },
-  'Ceuta': { code: 'CE', color: '#a8e8e8' },
-  'Melilla': { code: 'ML', color: '#e8a8a8' }
+// Mapeo de comunidades autónomas con códigos y coordenadas para el SVG
+const REGIONS_DATA = {
+  'Andalucía': { 
+    code: 'AN', 
+    color: '#FF6B6B',
+    apiCode: 'ES-AN',
+    path: 'M 100 320 L 220 320 L 220 380 L 180 400 L 120 400 L 100 380 Z'
+  },
+  'Aragón': { 
+    code: 'AR', 
+    color: '#4ECDC4',
+    apiCode: 'ES-AR', 
+    path: 'M 180 180 L 240 180 L 240 220 L 200 240 L 180 220 Z'
+  },
+  'Asturias': { 
+    code: 'AS', 
+    color: '#45B7D1',
+    apiCode: 'ES-AS',
+    path: 'M 80 120 L 140 120 L 140 160 L 80 160 Z'
+  },
+  'Baleares': { 
+    code: 'IB', 
+    color: '#96CEB4',
+    apiCode: 'ES-IB',
+    path: 'M 320 280 L 360 280 L 360 320 L 320 320 Z'
+  },
+  'Canarias': { 
+    code: 'CN', 
+    color: '#FFEAA7',
+    apiCode: 'ES-CN',
+    path: 'M 20 450 L 120 450 L 120 490 L 20 490 Z'
+  },
+  'Cantabria': { 
+    code: 'CB', 
+    color: '#DDA0DD',
+    apiCode: 'ES-CB',
+    path: 'M 140 120 L 180 120 L 180 160 L 140 160 Z'
+  },
+  'Castilla-La Mancha': { 
+    code: 'CM', 
+    color: '#F39C12',
+    apiCode: 'ES-CM',
+    path: 'M 140 220 L 200 220 L 200 280 L 140 280 Z'
+  },
+  'Castilla y León': { 
+    code: 'CL', 
+    color: '#E74C3C',
+    apiCode: 'ES-CL',
+    path: 'M 80 160 L 180 160 L 180 220 L 80 220 Z'
+  },
+  'Cataluña': { 
+    code: 'CT', 
+    color: '#9B59B6',
+    apiCode: 'ES-CT',
+    path: 'M 240 140 L 300 140 L 300 200 L 240 200 Z'
+  },
+  'Ceuta': { 
+    code: 'CE', 
+    color: '#1ABC9C',
+    apiCode: 'ES-CE',
+    path: 'M 140 420 L 160 420 L 160 440 L 140 440 Z'
+  },
+  'Comunidad Valenciana': { 
+    code: 'VC', 
+    color: '#3498DB',
+    apiCode: 'ES-VC',
+    path: 'M 200 240 L 260 240 L 260 320 L 200 320 Z'
+  },
+  'Extremadura': { 
+    code: 'EX', 
+    color: '#2ECC71',
+    apiCode: 'ES-EX',
+    path: 'M 80 240 L 140 240 L 140 320 L 80 320 Z'
+  },
+  'Galicia': { 
+    code: 'GA', 
+    color: '#E67E22',
+    apiCode: 'ES-GA',
+    path: 'M 20 120 L 80 120 L 80 200 L 20 200 Z'
+  },
+  'La Rioja': { 
+    code: 'RI', 
+    color: '#8E44AD',
+    apiCode: 'ES-RI',
+    path: 'M 160 160 L 200 160 L 200 180 L 160 180 Z'
+  },
+  'Madrid': { 
+    code: 'MD', 
+    color: '#E91E63',
+    apiCode: 'ES-MD',
+    path: 'M 160 200 L 200 200 L 200 240 L 160 240 Z'
+  },
+  'Melilla': { 
+    code: 'ML', 
+    color: '#FF9800',
+    apiCode: 'ES-ML',
+    path: 'M 180 420 L 200 420 L 200 440 L 180 440 Z'
+  },
+  'Murcia': { 
+    code: 'MC', 
+    color: '#795548',
+    apiCode: 'ES-MC',
+    path: 'M 200 280 L 240 280 L 240 320 L 200 320 Z'
+  },
+  'Navarra': { 
+    code: 'NC', 
+    color: '#607D8B',
+    apiCode: 'ES-NC',
+    path: 'M 180 140 L 220 140 L 220 180 L 180 180 Z'
+  },
+  'País Vasco': { 
+    code: 'PV', 
+    color: '#009688',
+    apiCode: 'ES-PV',
+    path: 'M 140 140 L 180 140 L 180 180 L 140 180 Z'
+  }
 };
 
-const MONTHS_CHRONOLOGICAL = [
-  { value: 'all', label: 'TODOS' },
+const MONTHS_OPTIONS = [
+  { value: 'all', label: 'Todos los meses' },
   { value: '1', label: 'Enero' },
   { value: '2', label: 'Febrero' },
   { value: '3', label: 'Marzo' },
@@ -46,83 +144,58 @@ const MONTHS_CHRONOLOGICAL = [
   { value: '12', label: 'Diciembre' }
 ];
 
-const YEARS_RANGE = { start: 2025, end: 2035 };
+const YEARS_RANGE = Array.from({ length: 8 }, (_, i) => 2023 + i);
+
+interface Holiday {
+  date: string;
+  localName: string;
+  name: string;
+  countryCode: string;
+  counties?: string[];
+  global: boolean;
+}
 
 export default function SpainHolidaysMap() {
   const [selectedYear, setSelectedYear] = useState('2025');
   const [selectedMonth, setSelectedMonth] = useState('all');
   const [selectedRegion, setSelectedRegion] = useState<string | null>(null);
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [hoveredRegion, setHoveredRegion] = useState<string | null>(null);
+  const { toast } = useToast();
 
-  // Lista de regiones en orden alfabético
-  const regions = [
-    { name: 'Andalucía', color: '#d4a8a8' },
-    { name: 'Aragón', color: '#a8d4a8' },
-    { name: 'Asturias', color: '#b8d4a8' },
-    { name: 'Baleares', color: '#e8e8a8' },
-    { name: 'Canarias', color: '#a8a8e8' },
-    { name: 'Cantabria', color: '#a8c5e8' },
-    { name: 'Castilla-La Mancha', color: '#e8c5e8' },
-    { name: 'Castilla y León', color: '#a8c5e8' },
-    { name: 'Cataluña', color: '#d4d4a8' },
-    { name: 'Ceuta', color: '#a8e8e8' },
-    { name: 'Comunidad Valenciana', color: '#d4a8a8' },
-    { name: 'Extremadura', color: '#c5a8e8' },
-    { name: 'Galicia', color: '#d49ca9' },
-    { name: 'La Rioja', color: '#e8a8c5' },
-    { name: 'Madrid', color: '#e8a8e8' },
-    { name: 'Melilla', color: '#e8a8a8' },
-    { name: 'Murcia', color: '#a8e8a8' },
-    { name: 'Navarra', color: '#d4b8a8' },
-    { name: 'País Vasco', color: '#d4a8d4' }
-  ];
-
-  // Consulta para obtener festivos
+  // Consulta a la API externa de festivos
   const { data: holidays, isLoading, error } = useQuery({
-    queryKey: ['holidays', selectedYear],
+    queryKey: ['external-holidays', selectedYear],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('holidays')
-        .select('*')
-        .eq('pais', 'España')
-        .gte('date', `${selectedYear}-01-01`)
-        .lte('date', `${selectedYear}-12-31`)
-        .order('date');
-      
-      if (error) throw error;
-      return data || [];
-    }
+      const response = await fetch(`https://date.nager.at/api/v3/PublicHolidays/${selectedYear}/ES`);
+      if (!response.ok) {
+        throw new Error('Error al obtener festivos de la API externa');
+      }
+      return response.json() as Promise<Holiday[]>;
+    },
+    staleTime: 1000 * 60 * 60, // Cache por 1 hora
   });
 
-  // Filtrar festivos nacionales
-  const filteredNationalHolidays = useMemo(() => {
-    if (!holidays || !selectedRegion) return [];
-    
-    return holidays.filter(holiday => {
-      const holidayDate = new Date(holiday.date);
-      const holidayMonth = holidayDate.getMonth() + 1;
-      
-      const matchesMonth = selectedMonth === 'all' || holidayMonth.toString() === selectedMonth;
-      const isNational = holiday.comunidad_autonoma === 'NACIONAL' || holiday.comunidad_autonoma === '';
-      
-      return matchesMonth && isNational;
-    }).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-  }, [holidays, selectedMonth, selectedRegion]);
+  // Filtrar festivos por región y mes
+  const filteredHolidays = useMemo(() => {
+    if (!holidays || !selectedRegion) return { national: [], regional: [] };
 
-  // Filtrar festivos regionales
-  const filteredRegionalHolidays = useMemo(() => {
-    if (!holidays || !selectedRegion) return [];
-    
-    return holidays.filter(holiday => {
+    const regionData = REGIONS_DATA[selectedRegion as keyof typeof REGIONS_DATA];
+    if (!regionData) return { national: [], regional: [] };
+
+    const filtered = holidays.filter(holiday => {
       const holidayDate = new Date(holiday.date);
       const holidayMonth = holidayDate.getMonth() + 1;
-      
       const matchesMonth = selectedMonth === 'all' || holidayMonth.toString() === selectedMonth;
-      const matchesRegion = holiday.comunidad_autonoma === selectedRegion;
-      
-      return matchesMonth && matchesRegion;
-    }).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-  }, [holidays, selectedMonth, selectedRegion]);
+      return matchesMonth;
+    });
+
+    const national = filtered.filter(holiday => holiday.global || !holiday.counties);
+    const regional = filtered.filter(holiday => 
+      holiday.counties && holiday.counties.includes(regionData.apiCode)
+    );
+
+    return { national, regional };
+  }, [holidays, selectedRegion, selectedMonth]);
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -134,188 +207,354 @@ export default function SpainHolidaysMap() {
     });
   };
 
-  const handleRegionClick = (regionName: string) => {
+  const handleRegionClick = useCallback((regionName: string) => {
     setSelectedRegion(regionName);
-    setSidebarOpen(true);
-  };
+  }, []);
 
-  const closeSidebar = () => {
-    setSidebarOpen(false);
-    setSelectedRegion(null);
-  };
+  const handleDownloadCSV = useCallback(() => {
+    if (!selectedRegion || (!filteredHolidays.national.length && !filteredHolidays.regional.length)) {
+      toast({
+        title: "Sin datos",
+        description: "No hay festivos para exportar",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const allHolidays = [
+      ...filteredHolidays.national.map(h => ({ ...h, tipo: 'Nacional' })),
+      ...filteredHolidays.regional.map(h => ({ ...h, tipo: 'Regional' }))
+    ];
+
+    const csvData = allHolidays.map(holiday => ({
+      'Fecha': formatDate(holiday.date),
+      'Festivo': holiday.localName,
+      'Tipo': holiday.tipo,
+      'Región': selectedRegion
+    }));
+
+    const ws = XLSX.utils.json_to_sheet(csvData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Festivos');
+    XLSX.writeFile(wb, `festivos_${selectedRegion}_${selectedYear}.csv`);
+
+    toast({
+      title: "Descarga completada",
+      description: "Archivo CSV descargado correctamente",
+    });
+  }, [selectedRegion, filteredHolidays, selectedYear, toast]);
+
+  const handlePrintPDF = useCallback(() => {
+    if (!selectedRegion || (!filteredHolidays.national.length && !filteredHolidays.regional.length)) {
+      toast({
+        title: "Sin datos",
+        description: "No hay festivos para imprimir",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const doc = new jsPDF();
+    
+    // Título
+    doc.setFontSize(18);
+    doc.text(`Festivos ${selectedRegion} - ${selectedYear}`, 20, 30);
+    
+    let yPosition = 50;
+    
+    // Festivos nacionales
+    if (filteredHolidays.national.length > 0) {
+      doc.setFontSize(14);
+      doc.text('Festivos Nacionales:', 20, yPosition);
+      yPosition += 10;
+      
+      doc.setFontSize(10);
+      filteredHolidays.national.forEach(holiday => {
+        doc.text(`• ${formatDate(holiday.date)} - ${holiday.localName}`, 25, yPosition);
+        yPosition += 8;
+      });
+      yPosition += 10;
+    }
+    
+    // Festivos regionales
+    if (filteredHolidays.regional.length > 0) {
+      doc.setFontSize(14);
+      doc.text(`Festivos de ${selectedRegion}:`, 20, yPosition);
+      yPosition += 10;
+      
+      doc.setFontSize(10);
+      filteredHolidays.regional.forEach(holiday => {
+        doc.text(`• ${formatDate(holiday.date)} - ${holiday.localName}`, 25, yPosition);
+        yPosition += 8;
+      });
+    }
+    
+    doc.save(`festivos_${selectedRegion}_${selectedYear}.pdf`);
+
+    toast({
+      title: "PDF generado",
+      description: "Archivo PDF descargado correctamente",
+    });
+  }, [selectedRegion, filteredHolidays, selectedYear, toast]);
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-muted-foreground">Cargando festivos...</div>
+      <div className="flex items-center justify-center h-96">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Cargando festivos oficiales...</p>
+        </div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-destructive">Error al cargar los festivos</div>
+      <div className="flex items-center justify-center h-96">
+        <div className="text-center text-destructive">
+          <p className="text-lg font-semibold mb-2">Error al cargar los festivos</p>
+          <p className="text-sm">Verifique su conexión a internet</p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="relative w-full h-full">
-      <div className="flex gap-6 mb-6">
-        <Select value={selectedYear} onValueChange={setSelectedYear}>
-          <SelectTrigger className="w-[120px]">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {Array.from(
-              { length: YEARS_RANGE.end - YEARS_RANGE.start + 1 },
-              (_, i) => YEARS_RANGE.start + i
-            ).map((year) => (
-              <SelectItem key={year} value={year.toString()}>
-                {year}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-
-        <Select value={selectedMonth} onValueChange={setSelectedMonth}>
-          <SelectTrigger className="w-[140px]">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {MONTHS_CHRONOLOGICAL.map((month) => (
-              <SelectItem key={month.value} value={month.value}>
-                {month.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+    <div className="w-full max-w-7xl mx-auto p-6">
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold text-center mb-2">
+          Festivos Oficiales de España
+        </h1>
+        <p className="text-center text-muted-foreground">
+          Consulta los festivos nacionales y autonómicos por comunidad y período
+        </p>
       </div>
 
-      <div className="flex gap-6 relative">
-        <div className="flex-1 flex flex-col gap-6">
-          <div className="bg-gradient-to-br from-blue-100 to-blue-200 p-6 rounded-xl">
-            <div className="w-full bg-gradient-to-br from-blue-100 to-blue-200 rounded-xl p-4">
-              <h3 className="text-lg font-semibold text-center mb-4 text-gray-800">
-                Comunidades Autónomas de España
-              </h3>
-              <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
-                {regions.map((region) => (
-                  <div
-                    key={region.name}
-                    onClick={() => handleRegionClick(region.name)}
-                    className="cursor-pointer p-3 rounded-lg border-2 border-white/50 hover:border-white hover:scale-105 transition-all duration-300 text-center shadow-sm hover:shadow-md"
-                    style={{ backgroundColor: region.color }}
-                  >
-                    <div className="text-sm font-semibold text-white drop-shadow-md">
-                      {region.name}
-                    </div>
-                  </div>
-                ))}
-              </div>
+      {/* Controles */}
+      <Card className="mb-8">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Calendar className="h-5 w-5" />
+            Seleccionar Período
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-wrap gap-4">
+            <div className="flex flex-col gap-2">
+              <label className="text-sm font-medium">Año:</label>
+              <Select value={selectedYear} onValueChange={setSelectedYear}>
+                <SelectTrigger className="w-32">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {YEARS_RANGE.map((year) => (
+                    <SelectItem key={year} value={year.toString()}>
+                      {year}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
-          </div>
 
-          {selectedRegion && (
-            <Card className="bg-white/90 backdrop-blur-sm">
+            <div className="flex flex-col gap-2">
+              <label className="text-sm font-medium">Mes:</label>
+              <Select value={selectedMonth} onValueChange={setSelectedMonth}>
+                <SelectTrigger className="w-40">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {MONTHS_OPTIONS.map((month) => (
+                    <SelectItem key={month.value} value={month.value}>
+                      {month.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {selectedRegion && (
+              <div className="flex flex-col gap-2">
+                <label className="text-sm font-medium">Acciones:</label>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleDownloadCSV}
+                    className="flex items-center gap-2"
+                  >
+                    <Download className="h-4 w-4" />
+                    CSV
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handlePrintPDF}
+                    className="flex items-center gap-2"
+                  >
+                    <Printer className="h-4 w-4" />
+                    PDF
+                  </Button>
+                </div>
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* Mapa de España */}
+        <div className="lg:col-span-2">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <MapPin className="h-5 w-5" />
+                Comunidades Autónomas
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-6 rounded-xl">
+                <svg
+                  viewBox="0 0 400 520"
+                  className="w-full h-auto max-h-96"
+                  style={{ filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.1))' }}
+                >
+                  {Object.entries(REGIONS_DATA).map(([regionName, regionData]) => (
+                    <g key={regionName}>
+                      <path
+                        d={regionData.path}
+                        fill={selectedRegion === regionName ? '#FFD700' : regionData.color}
+                        stroke="#fff"
+                        strokeWidth="2"
+                        className="cursor-pointer transition-all duration-300 hover:brightness-110"
+                        style={{
+                          filter: hoveredRegion === regionName ? 'brightness(1.2)' : 'none',
+                          transform: selectedRegion === regionName ? 'scale(1.05)' : 'scale(1)',
+                          transformOrigin: 'center'
+                        }}
+                        onClick={() => handleRegionClick(regionName)}
+                        onMouseEnter={() => setHoveredRegion(regionName)}
+                        onMouseLeave={() => setHoveredRegion(null)}
+                      />
+                      {/* Tooltip */}
+                      {hoveredRegion === regionName && (
+                        <text
+                          x="200"
+                          y="30"
+                          textAnchor="middle"
+                          className="fill-gray-800 text-sm font-semibold"
+                          style={{ pointerEvents: 'none' }}
+                        >
+                          {regionName}
+                        </text>
+                      )}
+                    </g>
+                  ))}
+                </svg>
+                <p className="text-center text-sm text-muted-foreground mt-4">
+                  Haz clic en una comunidad autónoma para ver sus festivos
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Panel de resultados */}
+        <div>
+          {selectedRegion ? (
+            <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <MapPin className="h-5 w-5" />
-                  Información de {selectedRegion}
+                  <Calendar className="h-5 w-5" />
+                  Festivos en {selectedRegion}
                 </CardTitle>
+                <div className="flex gap-2">
+                  <Badge variant="secondary">
+                    {selectedYear}
+                  </Badge>
+                  <Badge variant="outline">
+                    {selectedMonth === 'all' ? 'Todo el año' : MONTHS_OPTIONS.find(m => m.value === selectedMonth)?.label}
+                  </Badge>
+                </div>
               </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground mb-4">
-                  Haz clic en la región para ver sus festivos en el panel lateral.
+              <CardContent className="space-y-6">
+                {/* Festivos Nacionales */}
+                <div>
+                  <h4 className="font-semibold text-lg mb-3 flex items-center gap-2">
+                    <Badge variant="default" className="bg-blue-500">
+                      Nacional
+                    </Badge>
+                    <span className="text-sm text-muted-foreground">
+                      ({filteredHolidays.national.length})
+                    </span>
+                  </h4>
+                  <div className="space-y-3 max-h-48 overflow-y-auto">
+                    {filteredHolidays.national.length > 0 ? (
+                      filteredHolidays.national.map((holiday, index) => (
+                        <Card key={index} className="p-3 bg-blue-50 border-blue-200">
+                          <div className="font-medium text-blue-900">{holiday.localName}</div>
+                          <div className="text-sm text-blue-700">{formatDate(holiday.date)}</div>
+                        </Card>
+                      ))
+                    ) : (
+                      <p className="text-sm text-muted-foreground italic">
+                        No hay festivos nacionales para este período
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                {/* Festivos Regionales */}
+                <div>
+                  <h4 className="font-semibold text-lg mb-3 flex items-center gap-2">
+                    <Badge 
+                      variant="outline" 
+                      style={{ 
+                        borderColor: REGIONS_DATA[selectedRegion as keyof typeof REGIONS_DATA]?.color,
+                        color: REGIONS_DATA[selectedRegion as keyof typeof REGIONS_DATA]?.color
+                      }}
+                    >
+                      {selectedRegion}
+                    </Badge>
+                    <span className="text-sm text-muted-foreground">
+                      ({filteredHolidays.regional.length})
+                    </span>
+                  </h4>
+                  <div className="space-y-3 max-h-48 overflow-y-auto">
+                    {filteredHolidays.regional.length > 0 ? (
+                      filteredHolidays.regional.map((holiday, index) => (
+                        <Card 
+                          key={index} 
+                          className="p-3" 
+                          style={{ 
+                            backgroundColor: `${REGIONS_DATA[selectedRegion as keyof typeof REGIONS_DATA]?.color}20`,
+                            borderColor: REGIONS_DATA[selectedRegion as keyof typeof REGIONS_DATA]?.color 
+                          }}
+                        >
+                          <div className="font-medium text-gray-900">{holiday.localName}</div>
+                          <div className="text-sm text-gray-700">{formatDate(holiday.date)}</div>
+                        </Card>
+                      ))
+                    ) : (
+                      <p className="text-sm text-muted-foreground italic">
+                        No hay festivos regionales para este período
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ) : (
+            <Card>
+              <CardContent className="flex flex-col items-center justify-center h-64 text-center">
+                <MapPin className="h-12 w-12 text-muted-foreground mb-4" />
+                <h3 className="text-lg font-semibold mb-2">Selecciona una comunidad</h3>
+                <p className="text-muted-foreground">
+                  Haz clic en el mapa para ver los festivos oficiales de cualquier comunidad autónoma
                 </p>
-                <Button onClick={() => handleRegionClick(selectedRegion)}>
-                  Ver Festivos
-                </Button>
               </CardContent>
             </Card>
           )}
         </div>
-
-        {/* Sidebar */}
-        <div className={`fixed inset-y-0 right-0 w-96 bg-white shadow-xl transform transition-transform duration-300 z-50 overflow-y-auto ${
-          sidebarOpen ? 'translate-x-0' : 'translate-x-full'
-        }`}>
-          <div className="p-6">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-xl font-semibold flex items-center gap-2">
-                <Calendar className="h-6 w-6" />
-                Festivos en {selectedRegion}
-              </h3>
-              <Button variant="ghost" size="sm" onClick={closeSidebar}>
-                <X className="h-4 w-4" />
-              </Button>
-            </div>
-
-            <div className="space-y-6">
-              {/* Festivos Nacionales */}
-              <div>
-                <h4 className="font-medium text-lg mb-3 flex items-center gap-2">
-                  <Badge variant="secondary">Nacional</Badge>
-                  ({filteredNationalHolidays.length} festivos)
-                </h4>
-                <div className="space-y-3">
-                  {filteredNationalHolidays.length > 0 ? (
-                    filteredNationalHolidays.map((holiday, index) => (
-                      <Card key={index} className="p-3 bg-blue-50 border-blue-200">
-                        <div className="font-medium text-blue-900">{holiday.festivo}</div>
-                        <div className="text-sm text-blue-700">{formatDate(holiday.date)}</div>
-                      </Card>
-                    ))
-                  ) : (
-                    <p className="text-sm text-muted-foreground italic">
-                      No hay festivos nacionales para el período seleccionado
-                    </p>
-                  )}
-                </div>
-              </div>
-
-              {/* Festivos Regionales */}
-              <div>
-                <h4 className="font-medium text-lg mb-3 flex items-center gap-2">
-                  <Badge variant="outline" style={{ borderColor: REGIONS_MAP[selectedRegion as keyof typeof REGIONS_MAP]?.color }}>
-                    {selectedRegion}
-                  </Badge>
-                  ({filteredRegionalHolidays.length} festivos)
-                </h4>
-                <div className="space-y-3">
-                  {filteredRegionalHolidays.length > 0 ? (
-                    filteredRegionalHolidays.map((holiday, index) => (
-                      <Card 
-                        key={index} 
-                        className="p-3" 
-                        style={{ 
-                          backgroundColor: `${REGIONS_MAP[selectedRegion as keyof typeof REGIONS_MAP]?.color}20`,
-                          borderColor: REGIONS_MAP[selectedRegion as keyof typeof REGIONS_MAP]?.color 
-                        }}
-                      >
-                        <div className="font-medium text-gray-900">{holiday.festivo}</div>
-                        <div className="text-sm text-gray-700">{formatDate(holiday.date)}</div>
-                      </Card>
-                    ))
-                  ) : (
-                    <p className="text-sm text-muted-foreground italic">
-                      No hay festivos regionales para el período seleccionado
-                    </p>
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Overlay */}
-        {sidebarOpen && (
-          <div 
-            className="fixed inset-0 bg-black bg-opacity-50 z-40"
-            onClick={closeSidebar}
-          />
-        )}
       </div>
     </div>
   );
