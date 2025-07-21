@@ -323,12 +323,16 @@ export default function SquadAssignments() {
             <ArrowLeft className="h-4 w-4" />
             Panel Principal
           </Button>
-          <div>
-            <h1 className="text-2xl font-bold">Asignaciones Avanzadas - Squad Lead</h1>
-            <p className="text-muted-foreground">
-              Miembros del equipo: {persons.length} personas | Proyectos activos: {projects.length} proyectos | 
-              Festivos configurados: {holidays.length} días
-            </p>
+          <div className="flex items-center gap-2">
+            <CalendarIcon className="h-6 w-6 text-primary" />
+            <div>
+              <h1 className="text-2xl font-bold">Asignaciones Avanzadas - Squad Lead: REVILLA MAILLO, JUAN MANUEL</h1>
+              <p className="text-muted-foreground">
+                <span className="text-blue-600">Miembros del equipo: {persons.length} personas</span> | 
+                <span className="text-blue-600 ml-1">Proyectos activos: {projects.length} proyectos</span> | 
+                <span className="text-blue-600 ml-1">Festivos configurados: {holidays.length} días</span>
+              </p>
+            </div>
           </div>
         </div>
 
