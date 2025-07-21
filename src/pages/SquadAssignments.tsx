@@ -743,26 +743,41 @@ export default function SquadAssignments({ userRole, userData }: { userRole?: st
                 <CardTitle>Leyenda</CardTitle>
               </CardHeader>
               <CardContent>
+                {/* Primera línea: Fin de Semana y Festivos */}
                 <div className="flex flex-wrap gap-4 mb-4">
                   <div className="flex items-center gap-2">
                     <div className="w-4 h-4 bg-yellow-100 border rounded"></div>
-                    <span className="text-sm">Fin de semana</span>
+                    <span className="text-sm">Fin de Semana</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <div className="w-4 h-4 bg-red-100 border rounded"></div>
                     <span className="text-sm">Festivo</span>
                   </div>
-                   {assignments
-                    .filter(a => a.person_id === selectedPerson)
-                    .map((assignment) => {
-                      const project = projects.find(p => p.id === assignment.project_id);
-                      return (
-                        <div key={`legend-${assignment.id}`} className="flex items-center gap-2">
-                          <div className={cn("w-4 h-4 rounded", assignment.project_color)}></div>
-                          <span className="text-sm">{project?.denominacion || project?.codigo_inicial}</span>
-                        </div>
-                      );
-                    })}
+                </div>
+
+                {/* Segunda sección: Proyectos de Stratesys */}
+                <div>
+                  <div className="text-sm font-medium text-muted-foreground mb-2">Proyectos Stratesys:</div>
+                  <div className="flex flex-wrap gap-4">
+                    {assignments
+                      .filter(a => a.person_id === selectedPerson)
+                      .reduce((unique, assignment) => {
+                        // Eliminar duplicados por project_id
+                        if (!unique.find(u => u.project_id === assignment.project_id)) {
+                          unique.push(assignment);
+                        }
+                        return unique;
+                      }, [] as typeof assignments)
+                      .map((assignment) => {
+                        const project = projects.find(p => p.id === assignment.project_id);
+                        return (
+                          <div key={`legend-${assignment.project_id}`} className="flex items-center gap-2">
+                            <div className={cn("w-4 h-4 rounded", assignment.project_color)}></div>
+                            <span className="text-sm">{project?.denominacion || project?.codigo_inicial}</span>
+                          </div>
+                        );
+                      })}
+                  </div>
                 </div>
 
                 {currentMonthHolidays.length > 0 && (
