@@ -70,7 +70,7 @@ const REGIONS_DATA = {
   'Comunidad Valenciana': { 
     code: 'VC', 
     apiCode: 'ES-VC',
-    image: null // Pendiente de imagen
+    image: '/lovable-uploads/54b12f06-d668-4202-880e-32785d0f7135.png'
   },
   'Extremadura': { 
     code: 'EX', 
@@ -80,7 +80,7 @@ const REGIONS_DATA = {
   'La Rioja': { 
     code: 'RI', 
     apiCode: 'ES-RI',
-    image: '/lovable-uploads/ba8ced52-2bfc-492b-9e12-a940338dd40b.png'
+    image: '/lovable-uploads/f1109839-35ce-4bd2-919d-be3b8d15076c.png'
   },
   'Madrid': { 
     code: 'MD', 
@@ -90,12 +90,12 @@ const REGIONS_DATA = {
   'Melilla': { 
     code: 'ML', 
     apiCode: 'ES-ML',
-    image: null // Pendiente de imagen
+    image: '/lovable-uploads/accb8fc7-f554-4ddf-a697-a3614ca17891.png'
   },
   'Murcia': {
     code: 'MC', 
     apiCode: 'ES-MC',
-    image: null // Pendiente de imagen
+    image: '/lovable-uploads/acabfdf3-b391-4e0d-b764-82e6c102790e.png'
   },
   'Navarra': { 
     code: 'NC', 
