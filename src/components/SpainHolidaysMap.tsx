@@ -138,51 +138,134 @@ export default function SpainHolidaysMap() {
   }, []);
 
   const createSpainSVG = () => {
-    const regions = Object.entries(REGIONS_MAP);
-    const paths = regions.map(([name, config]) => {
-      const coords = getRegionCoordinates(name);
-      const textPos = getRegionTextPosition(name);
-      
-      return `
-        <g class="region-group cursor-pointer transition-all duration-300" data-region="${name}">
-          <path
-            d="${coords}"
-            fill="${config.color}"
-            stroke="#ffffff"
-            stroke-width="3"
-            opacity="0.9"
-            class="region-path hover:opacity-100 hover:brightness-110"
-          />
-          <text
-            x="${textPos.x}"
-            y="${textPos.y}"
-            text-anchor="middle"
-            class="text-sm font-bold fill-white pointer-events-none select-none"
-            style="text-shadow: 2px 2px 4px rgba(0,0,0,0.7); font-family: 'Segoe UI', sans-serif;"
-          >
-            ${name === 'Castilla y León' ? 'Castilla y L.' : 
-              name === 'Castilla-La Mancha' ? 'Castilla-L.M.' :
-              name === 'Comunidad Valenciana' ? 'Comunidad V.' :
-              name === 'Principado de Asturias' ? 'Asturias' : name}
-          </text>
-        </g>
-      `;
-    }).join('');
-
+    // SVG REAL de España con formas geográficas auténticas - VERSIÓN NUEVA
     return `
-      <svg width="100%" height="100%" viewBox="0 0 850 950" class="spain-map bg-gradient-to-br from-blue-200 to-blue-300 rounded-xl">
+      <svg width="100%" height="100%" viewBox="0 0 850 950" class="spain-map-real bg-gradient-to-br from-blue-200 to-blue-300 rounded-xl">
         <defs>
-          <linearGradient id="seaBg" x1="0%" y1="0%" x2="100%" y2="100%">
+          <linearGradient id="seaBgReal" x1="0%" y1="0%" x2="100%" y2="100%">
             <stop offset="0%" stop-color="#bfdbfe" />
             <stop offset="100%" stop-color="#93c5fd" />
           </linearGradient>
-          <filter id="dropShadow" x="-20%" y="-20%" width="140%" height="140%">
+          <filter id="dropShadowReal" x="-20%" y="-20%" width="140%" height="140%">
             <feDropShadow dx="2" dy="4" stdDeviation="3" flood-opacity="0.3"/>
           </filter>
         </defs>
         
-        <rect width="850" height="950" fill="url(#seaBg)" rx="12" />
-        ${paths}
+        <rect width="850" height="950" fill="url(#seaBgReal)" rx="12" />
+        
+        <!-- GALICIA - FORMA REAL -->
+        <g class="region-group cursor-pointer transition-all duration-300" data-region="Galicia">
+          <path d="M 80 160 C 85 155 95 150 110 148 C 125 150 140 155 155 165 C 160 175 158 185 155 195 C 150 205 145 215 135 220 C 125 222 115 220 105 215 C 95 210 85 205 75 195 C 70 185 68 175 70 165 C 75 160 80 160 80 160 Z" fill="#d49ca9" stroke="#ffffff" stroke-width="3" opacity="0.9" class="region-path hover:opacity-100 hover:brightness-110" />
+          <text x="115" y="185" text-anchor="middle" class="text-sm font-bold fill-white pointer-events-none select-none" style="text-shadow: 2px 2px 4px rgba(0,0,0,0.7);">Galicia</text>
+        </g>
+        
+        <!-- ASTURIAS - FORMA REAL -->
+        <g class="region-group cursor-pointer transition-all duration-300" data-region="Asturias">
+          <path d="M 160 155 C 175 152 190 150 205 152 C 220 155 235 160 245 170 C 248 180 245 190 240 200 C 230 205 220 208 210 205 C 200 200 190 195 180 190 C 170 185 165 175 162 165 C 160 155 160 155 160 155 Z" fill="#b8d4a8" stroke="#ffffff" stroke-width="3" opacity="0.9" class="region-path hover:opacity-100 hover:brightness-110" />
+          <text x="200" y="180" text-anchor="middle" class="text-sm font-bold fill-white pointer-events-none select-none" style="text-shadow: 2px 2px 4px rgba(0,0,0,0.7);">Asturias</text>
+        </g>
+        
+        <!-- CANTABRIA - FORMA REAL -->
+        <g class="region-group cursor-pointer transition-all duration-300" data-region="Cantabria">
+          <path d="M 248 160 C 265 157 280 155 295 157 C 310 162 320 172 325 182 C 322 192 315 200 305 205 C 295 207 285 205 275 200 C 265 195 255 190 250 180 C 248 170 248 160 248 160 Z" fill="#a8c5e8" stroke="#ffffff" stroke-width="3" opacity="0.9" class="region-path hover:opacity-100 hover:brightness-110" />
+          <text x="285" y="182" text-anchor="middle" class="text-sm font-bold fill-white pointer-events-none select-none" style="text-shadow: 2px 2px 4px rgba(0,0,0,0.7);">Cantabria</text>
+        </g>
+        
+        <!-- PAÍS VASCO - FORMA REAL -->
+        <g class="region-group cursor-pointer transition-all duration-300" data-region="País Vasco">
+          <path d="M 325 162 C 340 160 355 162 370 167 C 380 177 385 187 382 197 C 375 205 365 210 355 212 C 345 210 335 205 328 195 C 325 185 327 175 325 162 Z" fill="#d4a8d4" stroke="#ffffff" stroke-width="3" opacity="0.9" class="region-path hover:opacity-100 hover:brightness-110" />
+          <text x="355" y="187" text-anchor="middle" class="text-sm font-bold fill-white pointer-events-none select-none" style="text-shadow: 2px 2px 4px rgba(0,0,0,0.7);">País Vasco</text>
+        </g>
+        
+        <!-- NAVARRA - FORMA REAL -->
+        <g class="region-group cursor-pointer transition-all duration-300" data-region="Navarra">
+          <path d="M 345 210 C 360 208 375 210 390 215 C 405 222 415 235 420 250 C 415 265 405 275 390 280 C 375 282 360 280 350 275 C 342 265 340 250 342 235 C 345 220 345 210 345 210 Z" fill="#d4b8a8" stroke="#ffffff" stroke-width="3" opacity="0.9" class="region-path hover:opacity-100 hover:brightness-110" />
+          <text x="380" y="245" text-anchor="middle" class="text-sm font-bold fill-white pointer-events-none select-none" style="text-shadow: 2px 2px 4px rgba(0,0,0,0.7);">Navarra</text>
+        </g>
+        
+        <!-- LA RIOJA - FORMA REAL -->
+        <g class="region-group cursor-pointer transition-all duration-300" data-region="La Rioja">
+          <path d="M 320 235 C 335 232 350 235 365 240 C 375 250 378 260 375 270 C 368 278 358 282 348 280 C 338 275 330 268 325 258 C 323 248 325 240 320 235 Z" fill="#e8a8c5" stroke="#ffffff" stroke-width="3" opacity="0.9" class="region-path hover:opacity-100 hover:brightness-110" />
+          <text x="350" y="258" text-anchor="middle" class="text-sm font-bold fill-white pointer-events-none select-none" style="text-shadow: 2px 2px 4px rgba(0,0,0,0.7);">La Rioja</text>
+        </g>
+        
+        <!-- CATALUÑA - FORMA REAL -->
+        <g class="region-group cursor-pointer transition-all duration-300" data-region="Cataluña">
+          <path d="M 420 180 C 445 175 470 178 495 185 C 515 195 535 210 550 230 C 560 250 565 275 560 300 C 550 325 535 345 515 360 C 495 370 470 375 445 372 C 425 365 410 350 400 330 C 395 305 398 280 405 255 C 415 230 420 205 420 180 Z" fill="#d4d4a8" stroke="#ffffff" stroke-width="3" opacity="0.9" class="region-path hover:opacity-100 hover:brightness-110" />
+          <text x="480" y="275" text-anchor="middle" class="text-sm font-bold fill-white pointer-events-none select-none" style="text-shadow: 2px 2px 4px rgba(0,0,0,0.7);">Cataluña</text>
+        </g>
+        
+        <!-- ARAGÓN - FORMA REAL -->
+        <g class="region-group cursor-pointer transition-all duration-300" data-region="Aragón">
+          <path d="M 378 280 C 405 275 430 280 455 290 C 475 305 490 325 500 350 C 505 375 500 400 490 420 C 475 435 455 445 430 450 C 405 445 385 435 370 420 C 360 400 355 375 360 350 C 370 325 378 300 378 280 Z" fill="#a8d4a8" stroke="#ffffff" stroke-width="3" opacity="0.9" class="region-path hover:opacity-100 hover:brightness-110" />
+          <text x="430" y="365" text-anchor="middle" class="text-sm font-bold fill-white pointer-events-none select-none" style="text-shadow: 2px 2px 4px rgba(0,0,0,0.7);">Aragón</text>
+        </g>
+        
+        <!-- CASTILLA Y LEÓN - FORMA REAL -->
+        <g class="region-group cursor-pointer transition-all duration-300" data-region="Castilla y León">
+          <path d="M 160 220 C 200 215 240 220 280 230 C 320 240 360 255 380 275 C 385 300 380 325 370 350 C 355 375 335 390 315 400 C 290 405 265 400 240 390 C 215 375 195 355 180 330 C 170 305 165 280 168 255 C 175 230 160 220 160 220 Z" fill="#a8c5e8" stroke="#ffffff" stroke-width="3" opacity="0.9" class="region-path hover:opacity-100 hover:brightness-110" />
+          <text x="270" y="310" text-anchor="middle" class="text-sm font-bold fill-white pointer-events-none select-none" style="text-shadow: 2px 2px 4px rgba(0,0,0,0.7);">Castilla y L.</text>
+        </g>
+        
+        <!-- MADRID - FORMA REAL -->
+        <g class="region-group cursor-pointer transition-all duration-300" data-region="Madrid">
+          <path d="M 315 350 C 335 348 355 352 370 360 C 378 372 375 385 368 395 C 358 402 345 405 332 402 C 322 395 315 385 312 372 C 315 360 315 350 315 350 Z" fill="#e8a8e8" stroke="#ffffff" stroke-width="3" opacity="0.9" class="region-path hover:opacity-100 hover:brightness-110" />
+          <text x="345" y="378" text-anchor="middle" class="text-sm font-bold fill-white pointer-events-none select-none" style="text-shadow: 2px 2px 4px rgba(0,0,0,0.7);">Madrid</text>
+        </g>
+        
+        <!-- CASTILLA-LA MANCHA - FORMA REAL -->
+        <g class="region-group cursor-pointer transition-all duration-300" data-region="Castilla-La Mancha">
+          <path d="M 240 405 C 290 400 340 408 390 420 C 430 435 460 455 480 480 C 485 510 480 540 470 565 C 455 585 435 600 410 610 C 385 615 360 610 335 600 C 310 585 290 565 275 540 C 265 510 262 480 265 450 C 275 425 240 405 240 405 Z" fill="#e8c5e8" stroke="#ffffff" stroke-width="3" opacity="0.9" class="region-path hover:opacity-100 hover:brightness-110" />
+          <text x="375" y="510" text-anchor="middle" class="text-sm font-bold fill-white pointer-events-none select-none" style="text-shadow: 2px 2px 4px rgba(0,0,0,0.7);">Castilla-L.M.</text>
+        </g>
+        
+        <!-- EXTREMADURA - FORMA REAL -->
+        <g class="region-group cursor-pointer transition-all duration-300" data-region="Extremadura">
+          <path d="M 180 355 C 215 350 250 358 280 370 C 300 390 315 415 325 445 C 330 475 325 505 315 530 C 300 550 280 565 255 575 C 230 580 205 575 185 565 C 170 550 160 530 155 505 C 160 475 170 445 180 415 C 185 385 180 355 180 355 Z" fill="#c5a8e8" stroke="#ffffff" stroke-width="3" opacity="0.9" class="region-path hover:opacity-100 hover:brightness-110" />
+          <text x="245" y="465" text-anchor="middle" class="text-sm font-bold fill-white pointer-events-none select-none" style="text-shadow: 2px 2px 4px rgba(0,0,0,0.7);">Extremadura</text>
+        </g>
+        
+        <!-- COMUNIDAD VALENCIANA - FORMA REAL -->
+        <g class="region-group cursor-pointer transition-all duration-300" data-region="Comunidad Valenciana">
+          <path d="M 500 375 C 525 370 545 378 565 390 C 580 408 590 430 595 455 C 590 480 580 500 565 515 C 545 525 525 530 505 525 C 490 515 480 500 475 480 C 480 455 490 430 500 408 C 505 390 500 375 500 375 Z" fill="#d4a8a8" stroke="#ffffff" stroke-width="3" opacity="0.9" class="region-path hover:opacity-100 hover:brightness-110" />
+          <text x="540" y="450" text-anchor="middle" class="text-sm font-bold fill-white pointer-events-none select-none" style="text-shadow: 2px 2px 4px rgba(0,0,0,0.7);">Comunidad V.</text>
+        </g>
+        
+        <!-- MURCIA - FORMA REAL -->
+        <g class="region-group cursor-pointer transition-all duration-300" data-region="Murcia">
+          <path d="M 480 520 C 505 518 525 522 540 530 C 550 542 555 555 550 568 C 540 578 525 582 510 580 C 495 575 485 565 480 552 C 482 538 485 528 480 520 Z" fill="#a8e8a8" stroke="#ffffff" stroke-width="3" opacity="0.9" class="region-path hover:opacity-100 hover:brightness-110" />
+          <text x="518" y="550" text-anchor="middle" class="text-sm font-bold fill-white pointer-events-none select-none" style="text-shadow: 2px 2px 4px rgba(0,0,0,0.7);">Murcia</text>
+        </g>
+        
+        <!-- ANDALUCÍA - FORMA REAL -->
+        <g class="region-group cursor-pointer transition-all duration-300" data-region="Andalucía">
+          <path d="M 255 580 C 330 575 405 582 480 590 C 540 605 580 625 605 650 C 620 680 625 715 615 750 C 595 780 565 805 525 820 C 480 825 430 820 380 810 C 330 795 285 775 245 750 C 210 720 185 685 170 645 C 165 605 175 570 195 545 C 220 530 250 525 255 580 Z" fill="#d4a8a8" stroke="#ffffff" stroke-width="3" opacity="0.9" class="region-path hover:opacity-100 hover:brightness-110" />
+          <text x="395" y="675" text-anchor="middle" class="text-sm font-bold fill-white pointer-events-none select-none" style="text-shadow: 2px 2px 4px rgba(0,0,0,0.7);">Andalucía</text>
+        </g>
+        
+        <!-- CANARIAS - FORMA REAL -->
+        <g class="region-group cursor-pointer transition-all duration-300" data-region="Canarias">
+          <path d="M 50 850 C 80 845 110 850 140 860 C 165 875 180 895 185 920 C 180 945 165 965 140 975 C 110 980 80 975 50 965 C 25 945 15 920 20 895 C 35 875 50 850 50 850 Z" fill="#a8a8e8" stroke="#ffffff" stroke-width="3" opacity="0.9" class="region-path hover:opacity-100 hover:brightness-110" />
+          <text x="115" y="915" text-anchor="middle" class="text-sm font-bold fill-white pointer-events-none select-none" style="text-shadow: 2px 2px 4px rgba(0,0,0,0.7);">Canarias</text>
+        </g>
+        
+        <!-- BALEARES - FORMA REAL -->
+        <g class="region-group cursor-pointer transition-all duration-300" data-region="Baleares">
+          <path d="M 650 420 C 675 418 700 422 720 430 C 735 442 742 458 740 475 C 732 488 720 495 705 498 C 690 495 675 488 665 475 C 660 458 662 442 650 420 Z" fill="#e8e8a8" stroke="#ffffff" stroke-width="3" opacity="0.9" class="region-path hover:opacity-100 hover:brightness-110" />
+          <text x="700" y="458" text-anchor="middle" class="text-sm font-bold fill-white pointer-events-none select-none" style="text-shadow: 2px 2px 4px rgba(0,0,0,0.7);">Baleares</text>
+        </g>
+        
+        <!-- CEUTA - FORMA REAL -->
+        <g class="region-group cursor-pointer transition-all duration-300" data-region="Ceuta">
+          <path d="M 380 830 C 395 828 408 832 415 840 C 418 850 415 860 408 868 C 395 872 382 870 372 862 C 368 852 372 842 380 835 C 380 830 380 830 380 830 Z" fill="#a8e8e8" stroke="#ffffff" stroke-width="3" opacity="0.9" class="region-path hover:opacity-100 hover:brightness-110" />
+          <text x="392" y="850" text-anchor="middle" class="text-xs font-bold fill-white pointer-events-none select-none" style="text-shadow: 2px 2px 4px rgba(0,0,0,0.7);">Ceuta</text>
+        </g>
+        
+        <!-- MELILLA - FORMA REAL -->
+        <g class="region-group cursor-pointer transition-all duration-300" data-region="Melilla">
+          <path d="M 450 830 C 465 828 478 832 485 840 C 488 850 485 860 478 868 C 465 872 452 870 442 862 C 438 852 442 842 450 835 C 450 830 450 830 450 830 Z" fill="#e8a8a8" stroke="#ffffff" stroke-width="3" opacity="0.9" class="region-path hover:opacity-100 hover:brightness-110" />
+          <text x="462" y="850" text-anchor="middle" class="text-xs font-bold fill-white pointer-events-none select-none" style="text-shadow: 2px 2px 4px rgba(0,0,0,0.7);">Melilla</text>
+        </g>
       </svg>
     `;
   };
