@@ -838,7 +838,11 @@ const TeamCapabilities: React.FC<TeamCapabilitiesProps> = ({
               </Button>
             </>
           ) : (
-            <Button onClick={() => setIsEditing(true)}>
+            <Button 
+              variant="outline" 
+              onClick={() => setIsEditing(true)}
+              className="flex items-center gap-2"
+            >
               <Edit className="h-4 w-4 mr-2" />
               Actualizar Capacidades del Equipo
             </Button>
