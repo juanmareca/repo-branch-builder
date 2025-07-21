@@ -6,8 +6,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Users, Loader2, ArrowLeft } from 'lucide-react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { Users, Loader2, ArrowLeft, Calendar } from 'lucide-react';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { Person } from '../types';
 
 const Index = ({ userRole, userData }: { userRole?: string; userData?: any }) => {
@@ -117,6 +117,26 @@ const Index = ({ userRole, userData }: { userRole?: string; userData?: any }) =>
               </p>
             </div>
           </div>
+        </div>
+
+        {/* Navegación rápida */}
+        <div className="mb-8">
+          <Card className="bg-gradient-to-r from-primary/10 to-primary/5 border-primary/20">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-xl font-semibold mb-2">Festivos de España</h2>
+                  <p className="text-muted-foreground">Consulta los festivos oficiales por comunidad autónoma</p>
+                </div>
+                <Link to="/holidays">
+                  <Button className="gap-2">
+                    <Calendar className="h-4 w-4" />
+                    Ver Festivos
+                  </Button>
+                </Link>
+              </div>
+            </CardContent>
+          </Card>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">

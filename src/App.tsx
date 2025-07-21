@@ -87,11 +87,7 @@ const App = () => {
         <Sonner />
         <BrowserRouter>
           <Routes>
-            <Route path="/" element={
-              userRole === 'admin' ? <Navigate to="/admin" replace /> : 
-              userRole === 'squad_lead' ? <Navigate to="/squad-dashboard" replace /> :
-              <Index />
-            } />
+            <Route path="/" element={<Index />} />
             
             {/* Admin Routes */}
             <Route path="/admin" element={userRole === 'admin' ? <AdminDashboard /> : <Navigate to="/" replace />} />
