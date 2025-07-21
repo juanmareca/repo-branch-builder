@@ -843,7 +843,7 @@ const TeamCapabilities: React.FC<TeamCapabilitiesProps> = ({
                               {/* Grid de capacidades de la subcategoría */}
                                  <div className="grid gap-2" style={{ 
                                    gridTemplateColumns: subCategory === 'Módulos TESORERÍA' 
-                                     ? 'repeat(3, minmax(160px, 180px))' 
+                                     ? 'repeat(3, minmax(170px, 190px))' 
                                      : 'repeat(auto-fit, minmax(180px, 1fr))'
                                  }}>
                                 {subCapacities.map((capacity) => {
