@@ -474,18 +474,33 @@ const StaffingReport: React.FC<StaffingReportProps> = ({ squadLeadName, squadPer
                     <th className="min-w-[150px]"></th>
                     {/* Nombres de semanas con fechas y estilo */}
                     {Object.keys(staffingData[0].weeklyData).map((week, index) => {
-                      // Calcular las fechas de cada semana
+                      // Calcular las fechas de cada semana - debe empezar máximo en startDate
                       const weeks = eachWeekOfInterval(
                         { start: startDate!, end: endDate! },
                         { weekStartsOn: 1 }
                       );
                       const weekStart = weeks[index];
+                      let actualWeekStart = weekStart;
+                      
+                      // Si el inicio de la semana es anterior al periodo seleccionado, usar startDate
+                      if (weekStart < startDate!) {
+                        actualWeekStart = startDate!;
+                      }
+                      
                       const weekEnd = endOfWeek(weekStart, { weekStartsOn: 1 });
-                      const dateRange = `(${format(weekStart, 'dd/MM/yyyy')} - ${format(weekEnd, 'dd/MM/yyyy')})`;
+                      let actualWeekEnd = weekEnd;
+                      
+                      // Si el final de la semana es posterior al periodo seleccionado, usar endDate
+                      if (weekEnd > endDate!) {
+                        actualWeekEnd = endDate!;
+                      }
+                      
+                      const weekNumber = String(index + 1).padStart(2, '0');
+                      const dateRange = `(${format(actualWeekStart, 'dd/MM/yyyy')} - ${format(actualWeekEnd, 'dd/MM/yyyy')})`;
                       
                       return (
                         <th key={week} className="border p-2 text-center font-bold min-w-[720px] bg-blue-500 text-white" colSpan={8}>
-                          {week}<br/>
+                          SEMANA {weekNumber}<br/>
                           <span className="text-xs font-normal">{dateRange}</span>
                         </th>
                       );
@@ -501,28 +516,28 @@ const StaffingReport: React.FC<StaffingReportProps> = ({ squadLeadName, squadPer
                     <th className="border p-3 text-center font-bold min-w-[80px] bg-blue-800 text-white">Grupo</th>
                     <th className="border p-3 text-center font-bold min-w-[80px] bg-blue-800 text-white">Oficina</th>
                     <th className="border p-3 text-center font-bold min-w-[150px] bg-blue-800 text-white">Squad Lead</th>
-                    {/* Detalles de jornadas con azul claro */}
+                    {/* Detalles de jornadas con colores diferenciados */}
                     {Object.keys(staffingData[0].weeklyData).map(week => (
                       <React.Fragment key={`${week}-details`}>
-                        <th className="border p-1 text-center font-bold min-w-[90px] text-xs bg-blue-400 text-white">
+                        <th className="border p-1 text-center font-bold min-w-[90px] text-xs bg-green-600 text-white">
                           Jornadas<br/>Facturables<br/>Proyecto
                         </th>
-                        <th className="border p-1 text-center font-bold min-w-[90px] text-xs bg-blue-400 text-white">
+                        <th className="border p-1 text-center font-bold min-w-[90px] text-xs bg-green-600 text-white">
                           Jornadas<br/>STR<br/>Productos
                         </th>
-                        <th className="border p-1 text-center font-bold min-w-[90px] text-xs bg-blue-400 text-white">
+                        <th className="border p-1 text-center font-bold min-w-[90px] text-xs bg-red-500 text-white">
                           Jornadas<br/>No Facturables<br/>Availability
                         </th>
-                        <th className="border p-1 text-center font-bold min-w-[90px] text-xs bg-blue-400 text-white">
+                        <th className="border p-1 text-center font-bold min-w-[90px] text-xs bg-red-500 text-white">
                           Jornadas<br/>No Facturables<br/>Management
                         </th>
-                        <th className="border p-1 text-center font-bold min-w-[90px] text-xs bg-blue-400 text-white">
+                        <th className="border p-1 text-center font-bold min-w-[90px] text-xs bg-red-500 text-white">
                           Jornadas<br/>No Facturables<br/>SAM
                         </th>
-                        <th className="border p-1 text-center font-bold min-w-[110px] text-xs bg-blue-400 text-white">
+                        <th className="border p-1 text-center font-bold min-w-[110px] text-xs bg-yellow-500 text-white">
                           Jornadas<br/>Facturables<br/>Otros<br/>(Internal Activities)
                         </th>
-                        <th className="border p-1 text-center font-bold min-w-[90px] text-xs bg-blue-400 text-white">
+                        <th className="border p-1 text-center font-bold min-w-[90px] text-xs bg-gray-500 text-white">
                           Jornadas<br/>No<br/>Disponibles
                         </th>
                         <th className="border p-1 text-center font-bold min-w-[90px] text-xs bg-blue-400 text-white">
