@@ -51,7 +51,7 @@ export default function SquadLeadDashboard() {
             </CardHeader>
             <CardContent className="text-center">
               <p className="text-muted-foreground text-sm">
-                Gestiona los miembros de tu squad y su información
+                Gestiona los miembros de tu squad y sus Capacidades
               </p>
             </CardContent>
           </Card>
@@ -82,21 +82,6 @@ export default function SquadLeadDashboard() {
             <CardContent className="text-center">
               <p className="text-muted-foreground text-sm">
                 Gestiona asignaciones de proyectos y calendarios
-              </p>
-            </CardContent>
-          </Card>
-
-          {/* Capacidades */}
-          <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => handleNavigation('/squad-capacities')}>
-            <CardHeader className="text-center pb-4">
-              <div className="mx-auto bg-purple-500/10 w-16 h-16 rounded-full flex items-center justify-center mb-3">
-                <Award className="h-8 w-8 text-purple-500" />
-              </div>
-              <CardTitle className="text-lg">Capacidades</CardTitle>
-            </CardHeader>
-            <CardContent className="text-center">
-              <p className="text-muted-foreground text-sm">
-                Revisa las habilidades de tu equipo
               </p>
             </CardContent>
           </Card>
