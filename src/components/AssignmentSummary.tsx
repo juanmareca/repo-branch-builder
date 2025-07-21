@@ -275,7 +275,7 @@ export default function AssignmentSummary({
                     <div className="flex justify-between items-center p-3 bg-orange-50 border border-orange-200 rounded-lg">
                       <div>
                         <div className="font-medium text-orange-800">Sin asignar</div>
-                        <div className="text-sm text-orange-600">Días disponibles</div>
+                        <div className="text-sm text-orange-600">Tiempo disponible equivalente en días</div>
                       </div>
                       <div className="text-right">
                         <div className="font-semibold text-orange-800">{summary.unassignedDays.toFixed(1)} días</div>
