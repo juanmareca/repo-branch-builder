@@ -95,7 +95,7 @@ const REGIONS_DATA = {
   'Murcia': {
     code: 'MC', 
     apiCode: 'ES-MC',
-    image: null // Pendiente de imagen
+    image: '/lovable-uploads/d3755b2f-015a-46f1-9c1d-f1f7f590363a.png'
   },
   'Navarra': { 
     code: 'NC', 
