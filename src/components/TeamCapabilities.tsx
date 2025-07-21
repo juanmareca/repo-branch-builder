@@ -270,10 +270,56 @@ const TeamCapabilities: React.FC<TeamCapabilitiesProps> = ({
   const calculateYearsInStratesys = (fechaIncorporacion: string): string => {
     if (!fechaIncorporacion) return '';
     
-    const startDate = new Date(fechaIncorporacion);
+    console.log('Fecha de incorporación recibida:', fechaIncorporacion);
+    
+    // Manejar diferentes formatos de fecha
+    let startDate: Date;
+    
+    // Si la fecha viene en formato DD/MM/YYYY o similar
+    if (fechaIncorporacion.includes('/')) {
+      const [day, month, year] = fechaIncorporacion.split('/');
+      startDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+    } 
+    // Si la fecha viene en formato YYYY-MM-DD
+    else if (fechaIncorporacion.includes('-')) {
+      startDate = new Date(fechaIncorporacion);
+    }
+    // Si es solo un año (formato YYYY)
+    else if (/^\d{4}$/.test(fechaIncorporacion)) {
+      startDate = new Date(parseInt(fechaIncorporacion), 0, 1); // 1 de enero del año
+    }
+    // Si viene como número (timestamp o días Excel)
+    else if (/^\d+$/.test(fechaIncorporacion)) {
+      const numValue = parseInt(fechaIncorporacion);
+      // Excel date serial number (días desde 1900-01-01)
+      if (numValue > 40000) {
+        const excelEpoch = new Date(1900, 0, 1);
+        startDate = new Date(excelEpoch.getTime() + (numValue - 2) * 24 * 60 * 60 * 1000);
+      } else {
+        startDate = new Date(fechaIncorporacion);
+      }
+    }
+    // Otros formatos
+    else {
+      startDate = new Date(fechaIncorporacion);
+    }
+    
+    console.log('Fecha parseada:', startDate);
+    
+    // Verificar si la fecha es válida
+    if (isNaN(startDate.getTime())) {
+      return 'fecha de incorporación inválida';
+    }
+    
     const currentDate = new Date();
-    const diffTime = Math.abs(currentDate.getTime() - startDate.getTime());
+    const diffTime = currentDate.getTime() - startDate.getTime();
     const diffYears = Math.floor(diffTime / (1000 * 60 * 60 * 24 * 365.25));
+    
+    console.log('Diferencia en años:', diffYears);
+    
+    if (diffYears < 0) {
+      return 'fecha de incorporación futura';
+    }
     
     return diffYears > 0 ? `${diffYears} años en Stratesys` : 'menos de 1 año en Stratesys';
   };
