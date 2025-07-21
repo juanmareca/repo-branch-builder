@@ -30,7 +30,7 @@ const REGIONS_DATA = {
   'Baleares': { 
     code: 'IB', 
     apiCode: 'ES-IB',
-    image: '/lovable-uploads/bfdc98f8-7762-4f74-9d56-74de94379b37.png'
+    image: '/lovable-uploads/f5931f0a-2aae-4a3e-838a-c0007b2ed8c5.png'
   },
   'Canarias': { 
     code: 'CN', 
