@@ -253,57 +253,25 @@ const TeamCapabilities: React.FC<TeamCapabilitiesProps> = ({
       'SAP S4 HANA Mix&Match': 'SAP S4HANA Mix & Match (Hybrid Approach): Estrategia intermedia entre Greenfield y Brownfield diseñada para aprovechar lo mejor de ambos mundos al migrar a SAP S/4HANA. Enfoque flexible que reutiliza lo que funciona del sistema actual (configuraciones, desarrollos Z bien estructurados), rediseña procesos obsoletos o mal implementados, y combina herramientas de migración, exportación selectiva de datos y cargas iniciales. Diferencias: configuración parcial según convenga, datos históricos opcionales por selección, análisis proceso por proceso, mantiene desarrollos útiles, coste y riesgo moderados. Proceso: evaluación de procesos y calidad de datos, selección de procesos/módulos a rediseñar, exportación selectiva de datos desde ECC, importación/carga en sistema S/4 limpio, adaptación de desarrollos útiles (Z, workflows), integración entre módulos migrados y no migrados. Ejemplo: reutilizar módulo logística (MM, SD) bien diseñado con enfoque brownfield, rediseñar completamente contabilidad para Universal Journal con enfoque greenfield, cargar selectivamente clientes y materiales con migración selectiva. Cuándo usar: sistema actual con módulos muy desalineados, no querer perder histórico valioso pero tampoco migrar todo tal cual, transformar procesos clave conservando lo que funciona. Herramientas: SAP Landscape Transformation (SLT), Selective Data Transition, SAP Data Services, Readiness Check, Custom Code Migration Tool, SAP Activate con ruta híbrida.'
     };
 
-    // Buscar coincidencias parciales en el nombre del módulo
-    for (const [key, description] of Object.entries(modules)) {
+    // Buscar por código de módulo
+    for (const [key, value] of Object.entries(modules)) {
       if (moduleName.includes(key)) {
-        return description;
+        return value;
       }
     }
 
-    return 'Información no disponible para este módulo. Contacta con el administrador para más detalles.';
+    return 'Información detallada no disponible para este módulo.';
   };
 
-  // Función para calcular años en Stratesys
   const calculateYearsInStratesys = (fechaIncorporacion: string): string => {
-    if (!fechaIncorporacion || fechaIncorporacion === '') return '';
+    if (!fechaIncorporacion) return '';
     
-    try {
-      let incorporationDate: Date;
-      
-      // Verificar si es formato de fecha DD/MM/YYYY
-      if (fechaIncorporacion.includes('/')) {
-        const parts = fechaIncorporacion.split('/');
-        if (parts.length !== 3) return '';
-        
-        const day = parseInt(parts[0]);
-        const month = parseInt(parts[1]) - 1; // Los meses en JS van de 0-11
-        const year = parseInt(parts[2]);
-        
-        incorporationDate = new Date(year, month, day);
-      } else {
-        // Es formato numérico (días desde 1/1/1900, formato Excel)
-        const excelDate = parseInt(fechaIncorporacion);
-        if (isNaN(excelDate)) return '';
-        
-        // Excel cuenta desde 1/1/1900 pero tiene un bug de año bisiesto
-        // Necesitamos restar 2 días para corregir esto
-        const baseDate = new Date(1900, 0, 1); // 1 de enero de 1900
-        incorporationDate = new Date(baseDate.getTime() + (excelDate - 2) * 24 * 60 * 60 * 1000);
-      }
-      
-      const today = new Date();
-      
-      const diffTime = today.getTime() - incorporationDate.getTime();
-      const diffYears = diffTime / (1000 * 3600 * 24 * 365.25);
-      
-      const years = Math.floor(diffYears);
-      if (years < 1) return 'menos de un año';
-      if (years === 1) return '1 año';
-      return `${years} años`;
-    } catch (error) {
-      console.error('Error calculating years in Stratesys:', error, fechaIncorporacion);
-      return '';
-    }
+    const startDate = new Date(fechaIncorporacion);
+    const currentDate = new Date();
+    const diffTime = Math.abs(currentDate.getTime() - startDate.getTime());
+    const diffYears = Math.floor(diffTime / (1000 * 60 * 60 * 24 * 365.25));
+    
+    return diffYears > 0 ? `${diffYears} años en Stratesys` : 'menos de 1 año en Stratesys';
   };
 
   // Función para generar currículum en texto de una persona
@@ -329,78 +297,60 @@ const TeamCapabilities: React.FC<TeamCapabilitiesProps> = ({
     // Añadir información de oficina y años en Stratesys
     if (office || yearsInStratesys) {
       curriculum += ', ';
-      if (office && yearsInStratesys) {
-        curriculum += `de la oficina de ${office}, lleva ${yearsInStratesys} en Stratesys`;
-      } else if (office) {
-        curriculum += `de la oficina de ${office}`;
-      } else if (yearsInStratesys) {
-        curriculum += `lleva ${yearsInStratesys} en Stratesys`;
-      }
+      if (office) curriculum += `Oficina de ${office}`;
+      if (office && yearsInStratesys) curriculum += ', ';
+      if (yearsInStratesys) curriculum += yearsInStratesys;
     }
     
-    // Conocimientos SAP
+    curriculum += '. ';
+
+    // Idioma nativo
+    if (nativeLanguage) {
+      const language = nativeLanguage.skill.replace('Idiomas - ', '');
+      curriculum += `Idioma nativo: ${language}. `;
+    }
+
+    // Módulos SAP de alto nivel
     if (expertModules.length > 0) {
-      curriculum += `, conoce en profundidad los módulos ${expertModules.map(m => m.skill.replace('Módulo SAP - ', '').replace(/^\([^)]*\)\s*/, '')).join(', ')} de SAP`;
+      curriculum += `Experto en módulos SAP: ${expertModules.map(m => 
+        m.skill.replace('Módulo SAP - ', '').replace(/^\([^)]+\)\s*/, '')
+      ).join(', ')}. `;
     }
-    
+
     if (basicModules.length > 0) {
-      curriculum += expertModules.length > 0 ? ' y de manera básica ' : ', tiene conocimientos básicos de ';
-      curriculum += `${basicModules.map(m => m.skill.replace('Módulo SAP - ', '').replace(/^\([^)]*\)\s*/, '')).join(', ')}`;
+      curriculum += `Conocimientos en módulos SAP: ${basicModules.map(m => 
+        m.skill.replace('Módulo SAP - ', '').replace(/^\([^)]+\)\s*/, '')
+      ).join(', ')}. `;
     }
-    
-    // Experiencia en industrias
+
+    // Industrias
     if (industries.length > 0) {
-      curriculum += `. Tiene experiencia en las industrias de ${industries.map(i => i.skill.replace('Industrias - ', '')).join(' y ')}`;
+      curriculum += `Experiencia en industrias: ${industries.map(i => 
+        i.skill.replace('Industrias - ', '')
+      ).join(', ')}. `;
     }
-    
-    // Idiomas - incluir todos los idiomas con algún nivel de conocimiento
-    const allLanguages = languages.filter(l => l.level !== 'Pre-A1');
-    const nativeLanguages = allLanguages.filter(l => ['Alto', 'Experto'].includes(l.level));
-    const otherLanguages = allLanguages.filter(l => !['Alto', 'Experto', 'Pre-A1'].includes(l.level));
-    
-    if (allLanguages.length > 0) {
-      let languageText = '';
-      
-      if (nativeLanguages.length > 0) {
-        const nativeNames = nativeLanguages.map(l => l.skill.replace('Idiomas - ', '').toLowerCase());
-        languageText += `domina ${nativeNames.length === 1 ? 'el' : 'los idiomas'} ${nativeNames.join(' y ')}`;
-      }
-      
-      if (otherLanguages.length > 0) {
-        const otherNames = otherLanguages.map(l => l.skill.replace('Idiomas - ', '').toLowerCase());
-        if (languageText) {
-          languageText += ` y tiene conocimientos de nivel ${otherLanguages[0].level.toLowerCase()} de ${otherNames.join(', ')}`;
-        } else {
-          languageText += `tiene conocimientos de ${otherNames.join(', ')}`;
-        }
-      }
-      
-      curriculum += ` y ${languageText}`;
+
+    // Idiomas adicionales
+    if (basicLanguages.length > 0) {
+      curriculum += `Idiomas adicionales: ${basicLanguages.map(l => {
+        const language = l.skill.replace('Idiomas - ', '');
+        return `${language} (${l.level})`;
+      }).join(', ')}. `;
     }
-    
-    curriculum += '.';
-    
-    return curriculum;
+
+    return curriculum.trim();
   };
 
-  // Función para exportar currículums a PDF
-  const exportToPDF = () => {
+  const exportToPDF = async () => {
     const pdf = new jsPDF();
+    const pageWidth = pdf.internal.pageSize.width;
     const pageHeight = pdf.internal.pageSize.height;
-    let yPosition = 40;
+    let yPosition = 30;
 
-    // Configurar fuentes y colores
-    pdf.setFont('helvetica', 'bold');
+    // Título
     pdf.setFontSize(20);
-    pdf.setTextColor(0, 102, 204);
-
-    // Header del documento
-    pdf.text('STRATESYS - Currículums del Equipo', 20, yPosition);
-    
-    yPosition += 20;
-    pdf.setFontSize(14);
     pdf.setTextColor(0, 0, 0);
-    pdf.text(`Squad Lead: ${currentSquadLeadName || 'No especificado'}`, 20, yPosition);
+    pdf.text('Currículum del Equipo', pageWidth / 2, yPosition, { align: 'center' });
     
     yPosition += 10;
     pdf.setFontSize(12);
@@ -423,20 +373,10 @@ const TeamCapabilities: React.FC<TeamCapabilitiesProps> = ({
         pdf.addPage();
         yPosition = 30;
       }
-
-      // Nombre de la persona
-      pdf.setFont('helvetica', 'bold');
-      pdf.setFontSize(14);
-      pdf.setTextColor(0, 102, 204);
-      pdf.text(`${index + 1}. ${personName}`, 20, yPosition);
       
-      yPosition += 10;
-
-      // Currículum
-      pdf.setFont('helvetica', 'normal');
-      pdf.setFontSize(11);
+      // Escribir el currículum
+      pdf.setFontSize(12);
       pdf.setTextColor(0, 0, 0);
-      
       const splitText = pdf.splitTextToSize(curriculum, 170);
       pdf.text(splitText, 20, yPosition);
       
@@ -454,20 +394,26 @@ const TeamCapabilities: React.FC<TeamCapabilitiesProps> = ({
 
   const isSAPModule = (skillName: string): boolean => {
     return skillName.toLowerCase().includes('módulo sap') || 
-           skillName.toLowerCase().includes('sap') ||
-           skillName.includes('FI-') ||
-           skillName.includes('CO-') ||
-           skillName.includes('TR-') ||
-           skillName.includes('RE-');
+           skillName.toLowerCase().includes('implantación sap');
   };
 
   const isLanguageSkill = (skillName: string): boolean => {
     return skillName.toLowerCase().includes('idiomas');
   };
 
+  const isIndustrySkill = (skillName: string): boolean => {
+    return skillName.toLowerCase().includes('industrias');
+  };
+
   const getSkillIcon = (skill: string) => {
-    if (skill.toLowerCase().includes('idioma')) {
-      return <Star className="h-4 w-4" />;
+    if (skill.toLowerCase().includes('módulos sap')) {
+      return <Brain className="h-4 w-4" />;
+    }
+    if (skill.toLowerCase().includes('idiomas')) {
+      return <Globe className="h-4 w-4" />;
+    }
+    if (skill.toLowerCase().includes('industrias')) {
+      return <Building2 className="h-4 w-4" />;
     }
     if (skill.toLowerCase().includes('certificación') || skill.toLowerCase().includes('certification')) {
       return <Award className="h-4 w-4" />;
@@ -505,13 +451,14 @@ const TeamCapabilities: React.FC<TeamCapabilitiesProps> = ({
         );
 
         if (existingCapacity) {
-          // Usar la capacidad existente
           completeData[personName][category].push(existingCapacity);
         } else {
-          // Crear una capacidad con valor por defecto según el tipo
-          const defaultLevel = category === 'Industrias' ? 'No' : (category === 'Idiomas' ? 'Pre-A1' : 'Nulo');
+          // Crear capacidad con nivel por defecto
+          const defaultLevel = isIndustrySkill(skill) ? 'No' : 
+                              isLanguageSkill(skill) ? 'Pre-A1' : 'Nulo';
+          
           completeData[personName][category].push({
-            id: `${personName}-${skill}`, // ID temporal
+            id: `${personName}-${skill}`,
             person_name: personName,
             skill: skill,
             level: defaultLevel,
@@ -526,30 +473,22 @@ const TeamCapabilities: React.FC<TeamCapabilitiesProps> = ({
     return completeData;
   };
 
-  const handleEditCapacity = (personName: string, skill: string, newLevel: string) => {
-    const key = `${personName}-${skill}`;
-    setEditedCapacities(prev => ({
-      ...prev,
-      [key]: newLevel
-    }));
-  };
-
-  const handleSaveCapacities = async () => {
+  const saveCapacities = async () => {
     setSaving(true);
     try {
       const updates = [];
       const inserts = [];
 
-      for (const [key, newLevel] of Object.entries(editedCapacities)) {
-        const [personName, skill] = key.split('-', 2);
-        const skill_full = key.replace(`${personName}-`, '');
-        
+      for (const [editKey, newLevel] of Object.entries(editedCapacities)) {
+        const [personName, ...skillParts] = editKey.split('-');
+        const skill_full = skillParts.join('-');
+
         const existingCapacity = capacities.find(c => 
           c.person_name === personName && c.skill === skill_full
         );
 
         if (existingCapacity) {
-          // Actualizar capacidad existente
+          // Solo actualizar si el nivel ha cambiado
           if (existingCapacity.level !== newLevel) {
             updates.push({
               id: existingCapacity.id,
@@ -560,9 +499,10 @@ const TeamCapabilities: React.FC<TeamCapabilitiesProps> = ({
         } else {
           // Insertar nueva capacidad - tanto para industrias como para otros niveles
           const isIndustry = skill_full.toLowerCase().includes('industria');
-          const shouldInsert = isIndustry ? (newLevel === 'Sí') : (skill_full.includes('Idiomas') ? (newLevel !== 'Pre-A1') : (newLevel !== 'Nulo'));
+          const isLanguage = skill_full.toLowerCase().includes('idioma');
+          const defaultLevel = isIndustry ? 'No' : isLanguage ? 'Pre-A1' : 'Nulo';
           
-          if (shouldInsert) {
+          if (newLevel !== defaultLevel) {
             inserts.push({
               person_name: personName,
               skill: skill_full,
@@ -578,12 +518,12 @@ const TeamCapabilities: React.FC<TeamCapabilitiesProps> = ({
         for (const update of updates) {
           const { error } = await supabase
             .from('capacities')
-            .update({ 
-              level: update.level, 
-              evaluation_date: update.evaluation_date 
+            .update({
+              level: update.level,
+              evaluation_date: update.evaluation_date
             })
             .eq('id', update.id);
-
+          
           if (error) throw error;
         }
       }
@@ -593,11 +533,11 @@ const TeamCapabilities: React.FC<TeamCapabilitiesProps> = ({
         const { error } = await supabase
           .from('capacities')
           .insert(inserts);
-
+        
         if (error) throw error;
       }
 
-      // Refrescar datos completos para actualizar el currículum
+      // Recargar datos
       const allMembers = getAllTeamMembers();
       const { data, error } = await supabase
         .from('capacities')
@@ -607,8 +547,6 @@ const TeamCapabilities: React.FC<TeamCapabilitiesProps> = ({
         .order('skill');
 
       if (error) throw error;
-      
-      // Actualizar capacidades
       setCapacities(data || []);
       
       // Forzar recálculo del currículum actualizando el estado
@@ -640,10 +578,8 @@ const TeamCapabilities: React.FC<TeamCapabilitiesProps> = ({
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <div className="flex items-center gap-2">
-          <Loader2 className="w-6 h-6 animate-spin text-primary" />
-          <span className="text-muted-foreground">Cargando capacidades...</span>
-        </div>
+        <Loader2 className="h-8 w-8 animate-spin" />
+        <span className="ml-2">Cargando capacidades del equipo...</span>
       </div>
     );
   }
@@ -694,14 +630,25 @@ const TeamCapabilities: React.FC<TeamCapabilitiesProps> = ({
       <div className="flex justify-between items-center">
         <h3 className="text-lg font-semibold">Capacidades del Equipo</h3>
         <div className="flex gap-2">
-          {!isEditing && (
-            <Button variant="outline" onClick={exportToPDF}>
-              <FileText className="h-4 w-4 mr-2" />
-              Exportar CV en PDF
-            </Button>
-          )}
+          <Button 
+            variant="outline" 
+            onClick={exportToPDF}
+            className="flex items-center gap-2"
+          >
+            <FileText className="h-4 w-4" />
+            Exportar PDF
+          </Button>
+          
           {isEditing ? (
             <>
+              <Button 
+                onClick={saveCapacities}
+                disabled={saving}
+                className="flex items-center gap-2"
+              >
+                {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                {saving ? 'Guardando...' : 'Guardar Cambios'}
+              </Button>
               <Button 
                 variant="outline" 
                 onClick={() => {
@@ -712,17 +659,6 @@ const TeamCapabilities: React.FC<TeamCapabilitiesProps> = ({
               >
                 <X className="h-4 w-4 mr-2" />
                 Cancelar
-              </Button>
-              <Button 
-                onClick={handleSaveCapacities}
-                disabled={saving}
-              >
-                {saving ? (
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                ) : (
-                  <Save className="h-4 w-4 mr-2" />
-                )}
-                Guardar Cambios
               </Button>
             </>
           ) : (
@@ -803,9 +739,9 @@ const TeamCapabilities: React.FC<TeamCapabilitiesProps> = ({
                         <div className="space-y-4">
                           {groupSAPModules(categoryCapacities).map(([subCategory, subCapacities]) => (
                             <div key={subCategory}>
-                              {/* Cabecera de subcategoría */}
-                              <div className="bg-gradient-to-r from-secondary/30 to-secondary/50 px-3 py-2 rounded-md mb-3">
-                                <h5 className="text-sm font-semibold text-secondary-foreground">{subCategory}</h5>
+                              {/* Cabecera de subcategoría con estilo diferenciado */}
+                              <div className="bg-gradient-to-r from-accent/20 to-accent/30 px-3 py-2 rounded-md mb-3 border border-accent/20">
+                                <h5 className="text-xs font-medium text-accent-foreground uppercase tracking-wide">{subCategory}</h5>
                               </div>
                               {/* Grid de capacidades de la subcategoría */}
                               <div className="grid gap-2" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))' }}>
@@ -822,7 +758,7 @@ const TeamCapabilities: React.FC<TeamCapabilitiesProps> = ({
                                         <div className="flex-1 min-w-0">
                                           <div className="flex items-center gap-2">
                                              <h4 className="font-medium text-sm leading-tight group-hover:text-primary transition-colors">
-                                               {capacity.skill.replace('Módulo SAP - ', '')}
+                                               {capacity.skill.replace('Módulo SAP - ', '').replace('Implantación SAP - ', '')}
                                              </h4>
                                              {isSAPModule(capacity.skill) && (
                                                <Popover>
@@ -1016,7 +952,7 @@ const TeamCapabilities: React.FC<TeamCapabilitiesProps> = ({
                           ))}
                         </div>
                       ) : (
-                        // Renderizado normal para otras categorías
+                        // Renderizado normal para otras categorías (Idiomas, Industrias, etc.)
                         <div className={cn(
                           "grid gap-2",
                           category === 'Idiomas' || category === 'Industrias'
@@ -1026,362 +962,210 @@ const TeamCapabilities: React.FC<TeamCapabilitiesProps> = ({
                           gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))'
                         } : undefined}>
                           {categoryCapacities.map((capacity) => {
-                          const editKey = `${capacity.person_name}-${capacity.skill}`;
-                          const currentLevel = editedCapacities[editKey] || capacity.level;
-                          
-                          return (
-                            <div
-                              key={editKey}
-                              className="p-3 border rounded-lg hover:shadow-sm transition-shadow group"
-                            >
-                              <div className="flex items-start justify-between gap-2 mb-2">
-                                <div className="flex-1 min-w-0">
-                                  <div className="flex items-center gap-2">
-                                     <h4 className={cn(
-                                       "font-medium text-sm leading-tight group-hover:text-primary transition-colors",
-                                       category === 'Industrias' ? "text-center" : ""
-                                     )}>
-                                       {category === 'Industrias' ? (
-                                         <div className="flex flex-col items-center">
-                                           <span className="text-xs">Industrias</span>
-                                           <span className="text-xs font-bold">
-                                             {capacity.skill.replace('Industrias - ', '')}
-                                           </span>
-                                         </div>
-                                       ) : (
-                                         capacity.skill.replace('Módulo SAP - ', '')
-                                       )}
-                                     </h4>
-                                     {isSAPModule(capacity.skill) && (
-                                       <Popover>
-                                         <PopoverTrigger asChild>
-                                           <Button
-                                             variant="ghost"
-                                             size="sm"
-                                             className="h-6 w-6 p-0 hover:bg-primary/10 transition-colors"
-                                           >
-                                             <Info className="h-4 w-4 text-muted-foreground hover:text-primary transition-colors" />
-                                           </Button>
-                                         </PopoverTrigger>
-                                         <PopoverContent className="w-[400px] p-0 bg-background border shadow-lg animate-fade-in" sideOffset={8}>
-                                           {(() => {
-                                             const description = getSAPModuleInfo(capacity.skill);
-                                             const moduleInfo = parseModuleInfo(capacity.skill, description);
-                                             
-                                             return (
-                                               <div className="space-y-4 p-5">
-                                                 {/* Header del módulo */}
-                                                 <div className="flex items-start gap-3 pb-3 border-b">
-                                                   <div className={`flex-shrink-0 w-10 h-10 rounded-lg flex items-center justify-center ${
-                                                     moduleInfo.isFinancial ? 'bg-blue-100 dark:bg-blue-900/30' :
-                                                     moduleInfo.isControlling ? 'bg-purple-100 dark:bg-purple-900/30' :
-                                                     moduleInfo.isTreasury ? 'bg-green-100 dark:bg-green-900/30' :
-                                                     moduleInfo.isRealEstate ? 'bg-orange-100 dark:bg-orange-900/30' :
-                                                     moduleInfo.isBRIM ? 'bg-pink-100 dark:bg-pink-900/30' :
-                                                     moduleInfo.isGRC ? 'bg-red-100 dark:bg-red-900/30' :
-                                                     moduleInfo.isS4Implementation ? 'bg-indigo-100 dark:bg-indigo-900/30' :
-                                                     'bg-gray-100 dark:bg-gray-900/30'
-                                                   }`}>
-                                                     {moduleInfo.isFinancial ? <Building2 className="w-5 h-5 text-blue-600 dark:text-blue-400" /> :
-                                                      moduleInfo.isControlling ? <Cog className="w-5 h-5 text-purple-600 dark:text-purple-400" /> :
-                                                      moduleInfo.isTreasury ? <Globe className="w-5 h-5 text-green-600 dark:text-green-400" /> :
-                                                      moduleInfo.isRealEstate ? <Building2 className="w-5 h-5 text-orange-600 dark:text-orange-400" /> :
-                                                      moduleInfo.isBRIM ? <Cog className="w-5 h-5 text-pink-600 dark:text-pink-400" /> :
-                                                      moduleInfo.isGRC ? <AlertCircle className="w-5 h-5 text-red-600 dark:text-red-400" /> :
-                                                      moduleInfo.isS4Implementation ? <ArrowRight className="w-5 h-5 text-indigo-600 dark:text-indigo-400" /> :
-                                                      <Brain className="w-5 h-5 text-gray-600 dark:text-gray-400" />}
-                                                   </div>
-                                                   <div className="flex-1 min-w-0">
-                                                     <h4 className="font-bold text-base text-foreground leading-tight">
-                                                       {moduleInfo.moduleCode}
-                                                     </h4>
-                                                     <p className="text-sm text-muted-foreground mt-1 leading-relaxed">
-                                                       {moduleInfo.mainDefinition}
+                            const editKey = `${capacity.person_name}-${capacity.skill}`;
+                            const currentLevel = editedCapacities[editKey] || capacity.level;
+                            
+                            return (
+                              <div
+                                key={editKey}
+                                className="p-3 border rounded-lg hover:shadow-sm transition-shadow group"
+                              >
+                                <div className="flex items-start justify-between gap-2 mb-2">
+                                  <div className="flex-1 min-w-0">
+                                    <div className="flex items-center gap-2">
+                                       <h4 className={cn(
+                                         "font-medium text-sm leading-tight group-hover:text-primary transition-colors",
+                                         category === 'Industrias' ? "text-center" : ""
+                                       )}>
+                                         {category === 'Industrias' ? (
+                                           <div className="flex flex-col items-center">
+                                             <span className="text-xs">Industrias</span>
+                                             <span className="text-xs font-bold">
+                                               {capacity.skill.replace('Industrias - ', '')}
+                                             </span>
+                                           </div>
+                                         ) : (
+                                           capacity.skill.replace('Módulo SAP - ', '')
+                                         )}
+                                       </h4>
+                                       {isLanguageSkill(capacity.skill) && (
+                                         <Popover>
+                                           <PopoverTrigger asChild>
+                                             <Button
+                                               variant="ghost"
+                                               size="sm"
+                                               className="h-6 w-6 p-0 hover:bg-primary/10 transition-colors"
+                                             >
+                                               <Info className="h-4 w-4 text-muted-foreground hover:text-primary transition-colors" />
+                                             </Button>
+                                           </PopoverTrigger>
+                                           <PopoverContent className="w-[500px] p-0 bg-background border shadow-lg animate-fade-in" sideOffset={8}>
+                                             <div className="space-y-4 p-6">
+                                               {/* Header */}
+                                               <div className="text-center pb-4 border-b">
+                                                 <h4 className="font-bold text-lg text-foreground mb-2">
+                                                   Niveles de Conocimiento de Idiomas
+                                                 </h4>
+                                                 <p className="text-sm text-muted-foreground">
+                                                   Basado en el Marco Común Europeo de Referencia (MCER)
+                                                 </p>
+                                               </div>
+
+                                               {/* Niveles */}
+                                               <div className="space-y-3">
+                                                 {/* Pre-A1 */}
+                                                 <div className="flex items-start gap-3 p-3 rounded-lg bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-800">
+                                                   <Badge className="bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 text-xs px-2">
+                                                     Pre-A1
+                                                   </Badge>
+                                                   <div className="flex-1">
+                                                     <h5 className="font-semibold text-sm text-red-800 dark:text-red-300 mb-1">
+                                                       Principiante Absoluto
+                                                     </h5>
+                                                     <p className="text-xs text-red-700 dark:text-red-400">
+                                                       Conocimiento muy básico o nulo. Puede reconocer palabras muy familiares.
                                                      </p>
                                                    </div>
                                                  </div>
 
-                                                 {/* Contenido estructurado */}
-                                                 <div className="space-y-4">
-                                                   {moduleInfo.funciones && (
-                                                     <div className="space-y-2">
-                                                       <div className="flex items-center gap-2">
-                                                         <CheckCircle className="w-4 h-4 text-green-600 dark:text-green-400" />
-                                                         <h5 className="font-semibold text-sm text-foreground">Funciones Principales</h5>
-                                                       </div>
-                                                       <p className="text-xs text-muted-foreground leading-relaxed pl-6">
-                                                         {moduleInfo.funciones}
-                                                       </p>
-                                                     </div>
-                                                   )}
-
-                                                   {moduleInfo.componentes && (
-                                                     <div className="space-y-2">
-                                                       <div className="flex items-center gap-2">
-                                                         <Cog className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-                                                         <h5 className="font-semibold text-sm text-foreground">Componentes</h5>
-                                                       </div>
-                                                       <p className="text-xs text-muted-foreground leading-relaxed pl-6">
-                                                         {moduleInfo.componentes}
-                                                       </p>
-                                                     </div>
-                                                   )}
-
-                                                   {moduleInfo.transacciones && (
-                                                     <div className="space-y-2">
-                                                       <div className="flex items-center gap-2">
-                                                         <ArrowRight className="w-4 h-4 text-purple-600 dark:text-purple-400" />
-                                                         <h5 className="font-semibold text-sm text-foreground">Transacciones Clave</h5>
-                                                       </div>
-                                                       <p className="text-xs text-muted-foreground leading-relaxed pl-6 font-mono">
-                                                         {moduleInfo.transacciones}
-                                                       </p>
-                                                     </div>
-                                                   )}
-
-                                                   {moduleInfo.integraciones && (
-                                                     <div className="space-y-2">
-                                                       <div className="flex items-center gap-2">
-                                                         <Globe className="w-4 h-4 text-orange-600 dark:text-orange-400" />
-                                                         <h5 className="font-semibold text-sm text-foreground">Integraciones</h5>
-                                                       </div>
-                                                       <p className="text-xs text-muted-foreground leading-relaxed pl-6">
-                                                         {moduleInfo.integraciones}
-                                                       </p>
-                                                     </div>
-                                                   )}
-
-                                                   {moduleInfo.s4hana && (
-                                                     <div className="space-y-2 bg-gradient-to-r from-primary/5 to-primary/10 p-3 rounded-lg border border-primary/20">
-                                                       <div className="flex items-center gap-2">
-                                                         <Star className="w-4 h-4 text-primary" />
-                                                         <h5 className="font-semibold text-sm text-primary">S/4HANA</h5>
-                                                       </div>
-                                                       <p className="text-xs text-muted-foreground leading-relaxed pl-6">
-                                                         {moduleInfo.s4hana}
-                                                       </p>
-                                                     </div>
-                                                   )}
+                                                 {/* A1 */}
+                                                 <div className="flex items-start gap-3 p-3 rounded-lg bg-orange-50 dark:bg-orange-900/10 border border-orange-200 dark:border-orange-800">
+                                                   <Badge className="bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400 text-xs px-2">
+                                                     A1
+                                                   </Badge>
+                                                   <div className="flex-1">
+                                                     <h5 className="font-semibold text-sm text-orange-800 dark:text-orange-300 mb-1">
+                                                       Acceso / Principiante
+                                                     </h5>
+                                                     <p className="text-xs text-orange-700 dark:text-orange-400">
+                                                       Comprende expresiones familiares de uso cotidiano. Puede presentarse y hacer preguntas básicas.
+                                                     </p>
+                                                   </div>
                                                  </div>
 
-                                                 {/* Badge del tipo de módulo */}
-                                                 <div className="flex justify-end pt-2 border-t">
-                                                   <Badge 
-                                                     variant="secondary" 
-                                                     className={`text-xs px-3 py-1 ${
-                                                       moduleInfo.isFinancial ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' :
-                                                       moduleInfo.isControlling ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400' :
-                                                       moduleInfo.isTreasury ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' :
-                                                       moduleInfo.isRealEstate ? 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400' :
-                                                       moduleInfo.isBRIM ? 'bg-pink-100 text-pink-700 dark:bg-pink-900/30 dark:text-pink-400' :
-                                                       moduleInfo.isGRC ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' :
-                                                       moduleInfo.isS4Implementation ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400' :
-                                                       'bg-gray-100 text-gray-700 dark:bg-gray-900/30 dark:text-gray-400'
-                                                     }`}
-                                                   >
-                                                     {moduleInfo.isFinancial ? 'Financials' :
-                                                      moduleInfo.isControlling ? 'Controlling' :
-                                                      moduleInfo.isTreasury ? 'Treasury' :
-                                                      moduleInfo.isRealEstate ? 'Real Estate' :
-                                                      moduleInfo.isBRIM ? 'BRIM' :
-                                                      moduleInfo.isGRC ? 'GRC' :
-                                                      moduleInfo.isS4Implementation ? 'S/4HANA Implementation' :
-                                                      'SAP Module'}
+                                                 {/* A2 */}
+                                                 <div className="flex items-start gap-3 p-3 rounded-lg bg-yellow-50 dark:bg-yellow-900/10 border border-yellow-200 dark:border-yellow-800">
+                                                   <Badge className="bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400 text-xs px-2">
+                                                     A2
                                                    </Badge>
+                                                   <div className="flex-1">
+                                                     <h5 className="font-semibold text-sm text-yellow-800 dark:text-yellow-300 mb-1">
+                                                       Plataforma / Elemental
+                                                     </h5>
+                                                     <p className="text-xs text-yellow-700 dark:text-yellow-400">
+                                                       Comprende frases sobre temas familiares. Puede comunicarse en tareas simples y rutinarias.
+                                                     </p>
+                                                   </div>
+                                                 </div>
+
+                                                 {/* B1 */}
+                                                 <div className="flex items-start gap-3 p-3 rounded-lg bg-blue-50 dark:bg-blue-900/10 border border-blue-200 dark:border-blue-800">
+                                                   <Badge className="bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 text-xs px-2">
+                                                     B1
+                                                   </Badge>
+                                                   <div className="flex-1">
+                                                     <h5 className="font-semibold text-sm text-blue-800 dark:text-blue-300 mb-1">
+                                                       Umbral / Intermedio
+                                                     </h5>
+                                                     <p className="text-xs text-blue-700 dark:text-blue-400">
+                                                       Comprende textos sobre temas conocidos. Puede desenvolverse en viajes y expresar opiniones.
+                                                     </p>
+                                                   </div>
+                                                 </div>
+
+                                                 {/* B2 */}
+                                                 <div className="flex items-start gap-3 p-3 rounded-lg bg-indigo-50 dark:bg-indigo-900/10 border border-indigo-200 dark:border-indigo-800">
+                                                   <Badge className="bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400 text-xs px-2">
+                                                     B2
+                                                   </Badge>
+                                                   <div className="flex-1">
+                                                     <h5 className="font-semibold text-sm text-indigo-800 dark:text-indigo-300 mb-1">
+                                                       Avanzado / Intermedio Alto
+                                                     </h5>
+                                                     <p className="text-xs text-indigo-700 dark:text-indigo-400">
+                                                       Comprende textos complejos. Puede relacionarse con hablantes nativos con fluidez.
+                                                     </p>
+                                                   </div>
+                                                 </div>
+
+                                                 {/* C1 */}
+                                                 <div className="flex items-start gap-3 p-3 rounded-lg bg-purple-50 dark:bg-purple-900/10 border border-purple-200 dark:border-purple-800">
+                                                   <Badge className="bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400 text-xs px-2">
+                                                     C1
+                                                   </Badge>
+                                                   <div className="flex-1">
+                                                     <h5 className="font-semibold text-sm text-purple-800 dark:text-purple-300 mb-1">
+                                                       Dominio Operativo / Avanzado
+                                                     </h5>
+                                                     <p className="text-xs text-purple-700 dark:text-purple-400">
+                                                       Comprende textos extensos y complejos. Se expresa con fluidez y espontaneidad.
+                                                     </p>
+                                                   </div>
+                                                 </div>
+
+                                                 {/* C2 */}
+                                                 <div className="flex items-start gap-3 p-3 rounded-lg bg-green-50 dark:bg-green-900/10 border border-green-200 dark:border-green-800">
+                                                   <Badge className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 text-xs px-2">
+                                                     C2
+                                                   </Badge>
+                                                   <div className="flex-1">
+                                                     <h5 className="font-semibold text-sm text-green-800 dark:text-green-300 mb-1">
+                                                       Maestría / Nativo
+                                                     </h5>
+                                                     <p className="text-xs text-green-700 dark:text-green-400">
+                                                       Se comunica de forma espontánea, fluida y precisa. Nivel similar al de un nativo culto.
+                                                     </p>
+                                                   </div>
                                                  </div>
                                                </div>
-                                             );
-                                           })()}
-                                          </PopoverContent>
-                                        </Popover>
-                                      )}
-                                      {isLanguageSkill(capacity.skill) && (
-                                        <Popover>
-                                          <PopoverTrigger asChild>
-                                            <Button
-                                              variant="ghost"
-                                              size="sm"
-                                              className="h-6 w-6 p-0 hover:bg-primary/10 transition-colors"
-                                            >
-                                              <Info className="h-4 w-4 text-muted-foreground hover:text-primary transition-colors" />
-                                            </Button>
-                                          </PopoverTrigger>
-                                          <PopoverContent className="w-[500px] p-0 bg-background border shadow-lg animate-fade-in" sideOffset={8}>
-                                            <div className="space-y-4 p-6">
-                                              {/* Header */}
-                                              <div className="text-center pb-4 border-b">
-                                                <h4 className="font-bold text-lg text-foreground mb-2">
-                                                  Niveles de Conocimiento de Idiomas
-                                                </h4>
-                                                <p className="text-sm text-muted-foreground">
-                                                  Marco Común Europeo de Referencia para las Lenguas (MCER/CEFR)
-                                                </p>
-                                              </div>
-
-                                              {/* Usuario Básico */}
-                                              <div className="space-y-3">
-                                                <div className="flex items-center gap-2 mb-3">
-                                                  <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                                                  <h5 className="font-semibold text-foreground">Usuario Básico</h5>
-                                                </div>
-                                                
-                                                <div className="space-y-2 ml-5">
-                                                  <div className="border-l-2 border-red-200 pl-3">
-                                                    <div className="flex items-center gap-2 mb-1">
-                                                      <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">Pre-A1</Badge>
-                                                      <span className="text-sm font-medium">Principiante</span>
-                                                      <span className="text-xs text-muted-foreground">• "Principiante"</span>
-                                                    </div>
-                                                    <p className="text-xs text-muted-foreground leading-relaxed">
-                                                      Comprende palabras y frases muy básicas. Nivel mínimo de comprensión y expresión oral.
-                                                    </p>
-                                                  </div>
-                                                  
-                                                  <div className="border-l-2 border-green-200 pl-3">
-                                                    <div className="flex items-center gap-2 mb-1">
-                                                      <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">A1</Badge>
-                                                      <span className="text-sm font-medium">Acceso</span>
-                                                      <span className="text-xs text-muted-foreground">• "Principiante absoluto"</span>
-                                                    </div>
-                                                    <p className="text-xs text-muted-foreground leading-relaxed">
-                                                      Entiende y usa expresiones cotidianas muy básicas. Puede presentarse y responder preguntas simples.
-                                                    </p>
-                                                  </div>
-                                                  
-                                                  <div className="border-l-2 border-green-200 pl-3">
-                                                    <div className="flex items-center gap-2 mb-1">
-                                                      <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">A2</Badge>
-                                                      <span className="text-sm font-medium">Plataforma</span>
-                                                      <span className="text-xs text-muted-foreground">• "Básico"</span>
-                                                    </div>
-                                                    <p className="text-xs text-muted-foreground leading-relaxed">
-                                                      Se comunica en tareas simples y rutinarias. Puede describir aspectos sencillos de su entorno o necesidades.
-                                                    </p>
-                                                  </div>
-                                                </div>
-                                              </div>
-
-                                              {/* Usuario Independiente */}
-                                              <div className="space-y-3">
-                                                <div className="flex items-center gap-2 mb-3">
-                                                  <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
-                                                  <h5 className="font-semibold text-foreground">Usuario Independiente</h5>
-                                                </div>
-                                                
-                                                <div className="space-y-2 ml-5">
-                                                  <div className="border-l-2 border-yellow-200 pl-3">
-                                                    <div className="flex items-center gap-2 mb-1">
-                                                      <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200">B1</Badge>
-                                                      <span className="text-sm font-medium">Intermedio</span>
-                                                      <span className="text-xs text-muted-foreground">• "Intermedio bajo"</span>
-                                                    </div>
-                                                    <p className="text-xs text-muted-foreground leading-relaxed">
-                                                      Se desenvuelve en situaciones familiares, como viajes o trabajo. Puede expresar opiniones de forma sencilla.
-                                                    </p>
-                                                  </div>
-                                                  
-                                                  <div className="border-l-2 border-yellow-200 pl-3">
-                                                    <div className="flex items-center gap-2 mb-1">
-                                                      <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200">B2</Badge>
-                                                      <span className="text-sm font-medium">Intermedio alto</span>
-                                                      <span className="text-xs text-muted-foreground">• "First Certificate"</span>
-                                                    </div>
-                                                    <p className="text-xs text-muted-foreground leading-relaxed">
-                                                      Entiende textos complejos y puede debatir temas concretos y abstractos. Participa activamente en conversaciones.
-                                                    </p>
-                                                  </div>
-                                                </div>
-                                              </div>
-
-                                              {/* Usuario Competente */}
-                                              <div className="space-y-3">
-                                                <div className="flex items-center gap-2 mb-3">
-                                                  <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
-                                                  <h5 className="font-semibold text-foreground">Usuario Competente</h5>
-                                                </div>
-                                                
-                                                <div className="space-y-2 ml-5">
-                                                  <div className="border-l-2 border-blue-200 pl-3">
-                                                    <div className="flex items-center gap-2 mb-1">
-                                                      <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">C1</Badge>
-                                                      <span className="text-sm font-medium">Avanzado</span>
-                                                      <span className="text-xs text-muted-foreground">• "CAE"</span>
-                                                    </div>
-                                                    <p className="text-xs text-muted-foreground leading-relaxed">
-                                                      Se expresa con fluidez, usa el idioma con eficacia en contextos sociales, académicos o profesionales.
-                                                    </p>
-                                                  </div>
-                                                  
-                                                  <div className="border-l-2 border-blue-200 pl-3">
-                                                    <div className="flex items-center gap-2 mb-1">
-                                                      <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">C2</Badge>
-                                                      <span className="text-sm font-medium">Maestría</span>
-                                                      <span className="text-xs text-muted-foreground">• "Proficiency"</span>
-                                                    </div>
-                                                    <p className="text-xs text-muted-foreground leading-relaxed">
-                                                      Se comunica de forma espontánea, fluida y precisa. Nivel similar al de un nativo culto.
-                                                    </p>
-                                                  </div>
-                                                </div>
-                                              </div>
-                                            </div>
-                                          </PopoverContent>
-                                        </Popover>
-                                      )}
-                                  </div>
-                                </div>
-                                
-                                {isEditing ? (
-                                  <Select
-                                    value={currentLevel}
-                                    onValueChange={(value) => handleEditCapacity(capacity.person_name, capacity.skill, value)}
-                                  >
-                                    <SelectTrigger className="w-24 h-8 bg-background">
-                                      <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent className="bg-background border shadow-lg z-50">
-                                      {/* Usar opciones diferentes según el tipo de capacidad */}
-                                      {(category === 'Industrias' 
-                                        ? INDUSTRY_OPTIONS 
-                                        : category === 'Idiomas' 
-                                          ? LANGUAGE_LEVEL_OPTIONS 
-                                          : LEVEL_OPTIONS
-                                      ).map(level => (
-                                        <SelectItem key={level} value={level} className="bg-background hover:bg-muted">
-                                          {level}
-                                        </SelectItem>
-                                      ))}
-                                    </SelectContent>
-                                  </Select>
-                                ) : (
-                                  <Badge 
-                                    variant="outline" 
-                                    className={cn(
-                                      category === 'Idiomas' || category === 'Industrias'
-                                        ? "text-xs px-1 py-0.5 min-w-0 h-5 leading-tight font-medium" 
-                                        : "text-xs px-2 py-1",
-                                      getLevelColor(currentLevel, category === 'Industrias')
-                                    )}
-                                  >
-                                    {currentLevel}
-                                  </Badge>
-                                )}
-                              </div>
-                              
-                              {capacity.certification && (
-                                <div className="flex items-center gap-1 mt-2">
-                                  <Award className="h-3 w-3 text-amber-500" />
-                                  <span className="text-xs text-muted-foreground truncate">
-                                    {capacity.certification}
-                                  </span>
-                                </div>
-                              )}
-                            </div>
-                          );
-                        })}
+                                             </div>
+                                           </PopoverContent>
+                                         </Popover>
+                                       )}
+                                   </div>
+                                 </div>
+                                 
+                                 {isEditing ? (
+                                   <Select 
+                                     value={currentLevel} 
+                                     onValueChange={(value) => setEditedCapacities(prev => ({ ...prev, [editKey]: value }))}
+                                   >
+                                     <SelectTrigger className="w-20 h-7 text-xs">
+                                       <SelectValue />
+                                     </SelectTrigger>
+                                     <SelectContent>
+                                       {(isLanguageSkill(capacity.skill) ? LANGUAGE_LEVEL_OPTIONS : 
+                                         isIndustrySkill(capacity.skill) ? INDUSTRY_OPTIONS : 
+                                         LEVEL_OPTIONS).map(level => (
+                                         <SelectItem key={level} value={level} className="text-xs">
+                                           {level}
+                                         </SelectItem>
+                                       ))}
+                                     </SelectContent>
+                                   </Select>
+                                 ) : (
+                                   <Badge 
+                                     variant="outline" 
+                                     className={`${getLevelColor(currentLevel, isIndustrySkill(capacity.skill))} text-xs px-2 py-1 border`}
+                                   >
+                                     {currentLevel}
+                                   </Badge>
+                                 )}
+                               </div>
+                               
+                               {capacity.certification && (
+                                 <div className="flex items-center gap-1 mt-2">
+                                   <Award className="h-3 w-3 text-amber-500" />
+                                   <span className="text-xs text-muted-foreground truncate">
+                                     {capacity.certification}
+                                   </span>
+                                 </div>
+                               )}
+                             </div>
+                           );
+                         })}
                         </div>
                       )}
-                    </CardContent>
                     </CardContent>
                   </Card>
                 ))}
