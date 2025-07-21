@@ -624,7 +624,7 @@ const TeamCapabilities: React.FC<TeamCapabilitiesProps> = ({
     return Object.entries(groups).filter(([_, caps]) => caps.length > 0);
   };
 
-  // Función para formatear títulos de módulos financieros
+  // Función para formatear títulos de módulos financieros y controlling
   const formatFinancialModuleTitle = (skill: string) => {
     const cleanedSkill = skill.replace('Módulo SAP - ', '').replace('Implantación SAP - ', '');
     
@@ -639,6 +639,16 @@ const TeamCapabilities: React.FC<TeamCapabilitiesProps> = ({
       return { line1: "(FI-AA) Financials", line2: "Assets Accounting" };
     } else if (cleanedSkill.includes('FI-Taxes')) {
       return { line1: "(FI-TAXES)", line2: "SII / DRC" };
+    } 
+    // Casos especiales para módulos de controlling
+    else if (cleanedSkill.includes('CO-CCA')) {
+      return { line1: "(CO-CCA) Controlling", line2: "Cost Center Accounting" };
+    } else if (cleanedSkill.includes('CO-PA (MA)')) {
+      return { line1: "(CO-PA) Controlling", line2: "Profitability Analysis" };
+    } else if (cleanedSkill.includes('CO-PC')) {
+      return { line1: "(CO-PC) Controlling", line2: "Product Costing" };
+    } else if (cleanedSkill.includes('CO-PCA')) {
+      return { line1: "(CO-PCA) Controlling", line2: "Profit Center Accounting" };
     }
     
     // Para otros módulos, retornar el texto original
@@ -810,9 +820,9 @@ const TeamCapabilities: React.FC<TeamCapabilitiesProps> = ({
                         <div className="space-y-4">
                           {groupSAPModules(categoryCapacities).map(([subCategory, subCapacities]) => (
                             <div key={subCategory}>
-                              {/* Cabecera de subcategoría con estilo diferenciado */}
-                              <div className="bg-gradient-to-r from-accent/20 to-accent/30 px-3 py-2 rounded-md mb-3 border border-accent/20">
-                                <h5 className="text-xs font-medium text-accent-foreground uppercase tracking-wide">{subCategory}</h5>
+                               {/* Cabecera de subcategoría con estilo diferenciado */}
+                               <div className="bg-gradient-to-r from-primary/10 to-primary/20 px-4 py-3 rounded-lg mb-3 border-l-4 border-primary">
+                                 <h5 className="text-sm font-semibold text-primary uppercase tracking-wide">{subCategory}</h5>
                               </div>
                               {/* Grid de capacidades de la subcategoría */}
                               <div className="grid gap-2" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))' }}>
