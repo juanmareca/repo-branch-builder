@@ -206,12 +206,12 @@ export default function SquadLeadDashboard() {
 
         {/* Dashboard Grid with Drag and Drop */}
         <DragDropContext onDragEnd={handleDragEnd}>
-          <Droppable droppableId="dashboard-cards" direction="horizontal">
+          <Droppable droppableId="dashboard-cards">
             {(provided) => (
               <div 
                 {...provided.droppableProps}
                 ref={provided.innerRef}
-                className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+                className="flex flex-wrap gap-6"
               >
                 {cards.map((card, index) => {
                   const IconComponent = card.icon;
@@ -222,8 +222,8 @@ export default function SquadLeadDashboard() {
                           ref={provided.innerRef}
                           {...provided.draggableProps}
                           {...provided.dragHandleProps}
-                          className={`transition-all duration-200 ${
-                            snapshot.isDragging ? 'scale-105 rotate-2 shadow-2xl' : ''
+                          className={`w-full md:w-[calc(50%-12px)] lg:w-[calc(33.333%-16px)] transition-all duration-200 ${
+                            snapshot.isDragging ? 'scale-105 rotate-2 shadow-2xl z-50' : ''
                           }`}
                         >
                           <Card 
