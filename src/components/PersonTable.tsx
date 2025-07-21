@@ -159,7 +159,11 @@ const PersonTable: React.FC<PersonTableProps> = ({ persons, onEditPerson }) => {
       {/* Tabla */}
     <div className="bg-background rounded-xl shadow-sm border border-border overflow-hidden w-full max-h-[70vh]">
       <div className="overflow-auto">
-        <table className="w-full divide-y divide-border" style={{ tableLayout: 'fixed' }}>
+        <table className="divide-y divide-border" style={{ 
+          tableLayout: 'fixed',
+          width: `${Object.values(columnWidths).reduce((sum, width) => sum + width, 0)}px`,
+          minWidth: '100%'
+        }}>
           <colgroup>
             <col style={{ width: `${columnWidths.index}px` }} />
             <col style={{ width: `${columnWidths.nombre}px` }} />
