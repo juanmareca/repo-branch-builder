@@ -20,7 +20,7 @@ const REGIONS_DATA = {
   'Andalucía': { 
     code: 'AN', 
     apiCode: 'ES-AN',
-    image: null // Pendiente de imagen
+    image: '/lovable-uploads/acabfdf3-b391-4e0d-b764-82e6c102790e.png'
   },
   'Aragón': { 
     code: 'AR', 
@@ -35,7 +35,7 @@ const REGIONS_DATA = {
   'Baleares': { 
     code: 'IB', 
     apiCode: 'ES-IB',
-    image: null // Pendiente de imagen
+    image: '/lovable-uploads/bfdc98f8-7762-4f74-9d56-74de94379b37.png'
   },
   'Canarias': { 
     code: 'CN', 
@@ -50,7 +50,7 @@ const REGIONS_DATA = {
   'Castilla-La Mancha': { 
     code: 'CM', 
     apiCode: 'ES-CM',
-    image: null // Pendiente de imagen
+    image: '/lovable-uploads/dce93539-da1c-4a81-9463-7dd483fd6e0b.png'
   },
   'Castilla y León': { 
     code: 'CL', 
@@ -65,7 +65,7 @@ const REGIONS_DATA = {
   'Ceuta': { 
     code: 'CE', 
     apiCode: 'ES-CE',
-    image: null // Pendiente de imagen
+    image: '/lovable-uploads/e3a40e37-1407-4bff-88a4-da2404014924.png'
   },
   'Comunidad Valenciana': { 
     code: 'VC', 
