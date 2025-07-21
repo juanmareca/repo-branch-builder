@@ -90,6 +90,8 @@ export default function SquadLeadDashboard() {
   const [cards, setCards] = useState<DashboardCard[]>(defaultCards);
   const [isLoading, setIsLoading] = useState(true);
   const [draggedCard, setDraggedCard] = useState<string | null>(null);
+  const [isDragMode, setIsDragMode] = useState(false);
+  const [dragModeCard, setDragModeCard] = useState<string | null>(null);
 
   // Cargar preferencias guardadas
   useEffect(() => {
@@ -175,13 +177,32 @@ export default function SquadLeadDashboard() {
     }
   };
 
+  // Handlers para el nuevo sistema de drag
+  const handleContextMenu = (e: React.MouseEvent, cardId: string) => {
+    e.preventDefault(); // Evitar menú contextual
+    setIsDragMode(true);
+    setDragModeCard(cardId);
+  };
+
+  const handleMouseLeave = () => {
+    if (!draggedCard) {
+      setIsDragMode(false);
+      setDragModeCard(null);
+    }
+  };
+
   const handleDragStart = (e: React.DragEvent, cardId: string) => {
+    if (!isDragMode || dragModeCard !== cardId) {
+      e.preventDefault();
+      return;
+    }
     setDraggedCard(cardId);
     e.dataTransfer.effectAllowed = 'move';
     e.dataTransfer.setData('text/html', cardId);
   };
 
   const handleDragOver = (e: React.DragEvent) => {
+    if (!isDragMode) return;
     e.preventDefault();
     e.dataTransfer.dropEffect = 'move';
   };
@@ -189,8 +210,10 @@ export default function SquadLeadDashboard() {
   const handleDrop = (e: React.DragEvent, targetCardId: string) => {
     e.preventDefault();
     
-    if (!draggedCard || draggedCard === targetCardId) {
+    if (!draggedCard || draggedCard === targetCardId || !isDragMode) {
       setDraggedCard(null);
+      setIsDragMode(false);
+      setDragModeCard(null);
       return;
     }
 
@@ -204,6 +227,8 @@ export default function SquadLeadDashboard() {
 
     setCards(newCards);
     setDraggedCard(null);
+    setIsDragMode(false);
+    setDragModeCard(null);
     
     // Guardar el nuevo orden
     const newOrder = newCards.map(card => card.id);
@@ -212,6 +237,8 @@ export default function SquadLeadDashboard() {
 
   const handleDragEnd = () => {
     setDraggedCard(null);
+    setIsDragMode(false);
+    setDragModeCard(null);
   };
 
   const handleNavigation = (route: string) => {
@@ -240,7 +267,7 @@ export default function SquadLeadDashboard() {
         <div className="flex justify-between items-center mb-8">
           <div>
             <h1 className="text-3xl font-bold text-foreground">Panel Squad Lead</h1>
-            <p className="text-muted-foreground mt-2">Gestiona tu equipo y proyectos - Arrastra las tarjetas para ordenarlas</p>
+            <p className="text-muted-foreground mt-2">Gestiona tu equipo y proyectos - Haz click derecho en una tarjeta para activar el modo de arrastre</p>
           </div>
           <Button variant="outline" onClick={handleLogout} className="gap-2">
             <LogOut className="h-4 w-4" />
@@ -255,23 +282,38 @@ export default function SquadLeadDashboard() {
             return (
               <div
                 key={card.id}
-                draggable
+                draggable={isDragMode && dragModeCard === card.id}
+                onContextMenu={(e) => handleContextMenu(e, card.id)}
+                onMouseLeave={handleMouseLeave}
                 onDragStart={(e) => handleDragStart(e, card.id)}
                 onDragOver={handleDragOver}
                 onDrop={(e) => handleDrop(e, card.id)}
                 onDragEnd={handleDragEnd}
-                className={`transition-all duration-200 cursor-move ${
+                className={`transition-all duration-200 ${
+                  isDragMode && dragModeCard === card.id
+                    ? 'cursor-move bg-primary/5 ring-2 ring-primary/20 scale-[1.02]' 
+                    : 'cursor-pointer'
+                } ${
                   draggedCard === card.id ? 'opacity-50 scale-105' : ''
                 }`}
               >
                 <Card 
-                  className="h-full hover:shadow-lg transition-shadow group relative"
-                  onClick={() => !draggedCard && handleNavigation(card.route)}
+                  className={`h-full hover:shadow-lg transition-all duration-200 ${
+                    isDragMode && dragModeCard === card.id 
+                      ? 'shadow-xl border-primary/30' 
+                      : ''
+                  }`}
+                  onClick={() => !draggedCard && !isDragMode && handleNavigation(card.route)}
                 >
-                  {/* Drag Handle */}
-                  <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <GripVertical className="h-4 w-4 text-muted-foreground" />
-                  </div>
+                  {/* Indicador de modo drag */}
+                  {isDragMode && dragModeCard === card.id && (
+                    <div className="absolute top-2 right-2 z-10">
+                      <div className="bg-primary text-primary-foreground px-2 py-1 rounded text-xs font-medium flex items-center gap-1">
+                        <GripVertical className="h-3 w-3" />
+                        Arrastrar
+                      </div>
+                    </div>
+                  )}
                   
                   <CardHeader className="text-center pb-4">
                     <div className={`mx-auto ${card.bgColor} w-16 h-16 rounded-full flex items-center justify-center mb-3`}>
