@@ -336,9 +336,10 @@ export default function SquadAssignments({ userRole, userData }: { userRole?: st
                 <div className="relative">
                   {format(day, 'd')}
                   {/* Solo mostrar asignaciones en días laborables */}
-                  {dayAssignments.length > 0 && !isWeekendDay && !isHolidayDay && (
+                  {dayAssignments.length > 0 && (
                     <div className="text-xs mt-1">
-                      {dayAssignments.map((assignment, index) => (
+                      {/* Solo renderizar si NO es fin de semana Y NO es festivo */}
+                      {!isWeekendDay && !isHolidayDay && dayAssignments.map((assignment, index) => (
                         <div
                           key={assignment.id}
                           className={cn(
