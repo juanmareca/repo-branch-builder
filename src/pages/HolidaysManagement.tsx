@@ -157,7 +157,7 @@ const HolidaysManagement = () => {
       { key: 'festivo', label: 'FESTIVO', visible: true, width: 250, minWidth: 200, resizable: true },
       { key: 'pais', label: 'PAÍS', visible: true, width: 150, minWidth: 120, resizable: true },
       { key: 'comunidad_autonoma', label: 'COMUNIDAD AUTÓNOMA', visible: true, width: 200, minWidth: 180, resizable: true },
-      { key: 'origen', label: 'ORIGEN', visible: false, width: 120, minWidth: 100, resizable: true }
+      { key: 'origen', label: 'ORIGEN', visible: true, width: 120, minWidth: 100, resizable: true }
     ];
   };
 
