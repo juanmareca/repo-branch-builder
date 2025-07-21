@@ -624,6 +624,27 @@ const TeamCapabilities: React.FC<TeamCapabilitiesProps> = ({
     return Object.entries(groups).filter(([_, caps]) => caps.length > 0);
   };
 
+  // Función para formatear títulos de módulos financieros
+  const formatFinancialModuleTitle = (skill: string) => {
+    const cleanedSkill = skill.replace('Módulo SAP - ', '').replace('Implantación SAP - ', '');
+    
+    // Casos especiales para módulos financieros
+    if (cleanedSkill.includes('FI-GL')) {
+      return { line1: "(FI-GL) Financials", line2: "General Ledger" };
+    } else if (cleanedSkill.includes('FI-AP')) {
+      return { line1: "(FI-AP) Financials", line2: "Accounts Payable" };
+    } else if (cleanedSkill.includes('FI-AR')) {
+      return { line1: "(FI-AR) Financials", line2: "Accounts Receivable" };
+    } else if (cleanedSkill.includes('FI-AA')) {
+      return { line1: "(FI-AA) Financials", line2: "Assets Accounting" };
+    } else if (cleanedSkill.includes('FI-Taxes')) {
+      return { line1: "(FI-TAXES)", line2: "SII / DRC" };
+    }
+    
+    // Para otros módulos, retornar el texto original
+    return { line1: cleanedSkill, line2: null };
+  };
+
   const completeCapacities = generateCompleteCapacities();
   const allMembers = getAllTeamMembers();
 
@@ -806,10 +827,23 @@ const TeamCapabilities: React.FC<TeamCapabilitiesProps> = ({
                                     >
                                       <div className="flex items-start justify-between gap-2 mb-2">
                                         <div className="flex-1 min-w-0">
-                                          <div className="flex items-center gap-2">
-                                             <h4 className="font-medium text-sm leading-tight group-hover:text-primary transition-colors">
-                                               {capacity.skill.replace('Módulo SAP - ', '').replace('Implantación SAP - ', '')}
-                                             </h4>
+                                           <div className="flex items-center gap-2">
+                                              {(() => {
+                                                const moduleTitle = formatFinancialModuleTitle(capacity.skill);
+                                                return (
+                                                  <h4 className="font-medium text-sm leading-tight group-hover:text-primary transition-colors">
+                                                    {moduleTitle.line2 ? (
+                                                      <div className="text-center">
+                                                        <div>{moduleTitle.line1}</div>
+                                                        <div className="text-xs text-muted-foreground">{moduleTitle.line2}</div>
+                                                      </div>
+                                                    ) : (
+                                                      moduleTitle.line1
+                                                    )}
+                                                  </h4>
+                                                );
+                                              })()}
+                                              
                                              {isSAPModule(capacity.skill) && (
                                                <Popover>
                                                  <PopoverTrigger asChild>
