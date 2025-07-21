@@ -482,7 +482,11 @@ const TeamCapabilities: React.FC<TeamCapabilitiesProps> = ({
 
     allMembers.forEach(personName => {
       completeData[personName] = {
-        'Módulos SAP e Implantaciones': [],
+        'Módulos FINANCIEROS': [],
+        'Módulos TESORERÍA': [],
+        'Módulos CONTROLLING': [],
+        'Otros Módulos': [],
+        'Implantaciones SAP': [],
         'Idiomas': [],
         'Industrias': [],
         'Otras Capacidades': []
@@ -491,8 +495,19 @@ const TeamCapabilities: React.FC<TeamCapabilitiesProps> = ({
       ALL_SKILLS.forEach(skill => {
         let category = 'Otras Capacidades';
         
-        if (skill.toLowerCase().includes('módulo sap') || skill.toLowerCase().includes('implantación sap')) {
-          category = 'Módulos SAP e Implantaciones';
+        if (skill.toLowerCase().includes('módulo sap')) {
+          // Clasificar módulos SAP en subcategorías
+          if (skill.includes('FI-')) {
+            category = 'Módulos FINANCIEROS';
+          } else if (skill.includes('TR-')) {
+            category = 'Módulos TESORERÍA';
+          } else if (skill.includes('CO-')) {
+            category = 'Módulos CONTROLLING';
+          } else {
+            category = 'Otros Módulos';
+          }
+        } else if (skill.toLowerCase().includes('implantación sap')) {
+          category = 'Implantaciones SAP';
         } else if (skill.toLowerCase().includes('idioma')) {
           category = 'Idiomas';
         } else if (skill.toLowerCase().includes('industria')) {
