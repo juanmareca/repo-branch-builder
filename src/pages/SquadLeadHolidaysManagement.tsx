@@ -450,7 +450,7 @@ const SquadLeadHolidaysManagement = () => {
                 className="flex items-center gap-2 hover:bg-blue-50 hover:text-blue-700 hover:border-blue-200"
               >
                 <Home className="h-4 w-4" />
-                Panel Squad Lead
+                Panel de Squad Lead
               </Button>
               <Button 
                 variant="outline" 
