@@ -15,6 +15,7 @@ import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { useSquadData } from '@/hooks/useSquadData';
 import AssignmentSummary from '@/components/AssignmentSummary';
+import TeamAssignmentSummary from '@/components/TeamAssignmentSummary';
 import StaffingReport from '@/components/StaffingReport';
 
 interface Assignment {
@@ -673,6 +674,15 @@ export default function SquadAssignments({ userRole, userData }: { userRole?: st
             </CardContent>
           </Card>
         </div>
+
+        {/* Team Assignment Summary */}
+        <TeamAssignmentSummary
+          squadLeadName={currentSquadLeadName || ''}
+          teamMembers={persons}
+          assignments={assignments}
+          holidays={holidays}
+          projects={projects}
+        />
 
         {/* Assignment Form */}
         <Card className="mb-6">
