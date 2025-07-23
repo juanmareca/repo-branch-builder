@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Users, Loader2, ArrowLeft, Calendar } from 'lucide-react';
+import { Users, Loader2, ArrowLeft, Calendar, LogOut } from 'lucide-react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { Person } from '../types';
 
@@ -96,6 +96,10 @@ const Index = ({ userRole, userData }: { userRole?: string; userData?: any }) =>
             <Button variant="outline" onClick={() => navigate('/squad-dashboard')} className="gap-2">
               <ArrowLeft className="h-4 w-4" />
               Panel de Squad Lead
+            </Button>
+            <Button variant="outline" onClick={() => window.location.reload()} className="gap-2">
+              <LogOut className="h-4 w-4" />
+              Salir
             </Button>
           </div>
         )}
