@@ -46,8 +46,10 @@ interface TeamSummaryData {
   totalDays: number;
   weekendDays: number;
   totalHolidayDays: number;
+  totalVacationDays: number;
   workDays: number;
   memberHolidays: { [personId: string]: { name: string; holidayDays: number; } };
+  memberVacations: { [personId: string]: { name: string; vacationDays: number; } };
   projectDays: { [projectId: string]: { 
     days: number; 
     percentage: number; 
@@ -117,6 +119,36 @@ export default function TeamAssignmentSummary({
     
     console.log('Total holiday days calculated:', totalHolidayDays);
     console.log('Member holidays:', memberHolidays);
+    
+    // Calculate vacation days (assignments to Holiday projects)
+    const memberVacations: { [personId: string]: { name: string; vacationDays: number; } } = {};
+    let totalVacationDays = 0;
+    
+    teamMembers.forEach(member => {
+      const memberVacationDays = assignments
+        .filter(a => a.person_id === member.id)
+        .filter(a => {
+          const project = projects.find(p => p.id === a.project_id);
+          return project?.denominacion.toLowerCase().includes('holiday');
+        })
+        .reduce((total, assignment) => {
+          const assignmentStart = new Date(Math.max(new Date(assignment.start_date).getTime(), start.getTime()));
+          const assignmentEnd = new Date(Math.min(new Date(assignment.end_date).getTime(), end.getTime()));
+          
+          if (assignmentStart <= assignmentEnd) {
+            const assignmentDays = eachDayOfInterval({ start: assignmentStart, end: assignmentEnd });
+            const assignmentWorkDays = assignmentDays.filter(day => !isWeekend(day)).length;
+            return total + (assignmentWorkDays * assignment.hours_allocated) / 100;
+          }
+          return total;
+        }, 0);
+      
+      memberVacations[member.id] = {
+        name: member.nombre,
+        vacationDays: memberVacationDays
+      };
+      totalVacationDays += memberVacationDays;
+    });
     
     const workDays = totalDays - weekendDays;
     
@@ -227,8 +259,10 @@ export default function TeamAssignmentSummary({
       totalDays,
       weekendDays,
       totalHolidayDays,
+      totalVacationDays,
       workDays,
       memberHolidays,
+      memberVacations,
       projectDays,
       unassignedDays,
       availableCapacity: Math.max(0, availableCapacity),
