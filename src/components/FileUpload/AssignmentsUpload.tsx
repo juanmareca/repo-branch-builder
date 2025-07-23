@@ -144,15 +144,44 @@ const AssignmentsUpload = () => {
             // Buscar fechas desde la columna K (índice 10)
             for (let colIdx = 10; colIdx < dateRow.length; colIdx++) {
               const cellValue = dateRow[colIdx];
-              console.log(`📅 Columna ${colIdx}: "${cellValue}"`);
+              console.log(`📅 Columna ${colIdx}: "${cellValue}" (tipo: ${typeof cellValue}, valor: ${cellValue})`);
               
-              if (cellValue) {
-                const cellStr = String(cellValue).trim();
-                // Buscar patrones de fecha DD/MM/YYYY
-                const dateMatch = cellStr.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
-                if (dateMatch) {
-                  dateColumns.push({ index: colIdx, date: cellStr });
-                  console.log(`✅ FECHA encontrada en columna ${colIdx}: "${cellStr}"`);
+              if (cellValue !== undefined && cellValue !== null && cellValue !== '') {
+                let dateString = '';
+                
+                // Caso 1: Ya es una fecha en formato DD/MM/YYYY
+                if (typeof cellValue === 'string') {
+                  const dateMatch = cellValue.trim().match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+                  if (dateMatch) {
+                    dateString = cellValue.trim();
+                    console.log(`✅ FECHA STRING encontrada en columna ${colIdx}: "${dateString}"`);
+                  }
+                }
+                
+                // Caso 2: Es un número serial de Excel
+                else if (typeof cellValue === 'number' && cellValue > 40000 && cellValue < 50000) {
+                  // Convertir número serial de Excel a fecha
+                  const excelDate = new Date((cellValue - 25569) * 86400 * 1000);
+                  dateString = excelDate.toLocaleDateString('es-ES', {
+                    day: '2-digit',
+                    month: '2-digit', 
+                    year: 'numeric'
+                  });
+                  console.log(`✅ FECHA EXCEL SERIAL encontrada en columna ${colIdx}: ${cellValue} -> "${dateString}"`);
+                }
+                
+                // Caso 3: Es un objeto Date
+                else if (cellValue instanceof Date) {
+                  dateString = cellValue.toLocaleDateString('es-ES', {
+                    day: '2-digit',
+                    month: '2-digit',
+                    year: 'numeric'
+                  });
+                  console.log(`✅ FECHA OBJECT encontrada en columna ${colIdx}: "${dateString}"`);
+                }
+                
+                if (dateString) {
+                  dateColumns.push({ index: colIdx, date: dateString });
                 }
               }
             }
