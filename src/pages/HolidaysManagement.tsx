@@ -116,6 +116,15 @@ const HolidaysManagement = () => {
   const [yearFilter, setYearFilter] = useState<string[]>([]);
   const [monthFilter, setMonthFilter] = useState<string[]>([]);
   
+  // Applied filters (what's currently filtering the table)
+  const [appliedSearchTerm, setAppliedSearchTerm] = useState<string>('');
+  const [appliedCountryFilter, setAppliedCountryFilter] = useState<string[]>([]);
+  const [appliedCommunityFilter, setAppliedCommunityFilter] = useState<string[]>([]);
+  const [appliedOriginFilter, setAppliedOriginFilter] = useState<string[]>([]);
+  const [appliedFestivoFilter, setAppliedFestivoFilter] = useState<string[]>([]);
+  const [appliedYearFilter, setAppliedYearFilter] = useState<string[]>([]);
+  const [appliedMonthFilter, setAppliedMonthFilter] = useState<string[]>([]);
+  
   // Sorting
   const [sortField, setSortField] = useState<keyof Holiday>('date');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
@@ -241,53 +250,53 @@ const HolidaysManagement = () => {
 
   useEffect(() => {
     applyFilters();
-  }, [holidays, searchTerm, countryFilter, communityFilter, originFilter, festivoFilter, yearFilter, monthFilter, sortField, sortDirection]);
+  }, [holidays, appliedSearchTerm, appliedCountryFilter, appliedCommunityFilter, appliedOriginFilter, appliedFestivoFilter, appliedYearFilter, appliedMonthFilter, sortField, sortDirection]);
 
   const applyFilters = useCallback(() => {
     let filtered = [...holidays];
 
     // Search filter
-    if (searchTerm) {
+    if (appliedSearchTerm) {
       filtered = filtered.filter(holiday =>
-        holiday.festivo.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        holiday.pais.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        holiday.comunidad_autonoma.toLowerCase().includes(searchTerm.toLowerCase())
+        holiday.festivo.toLowerCase().includes(appliedSearchTerm.toLowerCase()) ||
+        holiday.pais.toLowerCase().includes(appliedSearchTerm.toLowerCase()) ||
+        holiday.comunidad_autonoma.toLowerCase().includes(appliedSearchTerm.toLowerCase())
       );
     }
 
     // Country filter
-    if (countryFilter.length > 0) {
-      filtered = filtered.filter(holiday => countryFilter.includes(holiday.pais));
+    if (appliedCountryFilter.length > 0) {
+      filtered = filtered.filter(holiday => appliedCountryFilter.includes(holiday.pais));
     }
 
     // Community filter
-    if (communityFilter.length > 0) {
-      filtered = filtered.filter(holiday => communityFilter.includes(holiday.comunidad_autonoma));
+    if (appliedCommunityFilter.length > 0) {
+      filtered = filtered.filter(holiday => appliedCommunityFilter.includes(holiday.comunidad_autonoma));
     }
 
     // Origin filter
-    if (originFilter.length > 0) {
-      filtered = filtered.filter(holiday => originFilter.includes(holiday.origen));
+    if (appliedOriginFilter.length > 0) {
+      filtered = filtered.filter(holiday => appliedOriginFilter.includes(holiday.origen));
     }
 
     // Festivo filter
-    if (festivoFilter.length > 0) {
-      filtered = filtered.filter(holiday => festivoFilter.includes(holiday.festivo));
+    if (appliedFestivoFilter.length > 0) {
+      filtered = filtered.filter(holiday => appliedFestivoFilter.includes(holiday.festivo));
     }
 
     // Year filter
-    if (yearFilter.length > 0) {
+    if (appliedYearFilter.length > 0) {
       filtered = filtered.filter(holiday => {
         const holidayYear = new Date(holiday.date).getFullYear().toString();
-        return yearFilter.includes(holidayYear);
+        return appliedYearFilter.includes(holidayYear);
       });
     }
 
     // Month filter
-    if (monthFilter.length > 0) {
+    if (appliedMonthFilter.length > 0) {
       filtered = filtered.filter(holiday => {
         const holidayMonth = (new Date(holiday.date).getMonth() + 1).toString();
-        return monthFilter.includes(holidayMonth);
+        return appliedMonthFilter.includes(holidayMonth);
       });
     }
 
@@ -317,7 +326,7 @@ const HolidaysManagement = () => {
 
     setFilteredHolidays(filtered);
     setCurrentPage(1); // Reset to first page when filters change
-  }, [holidays, searchTerm, countryFilter, communityFilter, originFilter, festivoFilter, sortField, sortDirection]);
+  }, [holidays, appliedSearchTerm, appliedCountryFilter, appliedCommunityFilter, appliedOriginFilter, appliedFestivoFilter, appliedYearFilter, appliedMonthFilter, sortField, sortDirection]);
 
   const handleAddHoliday = async () => {
     if (!formData.date || !formData.festivo || !formData.pais) {
@@ -495,6 +504,35 @@ const HolidaysManagement = () => {
     setFestivoFilter([]);
     setYearFilter([]);
     setMonthFilter([]);
+    
+    // Clear applied filters too
+    setAppliedSearchTerm('');
+    setAppliedCountryFilter([]);
+    setAppliedCommunityFilter([]);
+    setAppliedOriginFilter([]);
+    setAppliedFestivoFilter([]);
+    setAppliedYearFilter([]);
+    setAppliedMonthFilter([]);
+  };
+
+  const applyCurrentFilters = () => {
+    setAppliedSearchTerm(searchTerm);
+    setAppliedCountryFilter([...countryFilter]);
+    setAppliedCommunityFilter([...communityFilter]);
+    setAppliedOriginFilter([...originFilter]);
+    setAppliedFestivoFilter([...festivoFilter]);
+    setAppliedYearFilter([...yearFilter]);
+    setAppliedMonthFilter([...monthFilter]);
+  };
+
+  const hasActiveFilters = () => {
+    return appliedSearchTerm || 
+           appliedCountryFilter.length > 0 || 
+           appliedCommunityFilter.length > 0 || 
+           appliedOriginFilter.length > 0 || 
+           appliedFestivoFilter.length > 0 || 
+           appliedYearFilter.length > 0 || 
+           appliedMonthFilter.length > 0;
   };
 
   const toggleFilter = (filterArray: string[], value: string, setFilter: (arr: string[]) => void) => {
@@ -704,10 +742,14 @@ const HolidaysManagement = () => {
             <Button 
               variant="outline" 
               onClick={() => setShowFilters(!showFilters)}
-              className={cn("text-orange-600 border-orange-600", showFilters && "bg-orange-50")}
+              className={cn(
+                "text-orange-600 border-orange-600", 
+                showFilters && "bg-orange-50",
+                hasActiveFilters() && "bg-orange-400 text-white border-orange-400 hover:bg-orange-500"
+              )}
             >
               <Filter className="h-4 w-4 mr-2" />
-              Filtros
+              {hasActiveFilters() ? "Filtros activos" : "Filtros"}
             </Button>
             <Button 
               variant="outline" 
@@ -842,9 +884,15 @@ const HolidaysManagement = () => {
                   </div>
                 </div>
               </div>
-              <div className="mt-4 flex justify-end">
+              <div className="mt-4 flex justify-end gap-2">
                 <Button variant="outline" onClick={clearFilters}>
                   Limpiar filtros
+                </Button>
+                <Button 
+                  onClick={applyCurrentFilters}
+                  className="bg-orange-600 hover:bg-orange-700 text-white"
+                >
+                  Aplicar filtros
                 </Button>
               </div>
             </CardContent>
