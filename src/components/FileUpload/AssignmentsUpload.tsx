@@ -138,7 +138,7 @@ const AssignmentsUpload = () => {
           console.log('📋 FILA 1 (fechas):', jsonData[1]);
           
           const dateColumns: { index: number; date: string }[] = [];
-          const dateRow = jsonData[1]; // Fila 1 contiene las fechas
+          const dateRow = jsonData[0]; // Fila 0 contiene las fechas (primera fila del Excel)
           
           if (dateRow) {
             // Buscar fechas desde la columna K (índice 10)
@@ -193,8 +193,8 @@ const AssignmentsUpload = () => {
           console.log('🔍 Iniciando procesamiento de filas de datos...');
           console.log('📝 Total de filas en Excel:', jsonData.length);
           
-          // Procesar datos desde la fila 2 (índice 2) porque fila 0=headers, fila 1=fechas
-          const startRowIndex = 2;
+          // Procesar datos desde la fila 1 (índice 1) porque fila 0=fechas
+          const startRowIndex = 1;
           
           // Procesar cada fila de datos
           for (let rowIndex = startRowIndex; rowIndex < jsonData.length; rowIndex++) {
