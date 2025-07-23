@@ -470,44 +470,110 @@ export default function TeamAssignmentSummary({
     
     yPosition += 75;
     
-    // Sección de análisis de capacidad con gráfico
-    pdf.setTextColor(31, 41, 55);
-    pdf.setFont('helvetica', 'bold');
-    pdf.setFontSize(16);
-    pdf.text('Análisis de Capacidad', 20, yPosition);
-    
-    // Añadir gráfico de capacidad mejorado
-    if (capacityChartImage) {
-      pdf.addImage(capacityChartImage, 'PNG', 20, yPosition + 5, 100, 75);
+    // ANÁLISIS DE CAPACIDAD - Evitar salto de página
+    // Verificar espacio suficiente para toda la sección (título + gráfico + métricas = ~120px)
+    if (yPosition > pageHeight - 140) {
+      pdf.addPage();
+      yPosition = 30;
     }
     
-    // Métricas de capacidad
-    const capacityX = 130;
-    pdf.setFillColor(248, 250, 252);
-    pdf.rect(capacityX, yPosition + 10, 70, 50, 'F');
-    pdf.setDrawColor(226, 232, 240);
-    pdf.rect(capacityX, yPosition + 10, 70, 50, 'S');
-    
-    pdf.setTextColor(15, 23, 42);
+    // Título de sección
+    pdf.setTextColor(31, 41, 55);
     pdf.setFont('helvetica', 'bold');
-    pdf.setFontSize(20);
-    pdf.text(`${summary.availableCapacity.toFixed(1)}%`, capacityX + 5, yPosition + 25, { align: 'right', maxWidth: 60 });
+    pdf.setFontSize(18);
+    pdf.text('Análisis de Capacidad', 20, yPosition);
+    yPosition += 25;
+
+    // Layout horizontal: Gráfico + Métricas + Detalles (como en la web)
+    const chartSize = 90;
+    const chartX = 30;
+    const metricsX = chartX + chartSize + 30;
+    const detailsX = metricsX + 120;
+
+    // 1. GRÁFICO DE DONUT (igual que la web)
+    if (capacityChartImage) {
+      pdf.addImage(capacityChartImage, 'PNG', chartX, yPosition, chartSize, chartSize);
+    }
+
+    // 2. MÉTRICAS PRINCIPALES (estilo web con tarjetas)
+    const assignedPercentage = ((summary.workDays * teamMembers.length - summary.unassignedDays) / (summary.workDays * teamMembers.length)) * 100;
     
+    // Tarjeta de porcentaje principal
+    pdf.setFillColor(255, 255, 255);
+    pdf.roundedRect(metricsX, yPosition, 110, 45, 8, 8, 'F');
+    pdf.setDrawColor(229, 231, 235);
+    pdf.setLineWidth(1);
+    pdf.roundedRect(metricsX, yPosition, 110, 45, 8, 8, 'S');
+    
+    // Porcentaje grande (como en la web)
+    pdf.setTextColor(59, 130, 246);
+    pdf.setFont('helvetica', 'bold');
+    pdf.setFontSize(24);
+    pdf.text(`${summary.availableCapacity.toFixed(1)}%`, metricsX + 55, yPosition + 20, { align: 'center' });
+    
+    pdf.setTextColor(107, 114, 128);
+    pdf.setFont('helvetica', 'normal');
+    pdf.setFontSize(12);
+    pdf.text('Disponible', metricsX + 55, yPosition + 35, { align: 'center' });
+
+    // Leyenda con círculos de colores (como en la web)
+    const legendY = yPosition + 55;
+    
+    // Círculo azul - Asignado
+    pdf.setFillColor(59, 130, 246);
+    pdf.circle(metricsX + 10, legendY, 4, 'F');
+    pdf.setTextColor(75, 85, 99);
     pdf.setFont('helvetica', 'normal');
     pdf.setFontSize(10);
-    pdf.setTextColor(100, 116, 139);
-    pdf.text('Capacidad Disponible', capacityX + 5, yPosition + 35);
-    pdf.text(`${summary.unassignedDays.toFixed(1)} días sin asignar`, capacityX + 5, yPosition + 45);
-    pdf.text(`de ${(summary.workDays * teamMembers.length).toFixed(1)} días totales`, capacityX + 5, yPosition + 55);
+    pdf.text(`Asignado (${assignedPercentage.toFixed(1)}%)`, metricsX + 20, legendY + 2);
+
+    // Círculo verde - Disponible  
+    pdf.setFillColor(16, 185, 129);
+    pdf.circle(metricsX + 10, legendY + 15, 4, 'F');
+    pdf.text(`Disponible (${summary.availableCapacity.toFixed(1)}%)`, metricsX + 20, legendY + 17);
+
+    // 3. PANEL DE DETALLES (como la tarjeta derecha de la web)
+    pdf.setFillColor(249, 250, 251);
+    pdf.roundedRect(detailsX, yPosition, 100, 70, 8, 8, 'F');
+    pdf.setDrawColor(229, 231, 235);
+    pdf.setLineWidth(1);
+    pdf.roundedRect(detailsX, yPosition, 100, 70, 8, 8, 'S');
     
-    yPosition += 85;
-    
-    // Asignaciones por proyecto con formato web
+    // Título del panel
+    pdf.setFillColor(243, 244, 246);
+    pdf.rect(detailsX, yPosition, 100, 15, 'F');
+    pdf.setTextColor(55, 65, 81);
     pdf.setFont('helvetica', 'bold');
-    pdf.setFontSize(16);
+    pdf.setFontSize(11);
+    pdf.text('Capacidad Disponible', detailsX + 50, yPosition + 10, { align: 'center' });
+    
+    // Contenido del panel
+    pdf.setTextColor(107, 114, 128);
+    pdf.setFont('helvetica', 'normal');
+    pdf.setFontSize(11);
+    pdf.text(`${summary.unassignedDays.toFixed(1)} días sin asignar`, detailsX + 5, yPosition + 30);
+    
+    pdf.setFontSize(9);
+    pdf.setTextColor(156, 163, 175);
+    pdf.text(`de ${(summary.workDays * teamMembers.length).toFixed(1)} días totales`, detailsX + 5, yPosition + 45);
+    
+    // Métricas adicionales
+    pdf.setTextColor(107, 114, 128);
+    pdf.text(`Miembros del equipo: ${teamMembers.length}`, detailsX + 5, yPosition + 60);
+    
+    yPosition += 100;
+    
+    // ASIGNACIONES POR PROYECTO - Asegurar espacio para el título
+    if (yPosition > pageHeight - 60) {
+      pdf.addPage();
+      yPosition = 30;
+    }
+    
+    pdf.setFont('helvetica', 'bold');
+    pdf.setFontSize(18);
     pdf.setTextColor(31, 41, 55);
-    pdf.text('Asignaciones por Proyecto', 20, yPosition);
-    yPosition += 15;
+    pdf.text('Asignaciones por Proyecto del Equipo:', 20, yPosition);
+    yPosition += 25;
     
     Object.entries(summary.projectDays).forEach(([projectId, data]) => {
       if (yPosition > pageHeight - 80) {
