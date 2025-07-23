@@ -482,8 +482,11 @@ const SquadLeadHolidaysManagement = () => {
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold text-orange-800 dark:text-orange-300">
-                {holidays.length}
+                {holidays.filter(h => new Date(h.date).getFullYear() === new Date().getFullYear()).length}
               </div>
+              <p className="text-xs italic text-orange-600 dark:text-orange-400 mt-1">
+                Año {new Date().getFullYear()}
+              </p>
             </CardContent>
           </Card>
 
@@ -527,7 +530,7 @@ const SquadLeadHolidaysManagement = () => {
 
           <Card className="border-l-4 border-l-purple-500 bg-gradient-to-br from-purple-50 to-purple-100/50 dark:from-purple-950/20 dark:to-purple-900/10">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
-              <CardTitle className="text-sm font-medium text-purple-700 dark:text-purple-400">
+              <CardTitle className="text-sm font-medium text-purple-700 dark:text-purple-400 text-center">
                 Festivos de Comunidades Autónomas (España)
               </CardTitle>
               <div className="h-8 w-8 bg-purple-100 dark:bg-purple-900/50 rounded-lg flex items-center justify-center">
