@@ -99,7 +99,7 @@ const Index = ({ userRole, userData }: { userRole?: string; userData?: any }) =>
             </Button>
             <Button variant="outline" onClick={() => window.location.reload()} className="gap-2">
               <LogOut className="h-4 w-4" />
-              Salir
+              Cerrar sesión
             </Button>
           </div>
         )}
