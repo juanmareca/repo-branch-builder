@@ -286,23 +286,37 @@ const AssignmentsUpload = () => {
       // Obtener mapeo de códigos a IDs
       const { data: persons } = await supabase
         .from('persons')
-        .select('id, num_pers');
+        .select('id, num_pers, cex');
       
       const { data: projects } = await supabase
         .from('projects')
         .select('id, codigo_inicial');
       
-      const personMap = new Map(persons?.map(p => [p.num_pers, p.id]) || []);
-      const projectMap = new Map(projects?.map(p => [p.codigo_inicial, p.id]) || []);
+      // Normalizar búsquedas con trim y case insensitive
+      const personMap = new Map();
+      persons?.forEach(p => {
+        if (p.num_pers?.trim()) personMap.set(p.num_pers.trim(), p.id);
+        if (p.cex?.trim()) personMap.set(p.cex.trim(), p.id);
+      });
+      
+      const projectMap = new Map();
+      projects?.forEach(p => {
+        if (p.codigo_inicial?.trim()) {
+          projectMap.set(p.codigo_inicial.trim().toUpperCase(), p.id);
+        }
+      });
       
       // Convertir registros a formato de asignaciones
       const assignmentsToInsert: any[] = [];
       
       for (const record of finalRecords) {
-        const personId = personMap.get(record.personCode);
-        const projectId = projectMap.get(record.projectCode);
+        const personId = personMap.get(record.personCode?.trim());
+        const projectId = projectMap.get(record.projectCode?.trim()?.toUpperCase());
         
-        if (!personId || !projectId) continue; // Saltar registros inválidos
+        if (!personId || !projectId) {
+          console.warn(`❌ Códigos no encontrados - Persona: ${record.personCode}, Proyecto: ${record.projectCode}`);
+          continue; // Saltar registros inválidos
+        }
         
         // Crear una asignación por cada fecha con porcentaje > 0
         Object.entries(record.assignments).forEach(([date, percentage]) => {

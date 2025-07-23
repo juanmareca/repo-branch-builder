@@ -93,7 +93,7 @@ export default function SquadAssignments({ userRole, userData }: { userRole?: st
   
   // Filter persons for current squad lead and include the squad lead themselves
   const squadPersons = allPersons.filter(person => 
-    person.squad_lead === currentSquadLeadName || person.nombre === currentSquadLeadName
+    person.squad_lead === currentSquadLeadName
   );
 
   useEffect(() => {
@@ -126,10 +126,18 @@ export default function SquadAssignments({ userRole, userData }: { userRole?: st
         .from('projects')
         .select('id, denominacion, codigo_inicial');
       
-      // Fetch ALL assignments (back to original working logic)
-      const { data: assignmentsData } = await supabase
-        .from('assignments')
-        .select('*');
+      // Fetch assignments for squad team only
+      let assignmentsData = [];
+      if (squadPersons.length > 0) {
+        const squadPersonIds = squadPersons.map(p => p.id).filter(Boolean);
+        if (squadPersonIds.length > 0) {
+          const { data: squadAssignments } = await supabase
+            .from('assignments')
+            .select('*')
+            .in('person_id', squadPersonIds);
+          assignmentsData = squadAssignments || [];
+        }
+      }
       
       // Fetch holidays
       const { data: holidaysData } = await supabase
