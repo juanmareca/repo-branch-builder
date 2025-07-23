@@ -306,17 +306,30 @@ const AssignmentsUpload = () => {
         }
       });
       
+      console.log('📊 Mapas creados:');
+      console.log('- Personas en mapa:', personMap.size);
+      console.log('- Proyectos en mapa:', projectMap.size);
+      console.log('- Registros a procesar:', finalRecords.length);
+      
       // Convertir registros a formato de asignaciones
       const assignmentsToInsert: any[] = [];
+      let validRecords = 0;
+      let invalidRecords = 0;
       
       for (const record of finalRecords) {
         const personId = personMap.get(record.personCode?.trim());
         const projectId = projectMap.get(record.projectCode?.trim()?.toUpperCase());
         
+        console.log(`🔍 Buscando - Persona: "${record.personCode?.trim()}" -> ${personId ? 'ENCONTRADA' : 'NO ENCONTRADA'}`);
+        console.log(`🔍 Buscando - Proyecto: "${record.projectCode?.trim()?.toUpperCase()}" -> ${projectId ? 'ENCONTRADO' : 'NO ENCONTRADO'}`);
+        
         if (!personId || !projectId) {
           console.warn(`❌ Códigos no encontrados - Persona: ${record.personCode}, Proyecto: ${record.projectCode}`);
+          invalidRecords++;
           continue; // Saltar registros inválidos
         }
+        
+        validRecords++;
         
         // Crear una asignación por cada fecha con porcentaje > 0
         Object.entries(record.assignments).forEach(([date, percentage]) => {
@@ -332,6 +345,11 @@ const AssignmentsUpload = () => {
           });
         });
       }
+      
+      console.log(`📈 Resumen de validación:`);
+      console.log(`- Registros válidos: ${validRecords}`);
+      console.log(`- Registros inválidos: ${invalidRecords}`);
+      console.log(`- Asignaciones a insertar: ${assignmentsToInsert.length}`);
       
       // Insertar asignaciones en lotes
       const batchSize = 1000;
