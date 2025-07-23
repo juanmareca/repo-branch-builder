@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { 
   Users, 
   FolderKanban, 
@@ -28,6 +29,7 @@ interface DashboardCard {
 export default function SquadLeadDashboard() {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { currentUser } = useCurrentUser();
   
   // Configuración por defecto de las tarjetas
   const defaultCards: DashboardCard[] = [
@@ -291,7 +293,7 @@ export default function SquadLeadDashboard() {
         {/* Header */}
         <div className="flex justify-between items-center mb-8">
           <div>
-            <h1 className="text-3xl font-bold text-foreground">Panel Squad Lead</h1>
+            <h1 className="text-3xl font-bold text-foreground">Panel de Squad Lead - {currentUser?.name || 'Squad Lead'}</h1>
             <p className="text-muted-foreground mt-2">Gestiona tu equipo y proyectos</p>
           </div>
           <Button variant="outline" onClick={handleLogout} className="gap-2">
