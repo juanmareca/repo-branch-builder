@@ -404,7 +404,7 @@ const AssignmentsUpload = () => {
             start_date: date,
             end_date: date,
             hours_allocated: Math.round((percentage / 100) * 8), // Asumiendo 8 horas por día
-            type: 'project',
+            type: 'development', // Usar tipo válido en lugar de 'project'
             status: 'assigned',
             notes: `Migrado desde Excel - ${percentage}% asignación`
           });
@@ -450,6 +450,39 @@ const AssignmentsUpload = () => {
       toast.error('Error durante la migración de asignaciones');
     } finally {
       setUploading(false);
+    }
+  };
+
+  const exportErrorsToExcel = async () => {
+    try {
+      const workbook = XLSX.utils.book_new();
+      
+      // Hoja de empleados no encontrados
+      const personErrors = getPersonErrors();
+      const personErrorsData = [
+        ['Fila', 'Código Empleado', 'Nombre'],
+        ...personErrors.map(error => [error.row, error.code, error.name || ''])
+      ];
+      const personSheet = XLSX.utils.aoa_to_sheet(personErrorsData);
+      XLSX.utils.book_append_sheet(workbook, personSheet, 'Empleados No Encontrados');
+      
+      // Hoja de proyectos no encontrados
+      const projectErrors = getProjectErrors();
+      const projectErrorsData = [
+        ['Fila', 'Código Proyecto'],
+        ...projectErrors.map(error => [error.row, error.code])
+      ];
+      const projectSheet = XLSX.utils.aoa_to_sheet(projectErrorsData);
+      XLSX.utils.book_append_sheet(workbook, projectSheet, 'Proyectos No Encontrados');
+      
+      // Descargar archivo
+      const fileName = `errores_asignaciones_${new Date().toISOString().split('T')[0]}.xlsx`;
+      XLSX.writeFile(workbook, fileName);
+      
+      toast.success('✅ Archivo de errores exportado correctamente');
+    } catch (error) {
+      console.error('Error exporting errors:', error);
+      toast.error('Error al exportar errores a Excel');
     }
   };
 
@@ -632,6 +665,17 @@ const AssignmentsUpload = () => {
                   ¿Desea continuar con la migración de los registros válidos o prefiere 
                   depurar el archivo y volver a cargarlo correctamente?
                 </p>
+                
+                <div className="mt-3">
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={exportErrorsToExcel}
+                    className="w-full"
+                  >
+                    📊 Exportar Errores a Excel
+                  </Button>
+                </div>
               </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
