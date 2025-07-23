@@ -259,211 +259,205 @@ export default function TeamAssignmentSummary({
     const pageWidth = pdf.internal.pageSize.getWidth();
     const pageHeight = pdf.internal.pageSize.getHeight();
     
-    // Crear un canvas para el fondo tecnológico
-    const canvas = document.createElement('canvas');
-    const ctx = canvas.getContext('2d');
-    canvas.width = 800;
-    canvas.height = 200;
-    
-    // Crear gradiente tecnológico
-    if (ctx) {
-      const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
-      gradient.addColorStop(0, '#1e3a8a'); // Azul profundo
-      gradient.addColorStop(0.5, '#3b82f6'); // Azul medio
-      gradient.addColorStop(1, '#60a5fa'); // Azul claro
+    // Crear gráfico de capacidad tipo quesito
+    const createCapacityChart = () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = 300;
+      canvas.height = 300;
+      const ctx = canvas.getContext('2d');
       
-      ctx.fillStyle = gradient;
+      if (!ctx) return null;
+      
+      const centerX = canvas.width / 2;
+      const centerY = canvas.height / 2;
+      const radius = 100;
+      
+      const assignedPercentage = 100 - summary.availableCapacity;
+      const assignedAngle = (assignedPercentage / 100) * 2 * Math.PI;
+      
+      // Fondo del gráfico
+      ctx.fillStyle = '#f8fafc';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
       
-      // Añadir formas geométricas tecnológicas
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
-      ctx.lineWidth = 2;
+      // Capacidad asignada (azul)
+      ctx.beginPath();
+      ctx.moveTo(centerX, centerY);
+      ctx.arc(centerX, centerY, radius, -Math.PI / 2, -Math.PI / 2 + assignedAngle);
+      ctx.closePath();
+      ctx.fillStyle = '#3b82f6';
+      ctx.fill();
       
-      // Líneas diagonales
-      for (let i = 0; i < 20; i++) {
-        ctx.beginPath();
-        ctx.moveTo(i * 40, 0);
-        ctx.lineTo(i * 40 + 100, canvas.height);
-        ctx.stroke();
-      }
+      // Capacidad disponible (verde)
+      ctx.beginPath();
+      ctx.moveTo(centerX, centerY);
+      ctx.arc(centerX, centerY, radius, -Math.PI / 2 + assignedAngle, -Math.PI / 2 + 2 * Math.PI);
+      ctx.closePath();
+      ctx.fillStyle = '#10b981';
+      ctx.fill();
       
-      // Círculos tecnológicos
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
-      for (let i = 0; i < 10; i++) {
-        ctx.beginPath();
-        ctx.arc(Math.random() * canvas.width, Math.random() * canvas.height, Math.random() * 30 + 10, 0, 2 * Math.PI);
-        ctx.fill();
-      }
-    }
+      // Añadir leyenda
+      ctx.fillStyle = '#374151';
+      ctx.font = 'bold 14px Arial';
+      ctx.fillText('Capacidad del Equipo', centerX - 70, 30);
+      
+      // Leyenda asignado
+      ctx.fillStyle = '#3b82f6';
+      ctx.fillRect(20, 250, 15, 15);
+      ctx.fillStyle = '#374151';
+      ctx.font = '12px Arial';
+      ctx.fillText(`Asignado: ${assignedPercentage.toFixed(1)}%`, 45, 262);
+      
+      // Leyenda disponible
+      ctx.fillStyle = '#10b981';
+      ctx.fillRect(20, 270, 15, 15);
+      ctx.fillStyle = '#374151';
+      ctx.fillText(`Disponible: ${summary.availableCapacity.toFixed(1)}%`, 45, 282);
+      
+      return canvas.toDataURL('image/png');
+    };
     
-    // Convertir canvas a imagen base64
-    const backgroundImage = canvas.toDataURL('image/png');
+    const capacityChartImage = createCapacityChart();
     
-    // Header con fondo tecnológico
-    pdf.addImage(backgroundImage, 'PNG', 0, 0, pageWidth, 50);
+    // Header mejorado
+    pdf.setFillColor(59, 130, 246);
+    pdf.rect(0, 0, pageWidth, 50, 'F');
     
-    // Logo y título corporativo
     pdf.setTextColor(255, 255, 255);
     pdf.setFont('helvetica', 'bold');
-    pdf.setFontSize(28);
+    pdf.setFontSize(24);
     pdf.text('STRATESYS', 20, 25);
     
-    pdf.setFontSize(16);
+    pdf.setFontSize(14);
     pdf.setFont('helvetica', 'normal');
     pdf.text('Resumen de Asignaciones del Equipo', 20, 35);
-    
-    // Información del informe
-    pdf.setTextColor(255, 255, 255);
-    pdf.setFontSize(12);
     pdf.text(`Squad Lead: ${squadLeadName}`, 20, 42);
-    pdf.text(`Período: ${format(new Date(startDate), 'dd/MM/yyyy')} - ${format(new Date(endDate), 'dd/MM/yyyy')}`, pageWidth - 80, 42);
     
-    // Resetear color para el contenido
-    pdf.setTextColor(60, 60, 60);
+    // Fecha en esquina superior derecha
+    pdf.setFontSize(10);
+    pdf.text(`${format(new Date(startDate), 'dd/MM/yyyy')} - ${format(new Date(endDate), 'dd/MM/yyyy')}`, pageWidth - 60, 42);
+    
     let yPosition = 65;
     
-    // Título principal
+    // Métricas principales en tarjetas
+    pdf.setTextColor(60, 60, 60);
     pdf.setFont('helvetica', 'bold');
-    pdf.setFontSize(18);
+    pdf.setFontSize(16);
     pdf.text('Resumen Ejecutivo', 20, yPosition);
     yPosition += 15;
     
-    // Métricas principales en tabla elegante
-    pdf.setFont('helvetica', 'normal');
-    pdf.setFontSize(10);
-    
-    // Fondo para la tabla de métricas
-    pdf.setFillColor(248, 250, 252);
-    pdf.rect(20, yPosition - 5, pageWidth - 40, 35, 'F');
-    
-    // Encabezados de métricas
-    pdf.setFont('helvetica', 'bold');
-    pdf.setFontSize(11);
-    pdf.text('Métrica', 25, yPosition + 5);
-    pdf.text('Valor', 80, yPosition + 5);
-    pdf.text('Porcentaje', 120, yPosition + 5);
-    pdf.text('Descripción', 160, yPosition + 5);
-    
-    // Línea separadora
-    pdf.setDrawColor(200, 200, 200);
-    pdf.line(20, yPosition + 8, pageWidth - 20, yPosition + 8);
-    
-    yPosition += 15;
-    
-    // Datos de métricas
-    pdf.setFont('helvetica', 'normal');
-    pdf.setFontSize(10);
-    
+    // Grid de métricas con colores
     const metrics = [
-      { name: 'Días Naturales', value: summary.totalDays.toString(), percentage: '100%', description: 'Período total' },
-      { name: 'Fines de Semana', value: summary.weekendDays.toString(), percentage: `${((summary.weekendDays / summary.totalDays) * 100).toFixed(1)}%`, description: 'Días no laborables' },
-      { name: 'Festivos', value: summary.totalHolidayDays.toString(), percentage: `${((summary.totalHolidayDays / (summary.totalDays * teamMembers.length)) * 100).toFixed(1)}%`, description: 'Suma del equipo' },
-      { name: 'Días Laborables', value: summary.workDays.toString(), percentage: `${((summary.workDays / summary.totalDays) * 100).toFixed(1)}%`, description: 'Días de trabajo' }
+      { label: 'Días Naturales', value: summary.totalDays, color: [59, 130, 246] },
+      { label: 'Fines de Semana', value: summary.weekendDays, color: [245, 158, 11] },
+      { label: 'Festivos', value: summary.totalHolidayDays, color: [239, 68, 68] },
+      { label: 'Días Laborables', value: summary.workDays, color: [16, 185, 129] }
     ];
     
     metrics.forEach((metric, index) => {
-      const rowY = yPosition + (index * 5);
-      pdf.text(metric.name, 25, rowY);
-      pdf.text(metric.value, 80, rowY);
-      pdf.text(metric.percentage, 120, rowY);
-      pdf.text(metric.description, 160, rowY);
+      const x = 20 + (index % 2) * 85;
+      const y = yPosition + Math.floor(index / 2) * 25;
+      
+      // Tarjeta con color
+      pdf.setFillColor(metric.color[0], metric.color[1], metric.color[2]);
+      pdf.rect(x, y - 5, 80, 20, 'F');
+      
+      // Texto en blanco
+      pdf.setTextColor(255, 255, 255);
+      pdf.setFont('helvetica', 'bold');
+      pdf.setFontSize(14);
+      pdf.text(metric.value.toString(), x + 5, y + 3);
+      pdf.setFont('helvetica', 'normal');
+      pdf.setFontSize(8);
+      pdf.text(metric.label, x + 5, y + 10);
     });
     
-    yPosition += 35;
+    yPosition += 55;
     
-    // Gráfico de capacidad (representación textual elegante)
+    // Añadir gráfico de capacidad
+    if (capacityChartImage) {
+      pdf.addImage(capacityChartImage, 'PNG', pageWidth - 80, yPosition - 20, 60, 60);
+    }
+    
+    // Análisis de capacidad
+    pdf.setTextColor(60, 60, 60);
     pdf.setFont('helvetica', 'bold');
     pdf.setFontSize(14);
-    pdf.text('Análisis de Capacidad del Equipo', 20, yPosition);
+    pdf.text('Análisis de Capacidad', 20, yPosition);
     yPosition += 10;
     
-    // Fondo para la sección de capacidad
     const capacityColor = summary.availableCapacity > 50 ? [220, 252, 231] : 
                          summary.availableCapacity > 20 ? [254, 240, 138] : [254, 226, 226];
     pdf.setFillColor(capacityColor[0], capacityColor[1], capacityColor[2]);
-    pdf.rect(20, yPosition - 5, pageWidth - 40, 20, 'F');
+    pdf.rect(20, yPosition - 5, pageWidth - 100, 25, 'F');
     
+    pdf.setTextColor(60, 60, 60);
     pdf.setFont('helvetica', 'normal');
-    pdf.setFontSize(12);
+    pdf.setFontSize(11);
     pdf.text(`Capacidad Disponible: ${summary.availableCapacity.toFixed(1)}%`, 25, yPosition + 5);
     pdf.text(`Días Sin Asignar: ${summary.unassignedDays.toFixed(1)}`, 25, yPosition + 12);
     
-    yPosition += 30;
+    yPosition += 35;
     
-    // Asignaciones por proyecto
+    // Asignaciones por proyecto con mejor formato
     pdf.setFont('helvetica', 'bold');
     pdf.setFontSize(14);
     pdf.text('Asignaciones por Proyecto', 20, yPosition);
-    yPosition += 10;
+    yPosition += 15;
     
-    Object.entries(summary.projectDays).forEach(([projectId, data]) => {
-      if (yPosition > pageHeight - 50) {
+    Object.entries(summary.projectDays).forEach(([projectId, data], index) => {
+      if (yPosition > pageHeight - 60) {
         pdf.addPage();
         yPosition = 30;
       }
       
-      // Fondo para cada proyecto
-      pdf.setFillColor(245, 245, 245);
-      pdf.rect(20, yPosition - 3, pageWidth - 40, 20, 'F');
+      // Header del proyecto con gradiente
+      const colors = [
+        [99, 102, 241], [168, 85, 247], [236, 72, 153], 
+        [245, 101, 101], [59, 130, 246], [16, 185, 129]
+      ];
+      const color = colors[index % colors.length];
       
+      pdf.setFillColor(color[0], color[1], color[2]);
+      pdf.rect(20, yPosition - 5, pageWidth - 40, 15, 'F');
+      
+      pdf.setTextColor(255, 255, 255);
       pdf.setFont('helvetica', 'bold');
-      pdf.setFontSize(11);
-      pdf.text(data.name, 25, yPosition + 5);
-      pdf.text(`${data.days.toFixed(1)} días`, pageWidth - 60, yPosition + 5);
+      pdf.setFontSize(10);
+      pdf.text(data.name, 25, yPosition + 3);
+      pdf.text(`${data.days.toFixed(1)} días`, pageWidth - 60, yPosition + 3);
       
-      yPosition += 15;
+      yPosition += 18;
       
-      // Desglose por miembro
+      // Miembros con mejor formato
       Object.values(data.memberBreakdown).forEach((member) => {
+        pdf.setTextColor(60, 60, 60);
         pdf.setFont('helvetica', 'normal');
         pdf.setFontSize(9);
-        pdf.text(`• ${member.name}: ${member.days.toFixed(1)} días`, 30, yPosition);
+        pdf.text(`• ${member.name}`, 30, yPosition);
+        pdf.text(`${member.days.toFixed(1)} días`, pageWidth - 60, yPosition);
         yPosition += 5;
       });
       
-      yPosition += 5;
+      yPosition += 8;
     });
     
-    // Miembros sin asignar
-    if (Object.keys(summary.unassignedMemberBreakdown).length > 0) {
-      if (yPosition > pageHeight - 40) {
-        pdf.addPage();
-        yPosition = 30;
-      }
-      
-      pdf.setFont('helvetica', 'bold');
-      pdf.setFontSize(14);
-      pdf.text('Disponibilidad por Miembro', 20, yPosition);
-      yPosition += 10;
-      
-      Object.values(summary.unassignedMemberBreakdown).forEach((member) => {
-        pdf.setFont('helvetica', 'normal');
-        pdf.setFontSize(10);
-        pdf.text(`• ${member.name}: ${member.days.toFixed(1)} días disponibles`, 25, yPosition);
-        yPosition += 6;
-      });
-    }
-    
-    // Footer en todas las páginas
+    // Footer profesional
     const pageCount = (pdf as any).internal.getNumberOfPages();
     for (let i = 1; i <= pageCount; i++) {
       pdf.setPage(i);
       
-      // Línea separadora del footer
       pdf.setDrawColor(59, 130, 246);
-      pdf.setLineWidth(0.5);
+      pdf.setLineWidth(1);
       pdf.line(20, pageHeight - 20, pageWidth - 20, pageHeight - 20);
       
-      // Texto del footer
       pdf.setTextColor(100, 100, 100);
       pdf.setFont('helvetica', 'normal');
       pdf.setFontSize(8);
-      pdf.text(`Generado el ${format(new Date(), 'dd/MM/yyyy HH:mm')}`, 20, pageHeight - 15);
+      pdf.text(`Generado: ${format(new Date(), 'dd/MM/yyyy HH:mm')}`, 20, pageHeight - 15);
       pdf.text(`Página ${i} de ${pageCount}`, pageWidth - 40, pageHeight - 15);
-      pdf.text('© 2025 Stratesys - Confidencial', 20, pageHeight - 10);
+      pdf.text('© 2025 Stratesys', 20, pageHeight - 10);
     }
     
-    // Guardar el PDF
     const filename = `Resumen_Equipo_${squadLeadName}_${format(new Date(startDate), 'yyyyMMdd')}-${format(new Date(endDate), 'yyyyMMdd')}.pdf`;
     pdf.save(filename);
   };
