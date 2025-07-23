@@ -132,53 +132,40 @@ const AssignmentsUpload = () => {
           const worksheet = workbook.Sheets[sheetName];
           const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 }) as any[][];
           const records: AssignmentRecord[] = [];
-          // Buscar fechas en las primeras filas (no solo en el header)
-          console.log('🔍 BUSCANDO FECHAS EN LAS PRIMERAS FILAS...');
+          // FORMATO MATRIZ: Fechas en fila 1, datos desde columna K (índice 10)
+          console.log('🔍 PROCESANDO FORMATO MATRIZ...');
+          console.log('📋 FILA 0 (headers):', jsonData[0]);
+          console.log('📋 FILA 1 (fechas):', jsonData[1]);
           
           const dateColumns: { index: number; date: string }[] = [];
-          let dateRowIndex = -1;
+          const dateRow = jsonData[1]; // Fila 1 contiene las fechas
           
-          // Buscar fechas en las primeras 5 filas
-          for (let rowIdx = 0; rowIdx < Math.min(5, jsonData.length); rowIdx++) {
-            const row = jsonData[rowIdx];
-            console.log(`📋 FILA ${rowIdx} COMPLETA:`, row);
-            
-            if (row) {
-              const tempDateColumns: { index: number; date: string }[] = [];
+          if (dateRow) {
+            // Buscar fechas desde la columna K (índice 10)
+            for (let colIdx = 10; colIdx < dateRow.length; colIdx++) {
+              const cellValue = dateRow[colIdx];
+              console.log(`📅 Columna ${colIdx}: "${cellValue}"`);
               
-              for (let colIdx = 0; colIdx < row.length; colIdx++) {
-                const cellValue = row[colIdx];
-                
-                if (cellValue) {
-                  const cellStr = String(cellValue).trim();
-                  // Buscar patrones de fecha DD/MM/YYYY
-                  const dateMatch = cellStr.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
-                  if (dateMatch) {
-                    tempDateColumns.push({ index: colIdx, date: cellStr });
-                    console.log(`✅ FECHA encontrada en fila ${rowIdx}, columna ${colIdx}: "${cellStr}"`);
-                  }
+              if (cellValue) {
+                const cellStr = String(cellValue).trim();
+                // Buscar patrones de fecha DD/MM/YYYY
+                const dateMatch = cellStr.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+                if (dateMatch) {
+                  dateColumns.push({ index: colIdx, date: cellStr });
+                  console.log(`✅ FECHA encontrada en columna ${colIdx}: "${cellStr}"`);
                 }
-              }
-              
-              // Si encontramos fechas en esta fila, usarla
-              if (tempDateColumns.length > 0) {
-                dateColumns.push(...tempDateColumns);
-                dateRowIndex = rowIdx;
-                console.log(`🎯 USANDO FILA ${rowIdx} COMO FILA DE FECHAS con ${tempDateColumns.length} fechas`);
-                break;
               }
             }
           }
           
           console.log('📊 TOTAL de columnas de fechas encontradas:', dateColumns.length);
-          console.log('📊 Fila de fechas:', dateRowIndex);
           console.log('📊 Columnas de fechas:', dateColumns);
           
           console.log('🔍 Iniciando procesamiento de filas de datos...');
           console.log('📝 Total de filas en Excel:', jsonData.length);
           
-          // Empezar desde la fila siguiente a la de fechas (o desde la fila 1 si no hay fechas)
-          const startRowIndex = dateRowIndex >= 0 ? dateRowIndex + 1 : 1;
+          // Procesar datos desde la fila 2 (índice 2) porque fila 0=headers, fila 1=fechas
+          const startRowIndex = 2;
           
           // Procesar cada fila de datos
           for (let rowIndex = startRowIndex; rowIndex < jsonData.length; rowIndex++) {
