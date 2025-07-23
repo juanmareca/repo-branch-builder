@@ -17,19 +17,17 @@ export const useCurrentUser = () => {
       const path = window.location.pathname;
       
       if (path.includes('/squad-') || path === '/squad-dashboard') {
-        // Para determinar el squad lead real, usaremos el localStorage o parámetros URL
-        // Por ahora, permitir que se seleccione desde la UI
+        // Limpiar cualquier dato incorrecto del localStorage
         const savedSquadLead = localStorage.getItem('current-squad-lead');
         
-        if (savedSquadLead) {
-          return {
-            name: savedSquadLead,
-            role: 'squad_lead' as const,
-            squadName: `Squad de ${savedSquadLead}`
-          };
+        // Si hay un valor guardado pero no es REVILLA MAILLO, JUAN MANUEL, lo limpiamos
+        if (savedSquadLead && savedSquadLead !== 'REVILLA MAILLO, JUAN MANUEL') {
+          localStorage.removeItem('current-squad-lead');
         }
         
-        // Si no hay squad lead guardado, usar REVILLA MAILLO, JUAN MANUEL por defecto
+        // Establecer siempre REVILLA MAILLO, JUAN MANUEL como el usuario actual
+        localStorage.setItem('current-squad-lead', 'REVILLA MAILLO, JUAN MANUEL');
+        
         return {
           name: 'REVILLA MAILLO, JUAN MANUEL',
           role: 'squad_lead' as const,
