@@ -565,6 +565,15 @@ const ProjectsManagement = () => {
     setOrigenFilter([]);
   };
 
+  const hasActiveFilters = () => {
+    return searchTerm !== '' || 
+           tipologiaFilter.length > 0 || 
+           clienteFilter.length > 0 || 
+           gestorFilter.length > 0 || 
+           socioResponsableFilter.length > 0 || 
+           origenFilter.length > 0;
+  };
+
   const getUniqueValues = (field: keyof Project) => {
     return [...new Set(projects.map(project => project[field]).filter(Boolean))].sort();
   };
