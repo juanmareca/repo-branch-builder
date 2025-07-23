@@ -579,6 +579,9 @@ export default function SquadAssignments({ userRole, userData }: { userRole?: st
               <div className="text-3xl font-bold text-blue-800 dark:text-blue-300">
                 {persons.length}
               </div>
+              <p className="text-xs italic text-blue-600 dark:text-blue-400 mt-1">
+                Año {new Date().getFullYear()}
+              </p>
             </CardContent>
           </Card>
 
@@ -593,15 +596,23 @@ export default function SquadAssignments({ userRole, userData }: { userRole?: st
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold text-green-800 dark:text-green-300">
-                {assignments.length}
+                {assignments.filter(a => {
+                  const startYear = new Date(a.start_date).getFullYear();
+                  const endYear = new Date(a.end_date).getFullYear();
+                  const currentYear = new Date().getFullYear();
+                  return startYear === currentYear || endYear === currentYear;
+                }).length}
               </div>
+              <p className="text-xs italic text-green-600 dark:text-green-400 mt-1">
+                Año {new Date().getFullYear()}
+              </p>
             </CardContent>
           </Card>
 
           <Card className="border-l-4 border-l-purple-500 bg-gradient-to-br from-purple-50 to-purple-100/50 dark:from-purple-950/20 dark:to-purple-900/10">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
               <CardTitle className="text-sm font-medium text-purple-700 dark:text-purple-400">
-                Proyectos Activos
+                Festivos Asignados
               </CardTitle>
               <div className="h-8 w-8 bg-purple-100 dark:bg-purple-900/50 rounded-lg flex items-center justify-center">
                 <CalendarIcon className="h-4 w-4 text-purple-600 dark:text-purple-400" />
@@ -609,8 +620,37 @@ export default function SquadAssignments({ userRole, userData }: { userRole?: st
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold text-purple-800 dark:text-purple-300">
-                {projects.length}
+                {(() => {
+                  const currentYear = new Date().getFullYear();
+                  const holidayProject = projects.find(p => p.codigo_inicial === '100748.1.1 STR04 - NON AVAILABLE - Holidays');
+                  if (!holidayProject) return 0;
+                  
+                  return assignments.filter(a => {
+                    const startYear = new Date(a.start_date).getFullYear();
+                    const endYear = new Date(a.end_date).getFullYear();
+                    return a.project_id === holidayProject.id && (startYear === currentYear || endYear === currentYear);
+                  }).reduce((total, assignment) => {
+                    const startDate = new Date(assignment.start_date);
+                    const endDate = new Date(assignment.end_date);
+                    
+                    // Calcular días en el año actual
+                    const yearStart = new Date(currentYear, 0, 1);
+                    const yearEnd = new Date(currentYear, 11, 31);
+                    
+                    const actualStart = startDate > yearStart ? startDate : yearStart;
+                    const actualEnd = endDate < yearEnd ? endDate : yearEnd;
+                    
+                    if (actualStart <= actualEnd) {
+                      const days = Math.ceil((actualEnd.getTime() - actualStart.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+                      return total + days;
+                    }
+                    return total;
+                  }, 0);
+                })()}
               </div>
+              <p className="text-xs italic text-purple-600 dark:text-purple-400 mt-1">
+                Año {new Date().getFullYear()}
+              </p>
             </CardContent>
           </Card>
 
@@ -627,6 +667,9 @@ export default function SquadAssignments({ userRole, userData }: { userRole?: st
               <div className="text-3xl font-bold text-orange-800 dark:text-orange-300">
                 {offices.length}
               </div>
+              <p className="text-xs italic text-orange-600 dark:text-orange-400 mt-1">
+                Año {new Date().getFullYear()}
+              </p>
             </CardContent>
           </Card>
         </div>
