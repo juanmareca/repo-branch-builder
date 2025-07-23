@@ -222,26 +222,6 @@ const Index = () => {
             </CardContent>
           </Card>
 
-          {isSquadLeadView && (
-            <Card className="border-l-4 border-l-orange-500 bg-gradient-to-br from-orange-50 to-orange-100/50 dark:from-orange-950/20 dark:to-orange-900/10">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
-                <CardTitle className="text-sm font-medium text-orange-700 dark:text-orange-400">
-                  Capacidades
-                </CardTitle>
-                <div className="h-8 w-8 bg-orange-100 dark:bg-orange-900/50 rounded-lg flex items-center justify-center">
-                  <Users className="h-4 w-4 text-orange-600 dark:text-orange-400" />
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="text-3xl font-bold text-orange-800 dark:text-orange-300">
-                  {capacities.filter(capacity => {
-                    const teamMembers = getTeamMembers();
-                    return teamMembers.some(member => member.nombre === capacity.person_name);
-                  }).length}
-                </div>
-              </CardContent>
-            </Card>
-          )}
         </div>
 
         {/* Filtros - Solo mostrar para admins */}
