@@ -885,12 +885,16 @@ const HolidaysManagement = () => {
                 </div>
               </div>
               <div className="mt-4 flex justify-end gap-2">
-                <Button variant="outline" onClick={clearFilters}>
+                <Button 
+                  variant="outline" 
+                  onClick={clearFilters}
+                  className={hasActiveFilters() ? "bg-orange-50 border-orange-200 text-orange-800 hover:bg-orange-100" : ""}
+                >
                   Limpiar filtros
                 </Button>
                 <Button 
                   onClick={applyCurrentFilters}
-                  className="bg-orange-600 hover:bg-orange-700 text-white"
+                  className={hasActiveFilters() ? "bg-orange-600 hover:bg-orange-700 text-white" : "bg-white border border-gray-200 text-gray-700 hover:bg-gray-50"}
                 >
                   Aplicar filtros
                 </Button>
