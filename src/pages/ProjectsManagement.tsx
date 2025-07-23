@@ -236,7 +236,7 @@ const ProjectsManagement = () => {
 
   useEffect(() => {
     applyFilters();
-  }, [projects, searchTerm, tipologiaFilter, clienteFilter, gestorFilter, socioResponsableFilter, origenFilter, sortField, sortDirection]);
+  }, [projects, searchTerm, squadMemberFilter, tipologiaFilter, clienteFilter, gestorFilter, socioResponsableFilter, origenFilter, sortField, sortDirection]);
 
   // Función para cargar datos del gráfico
   const fetchChartData = async () => {
@@ -315,46 +315,48 @@ const ProjectsManagement = () => {
       let allProjects: Project[] = [];
       
       if (currentUser?.role === 'squad_lead') {
-        // Para Squad Lead: solo proyectos asignados a su equipo
+        // Para Squad Lead: obtener proyectos donde hay asignaciones de su equipo
         console.log('📋 Cargando proyectos del squad:', currentUser.name);
         
-        // Primero obtenemos los IDs de proyectos únicos donde trabaja el squad
-        const { data: projectIds, error: assignmentsError } = await supabase
-          .from('assignments')
-          .select(`
-            project_id,
-            persons!inner(squad_lead)
-          `)
-          .eq('persons.squad_lead', currentUser.name);
-
-        if (assignmentsError) throw assignmentsError;
-        
-        const uniqueProjectIds = [...new Set(projectIds?.map(a => a.project_id) || [])];
-        
-        if (uniqueProjectIds.length > 0) {
-          // Ahora obtenemos los proyectos completos
-          const { data, error } = await supabase
-            .from('projects')
-            .select('*')
-            .in('id', uniqueProjectIds)
-            .order('denominacion', { ascending: true });
-
-          if (error) throw error;
-          allProjects = data || [];
-        }
-        
-        // También cargar los miembros del squad (incluyendo al squad lead)
-        const { data: membersData } = await supabase
+        // Primero obtenemos todos los miembros del squad
+        const { data: squadData, error: squadError } = await supabase
           .from('persons')
-          .select('nombre')
+          .select('id, nombre')
           .eq('squad_lead', currentUser.name);
+
+        if (squadError) throw squadError;
         
-        const members = membersData?.map(m => m.nombre) || [];
+        const squadPersonIds = squadData?.map(p => p.id) || [];
+        const squadNames = squadData?.map(p => p.nombre) || [];
+        
         // Agregar el squad lead a la lista si no está
-        if (!members.includes(currentUser.name)) {
-          members.push(currentUser.name);
+        if (!squadNames.includes(currentUser.name)) {
+          squadNames.push(currentUser.name);
         }
-        setSquadMembers(members);
+        setSquadMembers(squadNames);
+        
+        if (squadPersonIds.length > 0) {
+          // Obtener proyectos únicos donde hay asignaciones
+          const { data: projectIds, error: assignmentsError } = await supabase
+            .from('assignments')
+            .select('project_id')
+            .in('person_id', squadPersonIds);
+
+          if (assignmentsError) throw assignmentsError;
+          
+          const uniqueProjectIds = [...new Set(projectIds?.map(a => a.project_id) || [])];
+          
+          if (uniqueProjectIds.length > 0) {
+            const { data, error } = await supabase
+              .from('projects')
+              .select('*')
+              .in('id', uniqueProjectIds)
+              .order('denominacion', { ascending: true });
+
+            if (error) throw error;
+            allProjects = data || [];
+          }
+        }
         
       } else {
         // Para Admin: todos los proyectos
@@ -403,8 +405,34 @@ const ProjectsManagement = () => {
     }
   };
 
-  const applyFilters = useCallback(() => {
+  const applyFilters = useCallback(async () => {
     let filtered = [...projects];
+
+    // Squad Member filter - para Squad Leads
+    if (currentUser?.role === 'squad_lead' && squadMemberFilter.length > 0) {
+      try {
+        // Obtener IDs de personas seleccionadas
+        const { data: selectedPersons } = await supabase
+          .from('persons')
+          .select('id')
+          .in('nombre', squadMemberFilter);
+        
+        const selectedPersonIds = selectedPersons?.map(p => p.id) || [];
+        
+        if (selectedPersonIds.length > 0) {
+          // Obtener proyectos con asignaciones de las personas seleccionadas
+          const { data: assignments } = await supabase
+            .from('assignments')
+            .select('project_id')
+            .in('person_id', selectedPersonIds);
+          
+          const projectIds = assignments?.map(a => a.project_id) || [];
+          filtered = filtered.filter(project => projectIds.includes(project.id));
+        }
+      } catch (error) {
+        console.error('Error applying squad member filter:', error);
+      }
+    }
 
     // Search filter
     if (searchTerm) {
@@ -463,7 +491,7 @@ const ProjectsManagement = () => {
 
     setFilteredProjects(filtered);
     setCurrentPage(1);
-  }, [projects, searchTerm, tipologiaFilter, clienteFilter, gestorFilter, socioResponsableFilter, origenFilter, sortField, sortDirection]);
+  }, [projects, searchTerm, squadMemberFilter, tipologiaFilter, clienteFilter, gestorFilter, socioResponsableFilter, origenFilter, sortField, sortDirection, currentUser]);
 
   const handleAddProject = async () => {
     if (!formData.codigo_inicial || !formData.denominacion || !formData.cliente) {
@@ -692,6 +720,7 @@ const ProjectsManagement = () => {
 
   const clearFilters = () => {
     setSearchTerm('');
+    setSquadMemberFilter([]);
     setTipologiaFilter([]);
     setClienteFilter([]);
     setGestorFilter([]);
@@ -701,6 +730,7 @@ const ProjectsManagement = () => {
 
   const hasActiveFilters = () => {
     return searchTerm !== '' || 
+           squadMemberFilter.length > 0 ||
            tipologiaFilter.length > 0 || 
            clienteFilter.length > 0 || 
            gestorFilter.length > 0 || 
@@ -1239,7 +1269,28 @@ const ProjectsManagement = () => {
               </div>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6">
+                {/* Squad Member Filter - Solo para Squad Leads */}
+                {currentUser?.role === 'squad_lead' && (
+                  <div>
+                    <Label className="text-sm font-medium mb-2 block">Miembros del Squad</Label>
+                    <div className="space-y-2 max-h-32 overflow-y-auto">
+                      {squadMembers.map((member) => (
+                        <div key={member} className="flex items-center space-x-2">
+                          <Checkbox
+                            id={`member-${member}`}
+                            checked={squadMemberFilter.includes(member)}
+                            onCheckedChange={() => toggleFilter(squadMemberFilter, member, setSquadMemberFilter)}
+                          />
+                          <Label htmlFor={`member-${member}`} className="text-sm">
+                            {member}
+                          </Label>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                
                 {/* Tipología Filter */}
                 <div>
                   <Label className="text-sm font-medium mb-2 block">Tipología</Label>
