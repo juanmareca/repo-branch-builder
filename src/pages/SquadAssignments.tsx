@@ -622,7 +622,7 @@ export default function SquadAssignments({ userRole, userData }: { userRole?: st
               <div className="text-3xl font-bold text-purple-800 dark:text-purple-300">
                 {(() => {
                   const currentYear = new Date().getFullYear();
-                  const holidayProject = projects.find(p => p.codigo_inicial === '100748.1.1 STR04 - NON AVAILABLE - Holidays');
+                  const holidayProject = projects.find(p => p.codigo_inicial === '100748.1.1 STR04');
                   if (!holidayProject) return 0;
                   
                   return assignments.filter(a => {
