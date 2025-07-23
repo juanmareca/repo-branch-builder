@@ -131,35 +131,57 @@ const AssignmentsUpload = () => {
           const sheetName = workbook.SheetNames[0];
           const worksheet = workbook.Sheets[sheetName];
           const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 }) as any[][];
-          
           const records: AssignmentRecord[] = [];
+          // Analizar la primera fila para identificar las columnas de fechas
           const headerRow = jsonData[0];
+          console.log('📋 Header row completo:', headerRow);
+          console.log('📋 Número total de columnas:', headerRow?.length);
           
-          // Encontrar índices de las fechas (a partir de la columna K)
-          const dateStartIndex = 10; // Columna K es índice 10
           const dateColumns: { index: number; date: string }[] = [];
           
-          for (let i = dateStartIndex; i < headerRow.length; i++) {
-            const cellValue = headerRow[i];
-            if (cellValue && typeof cellValue === 'string') {
-              // Verificar si es una fecha válida en formato DD/MM/YYYY
-              const dateMatch = cellValue.match(/^\d{2}\/\d{2}\/\d{4}$/);
-              if (dateMatch) {
-                dateColumns.push({ index: i, date: cellValue });
+          if (headerRow) {
+            for (let i = 3; i < headerRow.length; i++) { // Empezar desde columna D (índice 3)
+              const cellValue = headerRow[i];
+              console.log(`📅 Analizando columna ${i}: "${cellValue}"`);
+              
+              if (cellValue && typeof cellValue === 'string') {
+                // Verificar si es una fecha en formato DD/MM/YYYY
+                const dateMatch = cellValue.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+                if (dateMatch) {
+                  dateColumns.push({ index: i, date: cellValue });
+                  console.log(`✅ Fecha válida encontrada en columna ${i}: ${cellValue}`);
+                } else {
+                  console.log(`❌ No es fecha válida en columna ${i}: "${cellValue}"`);
+                }
               }
             }
           }
           
+          console.log('📊 Total de columnas de fechas encontradas:', dateColumns.length);
+          
+          console.log('🔍 Iniciando procesamiento de filas de datos...');
+          console.log('📝 Total de filas en Excel:', jsonData.length);
+          
           // Procesar cada fila de datos
           for (let rowIndex = 1; rowIndex < jsonData.length; rowIndex++) {
             const row = jsonData[rowIndex];
-            if (!row || !row[0]) continue; // Saltar filas vacías
+            console.log(`\n📝 FILA ${rowIndex + 1}:`, row);
+            
+            if (!row || !row[0]) {
+              console.log(`⏭️ Saltando fila ${rowIndex + 1}: vacía o sin código de persona`);
+              continue; // Saltar filas vacías
+            }
             
             const personCode = String(row[0]).trim();
             const personName = String(row[1] || '').trim();
             const projectCode = String(row[2] || '').split('-')[0].trim(); // Todo antes del guión
             
-            if (!personCode || !projectCode) continue;
+            console.log(`🔍 Fila ${rowIndex + 1} - Persona: "${personCode}", Nombre: "${personName}", Proyecto: "${projectCode}"`);
+            
+            if (!personCode || !projectCode) {
+              console.log(`❌ Fila ${rowIndex + 1}: Falta código de persona o proyecto`);
+              continue;
+            }
             
             const assignments: Record<string, number> = {};
             
@@ -168,6 +190,7 @@ const AssignmentsUpload = () => {
               const value = row[index];
               if (value !== undefined && value !== null && value !== '') {
                 const stringValue = String(value).trim();
+                console.log(`📅 Fecha ${date} (col ${index}): "${stringValue}"`);
                 
                 // Ignorar FS (Fin de Semana), V (Vacaciones), F (Festivos)
                 if (!['FS', 'V', 'F'].includes(stringValue)) {
@@ -177,6 +200,7 @@ const AssignmentsUpload = () => {
                     const [day, month, year] = date.split('/');
                     const isoDate = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
                     assignments[isoDate] = percentage;
+                    console.log(`✅ Asignación válida: ${isoDate} = ${percentage}%`);
                   }
                 }
               }
@@ -190,8 +214,15 @@ const AssignmentsUpload = () => {
                 projectCode,
                 assignments
               });
+              console.log(`✅ Registro ${rowIndex + 1} agregado con ${Object.keys(assignments).length} asignaciones`);
+            } else {
+              console.log(`❌ Registro ${rowIndex + 1}: Sin asignaciones válidas`);
             }
           }
+          
+          console.log(`\n📊 RESUMEN DEL PARSING:`);
+          console.log(`- Total registros procesados: ${records.length}`);
+          console.log(`- Registros con datos:`, records);
           
           resolve(records);
         } catch (error) {
