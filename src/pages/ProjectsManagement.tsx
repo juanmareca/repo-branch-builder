@@ -98,6 +98,7 @@ const ProjectsManagement = () => {
   const [searchTerm, setSearchTerm] = useState('');
   
   // Filters
+  const [squadMemberFilter, setSquadMemberFilter] = useState<string[]>([]); // Nuevo filtro para miembros del squad
   const [tipologiaFilter, setTipologiaFilter] = useState<string[]>([]);
   const [clienteFilter, setClienteFilter] = useState<string[]>([]);
   const [gestorFilter, setGestorFilter] = useState<string[]>([]);
@@ -317,57 +318,43 @@ const ProjectsManagement = () => {
         // Para Squad Lead: solo proyectos asignados a su equipo
         console.log('📋 Cargando proyectos del squad:', currentUser.name);
         
-        const { data, error } = await supabase
-          .from('projects')
+        // Primero obtenemos los IDs de proyectos únicos donde trabaja el squad
+        const { data: projectIds, error: assignmentsError } = await supabase
+          .from('assignments')
           .select(`
-            *,
-            assignments!inner(
-              id,
-              persons!inner(
-                id,
-                nombre,
-                squad_lead
-              )
-            )
+            project_id,
+            persons!inner(squad_lead)
           `)
-          .eq('assignments.persons.squad_lead', currentUser.name)
-          .order('denominacion', { ascending: true });
+          .eq('persons.squad_lead', currentUser.name);
 
-        if (error) throw error;
+        if (assignmentsError) throw assignmentsError;
         
-        // Remover duplicados por ID de proyecto
-        const uniqueProjects = data?.reduce((acc: Project[], project: any) => {
-          if (!acc.find(p => p.id === project.id)) {
-            // Limpiamos el objeto del proyecto para que solo tenga las propiedades de Project
-            const cleanProject: Project = {
-              id: project.id,
-              codigo_inicial: project.codigo_inicial,
-              denominacion: project.denominacion,
-              descripcion: project.descripcion,
-              cliente: project.cliente,
-              grupo_cliente: project.grupo_cliente,
-              gestor_proyecto: project.gestor_proyecto,
-              socio_responsable: project.socio_responsable,
-              tipologia: project.tipologia,
-              tipologia_2: project.tipologia_2,
-              created_at: project.created_at,
-              updated_at: project.updated_at,
-              origen: project.origen
-            };
-            acc.push(cleanProject);
-          }
-          return acc;
-        }, []) || [];
+        const uniqueProjectIds = [...new Set(projectIds?.map(a => a.project_id) || [])];
         
-        allProjects = uniqueProjects;
+        if (uniqueProjectIds.length > 0) {
+          // Ahora obtenemos los proyectos completos
+          const { data, error } = await supabase
+            .from('projects')
+            .select('*')
+            .in('id', uniqueProjectIds)
+            .order('denominacion', { ascending: true });
+
+          if (error) throw error;
+          allProjects = data || [];
+        }
         
-        // También cargar los miembros del squad
+        // También cargar los miembros del squad (incluyendo al squad lead)
         const { data: membersData } = await supabase
           .from('persons')
           .select('nombre')
           .eq('squad_lead', currentUser.name);
         
-        setSquadMembers(membersData?.map(m => m.nombre) || []);
+        const members = membersData?.map(m => m.nombre) || [];
+        // Agregar el squad lead a la lista si no está
+        if (!members.includes(currentUser.name)) {
+          members.push(currentUser.name);
+        }
+        setSquadMembers(members);
         
       } else {
         // Para Admin: todos los proyectos
