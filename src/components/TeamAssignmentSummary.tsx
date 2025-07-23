@@ -420,39 +420,52 @@ export default function TeamAssignmentSummary({
     pdf.text('Resumen Ejecutivo', 20, yPosition);
     yPosition += 15;
     
-    // Grid de métricas con diseño profesional
+    // Métricas principales en tarjetas modernas
+    const cardWidth = (pageWidth - 60) / 4;
+    const cardHeight = 60;
     const metrics = [
-      { label: 'Días Naturales', value: summary.totalDays },
-      { label: 'Fines de Semana', value: `${summary.weekendDays} (${((summary.weekendDays / summary.totalDays) * 100).toFixed(1)}%)` },
-      { label: 'Festivos Laborables', value: summary.totalHolidayDays },
-      { label: 'Días Laborables', value: `${summary.workDays} (${((summary.workDays / summary.totalDays) * 100).toFixed(1)}%)` }
+      { label: 'Días Totales', value: summary.totalDays, color: [59, 130, 246], bgColor: [239, 246, 255] },
+      { label: 'Días Laborables', value: summary.workDays, color: [34, 197, 94], bgColor: [240, 253, 244] },
+      { label: 'Festivos', value: summary.totalHolidayDays, color: [168, 85, 247], bgColor: [250, 245, 255] },
+      { label: 'Capacidad', value: `${Math.round(summary.availableCapacity)}%`, color: [249, 115, 22], bgColor: [255, 247, 237] }
     ];
-    
+
     metrics.forEach((metric, index) => {
-      const x = 20 + (index % 2) * 95;
-      const y = yPosition + Math.floor(index / 2) * 30;
+      const x = 20 + index * (cardWidth + 10);
       
-      // Fondo sutil
-      pdf.setFillColor(248, 250, 252);
-      pdf.rect(x, y - 5, 90, 25, 'F');
+      // Fondo de tarjeta con gradiente suave
+      pdf.setFillColor(metric.bgColor[0], metric.bgColor[1], metric.bgColor[2]);
+      pdf.roundedRect(x, yPosition, cardWidth, cardHeight, 8, 8, 'F');
       
-      // Borde elegante
-      pdf.setDrawColor(226, 232, 240);
-      pdf.setLineWidth(1);
-      pdf.rect(x, y - 5, 90, 25, 'S');
+      // Borde izquierdo de color
+      pdf.setFillColor(metric.color[0], metric.color[1], metric.color[2]);
+      pdf.rect(x, yPosition, 4, cardHeight, 'F');
       
-      // Valor grande
-      pdf.setTextColor(15, 23, 42);
+      // Borde sutil
+      pdf.setDrawColor(220, 220, 220);
+      pdf.setLineWidth(0.5);
+      pdf.roundedRect(x, yPosition, cardWidth, cardHeight, 8, 8, 'S');
+      
+      // Icono de fondo decorativo
+      pdf.setFillColor(metric.color[0], metric.color[1], metric.color[2], 0.1);
+      pdf.circle(x + cardWidth - 15, yPosition + 15, 8, 'F');
+      
+      // Valor principal
+      pdf.setTextColor(metric.color[0], metric.color[1], metric.color[2]);
       pdf.setFont('helvetica', 'bold');
       pdf.setFontSize(18);
-      const valueStr = metric.value.toString();
-      pdf.text(valueStr, x + 5, y + 5);
+      pdf.text(metric.value.toString(), x + 12, yPosition + 25, { align: 'left' });
       
-      // Etiqueta pequeña
+      // Etiqueta
+      pdf.setTextColor(75, 85, 99);
       pdf.setFont('helvetica', 'normal');
-      pdf.setFontSize(9);
-      pdf.setTextColor(100, 116, 139);
-      pdf.text(metric.label, x + 5, y + 15);
+      pdf.setFontSize(10);
+      pdf.text(metric.label, x + 12, yPosition + 40, { align: 'left' });
+      
+      // Línea decorativa
+      pdf.setDrawColor(metric.color[0], metric.color[1], metric.color[2], 0.3);
+      pdf.setLineWidth(1);
+      pdf.line(x + 12, yPosition + 45, x + cardWidth - 20, yPosition + 45);
     });
     
     yPosition += 75;
