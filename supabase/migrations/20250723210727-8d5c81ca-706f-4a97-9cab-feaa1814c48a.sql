@@ -1,0 +1,14 @@
+-- Habilitar Row Level Security en todas las tablas que no lo tienen habilitado
+ALTER TABLE public.assignments ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.audit_logs ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.backups ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.capacities ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.documents ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.holidays ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.notifications ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.persons ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.projects ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.tasks ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.time_entries ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.squad_leads ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.squad_lead_preferences ENABLE ROW LEVEL SECURITY;
