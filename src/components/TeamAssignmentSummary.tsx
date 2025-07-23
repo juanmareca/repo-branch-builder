@@ -293,186 +293,246 @@ export default function TeamAssignmentSummary({
     const pageWidth = pdf.internal.pageSize.getWidth();
     const pageHeight = pdf.internal.pageSize.getHeight();
     
-    // Crear gráfico de capacidad tipo quesito
+    // Crear gráfico de capacidad profesional
     const createCapacityChart = () => {
       const canvas = document.createElement('canvas');
-      canvas.width = 300;
+      canvas.width = 400;
       canvas.height = 300;
       const ctx = canvas.getContext('2d');
       
       if (!ctx) return null;
       
-      const centerX = canvas.width / 2;
-      const centerY = canvas.height / 2;
-      const radius = 100;
+      const centerX = 150;
+      const centerY = 150;
+      const radius = 80;
+      const innerRadius = 40;
       
       const assignedPercentage = 100 - summary.availableCapacity;
       const assignedAngle = (assignedPercentage / 100) * 2 * Math.PI;
       
-      // Fondo del gráfico
-      ctx.fillStyle = '#f8fafc';
+      // Fondo limpio
+      ctx.fillStyle = '#ffffff';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
       
-      // Capacidad asignada (azul)
+      // Anillo exterior sutil
       ctx.beginPath();
-      ctx.moveTo(centerX, centerY);
+      ctx.arc(centerX, centerY, radius + 10, 0, 2 * Math.PI);
+      ctx.fillStyle = '#f1f5f9';
+      ctx.fill();
+      
+      // Capacidad asignada (azul elegante)
+      ctx.beginPath();
       ctx.arc(centerX, centerY, radius, -Math.PI / 2, -Math.PI / 2 + assignedAngle);
+      ctx.arc(centerX, centerY, innerRadius, -Math.PI / 2 + assignedAngle, -Math.PI / 2, true);
       ctx.closePath();
-      ctx.fillStyle = '#3b82f6';
+      ctx.fillStyle = '#2563eb';
       ctx.fill();
       
-      // Capacidad disponible (verde)
+      // Gradiente sutil para profundidad
+      const gradientAssigned = ctx.createRadialGradient(centerX, centerY, innerRadius, centerX, centerY, radius);
+      gradientAssigned.addColorStop(0, '#3b82f6');
+      gradientAssigned.addColorStop(1, '#1d4ed8');
+      ctx.fillStyle = gradientAssigned;
+      ctx.fill();
+      
+      // Capacidad disponible (verde elegante)
       ctx.beginPath();
-      ctx.moveTo(centerX, centerY);
       ctx.arc(centerX, centerY, radius, -Math.PI / 2 + assignedAngle, -Math.PI / 2 + 2 * Math.PI);
+      ctx.arc(centerX, centerY, innerRadius, -Math.PI / 2 + 2 * Math.PI, -Math.PI / 2 + assignedAngle, true);
       ctx.closePath();
-      ctx.fillStyle = '#10b981';
+      const gradientAvailable = ctx.createRadialGradient(centerX, centerY, innerRadius, centerX, centerY, radius);
+      gradientAvailable.addColorStop(0, '#10b981');
+      gradientAvailable.addColorStop(1, '#059669');
+      ctx.fillStyle = gradientAvailable;
       ctx.fill();
       
-      // Añadir leyenda
-      ctx.fillStyle = '#374151';
-      ctx.font = 'bold 14px Arial';
-      ctx.fillText('Capacidad del Equipo', centerX - 70, 30);
+      // Texto central
+      ctx.fillStyle = '#1f2937';
+      ctx.font = 'bold 16px Arial';
+      ctx.textAlign = 'center';
+      ctx.fillText('Capacidad', centerX, centerY - 5);
+      ctx.fillText('del Equipo', centerX, centerY + 15);
       
-      // Leyenda asignado
-      ctx.fillStyle = '#3b82f6';
-      ctx.fillRect(20, 250, 15, 15);
+      // Leyenda moderna
+      ctx.textAlign = 'left';
+      ctx.fillStyle = '#1f2937';
+      ctx.font = 'bold 14px Arial';
+      ctx.fillText('Análisis de Capacidad', 320, 50);
+      
+      // Indicadores con círculos
+      ctx.beginPath();
+      ctx.arc(330, 80, 8, 0, 2 * Math.PI);
+      ctx.fillStyle = '#2563eb';
+      ctx.fill();
       ctx.fillStyle = '#374151';
       ctx.font = '12px Arial';
-      ctx.fillText(`Asignado: ${assignedPercentage.toFixed(1)}%`, 45, 262);
+      ctx.fillText(`Asignado: ${assignedPercentage.toFixed(1)}%`, 350, 85);
       
-      // Leyenda disponible
+      ctx.beginPath();
+      ctx.arc(330, 110, 8, 0, 2 * Math.PI);
       ctx.fillStyle = '#10b981';
-      ctx.fillRect(20, 270, 15, 15);
-      ctx.fillStyle = '#374151';
-      ctx.fillText(`Disponible: ${summary.availableCapacity.toFixed(1)}%`, 45, 282);
+      ctx.fill();
+      ctx.fillText(`Disponible: ${summary.availableCapacity.toFixed(1)}%`, 350, 115);
       
       return canvas.toDataURL('image/png');
     };
     
     const capacityChartImage = createCapacityChart();
     
-    // Header mejorado
-    pdf.setFillColor(59, 130, 246);
-    pdf.rect(0, 0, pageWidth, 50, 'F');
+    // Header profesional con fondo tecnológico
+    pdf.setFillColor(15, 23, 42); // Azul tecnológico oscuro
+    pdf.rect(0, 0, pageWidth, 55, 'F');
+    
+    // Líneas tecnológicas sutiles
+    pdf.setDrawColor(37, 99, 235);
+    pdf.setLineWidth(0.5);
+    for (let i = 0; i < 5; i++) {
+      pdf.line(20 + i * 40, 10, 30 + i * 40, 20);
+      pdf.line(30 + i * 40, 35, 40 + i * 40, 45);
+    }
     
     pdf.setTextColor(255, 255, 255);
     pdf.setFont('helvetica', 'bold');
-    pdf.setFontSize(24);
-    pdf.text('STRATESYS', 20, 25);
+    pdf.setFontSize(28);
+    pdf.text('STRATESYS', 20, 30);
     
-    pdf.setFontSize(14);
+    pdf.setFontSize(12);
     pdf.setFont('helvetica', 'normal');
-    pdf.text('Resumen de Asignaciones del Equipo', 20, 35);
-    pdf.text(`Squad Lead: ${squadLeadName}`, 20, 42);
+    pdf.text('Leaders in SAP Technology', 20, 40);
+    pdf.text('Resumen de Asignaciones del Equipo', 20, 48);
     
-    // Fecha en esquina superior derecha
+    // Info del squad lead
     pdf.setFontSize(10);
-    pdf.text(`${format(new Date(startDate), 'dd/MM/yyyy')} - ${format(new Date(endDate), 'dd/MM/yyyy')}`, pageWidth - 60, 42);
+    pdf.text(`Squad Lead: ${squadLeadName}`, pageWidth - 80, 25);
+    pdf.text(`Período: ${format(new Date(startDate), 'dd/MM/yyyy')} - ${format(new Date(endDate), 'dd/MM/yyyy')}`, pageWidth - 80, 35);
+    pdf.text(`Generado: ${format(new Date(), 'dd/MM/yyyy HH:mm')}`, pageWidth - 80, 45);
     
-    let yPosition = 65;
+    let yPosition = 70;
     
-    // Métricas principales en tarjetas
-    pdf.setTextColor(60, 60, 60);
+    // Métricas principales con diseño limpio
+    pdf.setTextColor(31, 41, 55);
     pdf.setFont('helvetica', 'bold');
     pdf.setFontSize(16);
     pdf.text('Resumen Ejecutivo', 20, yPosition);
     yPosition += 15;
     
-    // Grid de métricas con colores
+    // Grid de métricas con diseño profesional
     const metrics = [
-      { label: 'Días Naturales', value: summary.totalDays, color: [59, 130, 246] },
-      { label: 'Fines de Semana', value: summary.weekendDays, color: [245, 158, 11] },
-      { label: 'Festivos', value: summary.totalHolidayDays, color: [239, 68, 68] },
-      { label: 'Días Laborables', value: summary.workDays, color: [16, 185, 129] }
+      { label: 'Días Naturales', value: summary.totalDays },
+      { label: 'Fines de Semana', value: `${summary.weekendDays} (${((summary.weekendDays / summary.totalDays) * 100).toFixed(1)}%)` },
+      { label: 'Festivos Laborables', value: summary.totalHolidayDays },
+      { label: 'Días Laborables', value: `${summary.workDays} (${((summary.workDays / summary.totalDays) * 100).toFixed(1)}%)` }
     ];
     
     metrics.forEach((metric, index) => {
-      const x = 20 + (index % 2) * 85;
-      const y = yPosition + Math.floor(index / 2) * 25;
+      const x = 20 + (index % 2) * 95;
+      const y = yPosition + Math.floor(index / 2) * 30;
       
-      // Tarjeta con color
-      pdf.setFillColor(metric.color[0], metric.color[1], metric.color[2]);
-      pdf.rect(x, y - 5, 80, 20, 'F');
+      // Fondo sutil
+      pdf.setFillColor(248, 250, 252);
+      pdf.rect(x, y - 5, 90, 25, 'F');
       
-      // Texto en blanco
-      pdf.setTextColor(255, 255, 255);
+      // Borde elegante
+      pdf.setDrawColor(226, 232, 240);
+      pdf.setLineWidth(1);
+      pdf.rect(x, y - 5, 90, 25, 'S');
+      
+      // Valor grande
+      pdf.setTextColor(15, 23, 42);
       pdf.setFont('helvetica', 'bold');
-      pdf.setFontSize(14);
-      pdf.text(metric.value.toString(), x + 5, y + 3);
+      pdf.setFontSize(18);
+      const valueStr = metric.value.toString();
+      pdf.text(valueStr, x + 5, y + 5);
+      
+      // Etiqueta pequeña
       pdf.setFont('helvetica', 'normal');
-      pdf.setFontSize(8);
-      pdf.text(metric.label, x + 5, y + 10);
+      pdf.setFontSize(9);
+      pdf.setTextColor(100, 116, 139);
+      pdf.text(metric.label, x + 5, y + 15);
     });
     
-    yPosition += 55;
+    yPosition += 75;
     
-    // Añadir gráfico de capacidad
+    // Sección de análisis de capacidad con gráfico
+    pdf.setTextColor(31, 41, 55);
+    pdf.setFont('helvetica', 'bold');
+    pdf.setFontSize(16);
+    pdf.text('Análisis de Capacidad', 20, yPosition);
+    
+    // Añadir gráfico de capacidad mejorado
     if (capacityChartImage) {
-      pdf.addImage(capacityChartImage, 'PNG', pageWidth - 80, yPosition - 20, 60, 60);
+      pdf.addImage(capacityChartImage, 'PNG', 20, yPosition + 5, 100, 75);
     }
     
-    // Análisis de capacidad
-    pdf.setTextColor(60, 60, 60);
+    // Métricas de capacidad
+    const capacityX = 130;
+    pdf.setFillColor(248, 250, 252);
+    pdf.rect(capacityX, yPosition + 10, 70, 50, 'F');
+    pdf.setDrawColor(226, 232, 240);
+    pdf.rect(capacityX, yPosition + 10, 70, 50, 'S');
+    
+    pdf.setTextColor(15, 23, 42);
     pdf.setFont('helvetica', 'bold');
-    pdf.setFontSize(14);
-    pdf.text('Análisis de Capacidad', 20, yPosition);
-    yPosition += 10;
+    pdf.setFontSize(20);
+    pdf.text(`${summary.availableCapacity.toFixed(1)}%`, capacityX + 5, yPosition + 25, { align: 'right', maxWidth: 60 });
     
-    const capacityColor = summary.availableCapacity > 50 ? [220, 252, 231] : 
-                         summary.availableCapacity > 20 ? [254, 240, 138] : [254, 226, 226];
-    pdf.setFillColor(capacityColor[0], capacityColor[1], capacityColor[2]);
-    pdf.rect(20, yPosition - 5, pageWidth - 100, 25, 'F');
-    
-    pdf.setTextColor(60, 60, 60);
     pdf.setFont('helvetica', 'normal');
-    pdf.setFontSize(11);
-    pdf.text(`Capacidad Disponible: ${summary.availableCapacity.toFixed(1)}%`, 25, yPosition + 5);
-    pdf.text(`Días Sin Asignar: ${summary.unassignedDays.toFixed(1)}`, 25, yPosition + 12);
+    pdf.setFontSize(10);
+    pdf.setTextColor(100, 116, 139);
+    pdf.text('Capacidad Disponible', capacityX + 5, yPosition + 35);
+    pdf.text(`${summary.unassignedDays.toFixed(1)} días sin asignar`, capacityX + 5, yPosition + 45);
+    pdf.text(`de ${(summary.workDays * teamMembers.length).toFixed(1)} días totales`, capacityX + 5, yPosition + 55);
     
-    yPosition += 35;
+    yPosition += 85;
     
-    // Asignaciones por proyecto con mejor formato
+    // Asignaciones por proyecto con formato web
     pdf.setFont('helvetica', 'bold');
-    pdf.setFontSize(14);
+    pdf.setFontSize(16);
+    pdf.setTextColor(31, 41, 55);
     pdf.text('Asignaciones por Proyecto', 20, yPosition);
     yPosition += 15;
     
-    Object.entries(summary.projectDays).forEach(([projectId, data], index) => {
-      if (yPosition > pageHeight - 60) {
+    Object.entries(summary.projectDays).forEach(([projectId, data]) => {
+      if (yPosition > pageHeight - 80) {
         pdf.addPage();
         yPosition = 30;
       }
       
-      // Header del proyecto con gradiente
-      const colors = [
-        [99, 102, 241], [168, 85, 247], [236, 72, 153], 
-        [245, 101, 101], [59, 130, 246], [16, 185, 129]
-      ];
-      const color = colors[index % colors.length];
+      // Header del proyecto estilo web
+      pdf.setFillColor(241, 245, 249);
+      pdf.rect(20, yPosition - 5, pageWidth - 40, 18, 'F');
+      pdf.setDrawColor(226, 232, 240);
+      pdf.rect(20, yPosition - 5, pageWidth - 40, 18, 'S');
       
-      pdf.setFillColor(color[0], color[1], color[2]);
-      pdf.rect(20, yPosition - 5, pageWidth - 40, 15, 'F');
+      // Proyecto y código
+      const project = projects.find(p => p.id === projectId);
+      const projectCode = project?.codigo_inicial || '';
+      const projectName = project?.denominacion || data.name;
       
-      pdf.setTextColor(255, 255, 255);
+      pdf.setTextColor(15, 23, 42);
       pdf.setFont('helvetica', 'bold');
       pdf.setFontSize(10);
-      pdf.text(data.name, 25, yPosition + 3);
-      pdf.text(`${data.days.toFixed(1)} días`, pageWidth - 60, yPosition + 3);
+      pdf.text(`${projectCode}`, 25, yPosition + 3);
+      pdf.setFont('helvetica', 'normal');
+      pdf.text(`${projectName}`, 25, yPosition + 10);
       
-      yPosition += 18;
+      // Días alineados a la derecha
+      pdf.setFont('helvetica', 'bold');
+      pdf.text(`${data.days.toFixed(1)} días`, pageWidth - 25, yPosition + 7, { align: 'right' });
       
-      // Miembros con mejor formato
+      yPosition += 22;
+      
+      // Miembros del equipo
       Object.values(data.memberBreakdown).forEach((member) => {
-        pdf.setTextColor(60, 60, 60);
+        pdf.setTextColor(71, 85, 105);
         pdf.setFont('helvetica', 'normal');
         pdf.setFontSize(9);
         pdf.text(`• ${member.name}`, 30, yPosition);
-        pdf.text(`${member.days.toFixed(1)} días`, pageWidth - 60, yPosition);
+        pdf.text(`${member.days.toFixed(1)} días`, pageWidth - 25, yPosition, { align: 'right' });
         yPosition += 5;
       });
       
-      yPosition += 8;
+      yPosition += 5;
     });
     
     // Footer profesional
@@ -596,12 +656,17 @@ export default function TeamAssignmentSummary({
                       <div className="text-sm text-muted-foreground">
                         Festivos laborables (suma del equipo)
                       </div>
-                      <div className="text-xs text-muted-foreground mt-2 text-left">
-                        {Object.values(summary.memberHolidays).map((member, index) => (
+                      <div className="text-xs text-muted-foreground mt-2 text-left max-h-20 overflow-y-auto">
+                        {Object.values(summary.memberHolidays)
+                          .filter(member => member.holidayDays > 0)
+                          .map((member, index) => (
                           <div key={index}>
                             {member.name}: {member.holidayDays} días
                           </div>
                         ))}
+                        {Object.values(summary.memberHolidays).every(member => member.holidayDays === 0) && (
+                          <div className="text-green-600">Sin festivos en el período</div>
+                        )}
                       </div>
                     </div>
                   </CardContent>
@@ -619,51 +684,145 @@ export default function TeamAssignmentSummary({
                 </Card>
               </div>
               
+              {/* Gráfico de Capacidad Mejorado */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div className="space-y-4">
+                  <h4 className="font-medium">Análisis de Capacidad</h4>
+                  <div className="relative">
+                    <div className="w-48 h-48 mx-auto relative">
+                      <svg className="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
+                        {/* Fondo del círculo */}
+                        <circle
+                          cx="50"
+                          cy="50"
+                          r="40"
+                          fill="none"
+                          stroke="#f1f5f9"
+                          strokeWidth="8"
+                        />
+                        {/* Capacidad asignada */}
+                        <circle
+                          cx="50"
+                          cy="50"
+                          r="40"
+                          fill="none"
+                          stroke="#3b82f6"
+                          strokeWidth="8"
+                          strokeDasharray={`${(100 - summary.availableCapacity) * 2.51} 251.2`}
+                          strokeLinecap="round"
+                          className="transition-all duration-1000"
+                        />
+                        {/* Capacidad disponible */}
+                        <circle
+                          cx="50"
+                          cy="50"
+                          r="30"
+                          fill="none"
+                          stroke="#10b981"
+                          strokeWidth="8"
+                          strokeDasharray={`${summary.availableCapacity * 1.88} 188.4`}
+                          strokeDashoffset={`${-(100 - summary.availableCapacity) * 1.88}`}
+                          strokeLinecap="round"
+                          className="transition-all duration-1000"
+                        />
+                      </svg>
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <div className="text-center">
+                          <div className="text-2xl font-bold text-primary">
+                            {summary.availableCapacity.toFixed(1)}%
+                          </div>
+                          <div className="text-sm text-muted-foreground">Disponible</div>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex justify-center mt-4 space-x-6">
+                      <div className="flex items-center gap-2">
+                        <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
+                        <span className="text-sm">Asignado ({(100 - summary.availableCapacity).toFixed(1)}%)</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                        <span className="text-sm">Disponible ({summary.availableCapacity.toFixed(1)}%)</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="space-y-4">
+                  <h4 className="font-medium">Métricas del Período</h4>
+                  <div className="space-y-3">
+                    <div className="flex justify-between items-center p-3 bg-muted rounded-lg">
+                      <span className="text-sm font-medium">Días sin asignar</span>
+                      <span className="font-semibold">{summary.unassignedDays.toFixed(1)} días</span>
+                    </div>
+                    <div className="flex justify-between items-center p-3 bg-muted rounded-lg">
+                      <span className="text-sm font-medium">Total días laborables</span>
+                      <span className="font-semibold">{(summary.workDays * teamMembers.length).toFixed(1)} días</span>
+                    </div>
+                    <div className="flex justify-between items-center p-3 bg-muted rounded-lg">
+                      <span className="text-sm font-medium">Miembros del equipo</span>
+                      <span className="font-semibold">{teamMembers.length} personas</span>
+                    </div>
+                    {summary.totalVacationDays > 0 && (
+                      <div className="flex justify-between items-center p-3 bg-purple-50 border border-purple-200 rounded-lg">
+                        <span className="text-sm font-medium text-purple-800">Días de vacaciones</span>
+                        <span className="font-semibold text-purple-800">{summary.totalVacationDays.toFixed(1)} días</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
               {/* Project Assignments */}
               <div>
                 <h4 className="font-medium mb-3">Asignaciones por Proyecto del Equipo:</h4>
                 <div className="space-y-3">
-                  {Object.entries(summary.projectDays).map(([projectId, data]) => (
-                    <div key={projectId}>
-                      <Collapsible
-                        open={expandedProjects[projectId]}
-                        onOpenChange={() => toggleProjectExpansion(projectId)}
-                      >
-                        <CollapsibleTrigger asChild>
-                          <div className="flex justify-between items-center p-3 bg-muted rounded-lg cursor-pointer hover:bg-muted/80">
-                            <div className="flex items-center gap-2">
-                              {expandedProjects[projectId] ? 
-                                <ChevronDown className="h-4 w-4" /> : 
-                                <ChevronRight className="h-4 w-4" />
-                              }
-                              <div>
-                                <div className="font-medium">{data.name}</div>
+                  {Object.entries(summary.projectDays).map(([projectId, data]) => {
+                    const project = projects.find(p => p.id === projectId);
+                    const projectCode = project?.codigo_inicial || '';
+                    const projectName = project?.denominacion || data.name;
+                    
+                    return (
+                      <div key={projectId}>
+                        <Collapsible
+                          open={expandedProjects[projectId]}
+                          onOpenChange={() => toggleProjectExpansion(projectId)}
+                        >
+                          <CollapsibleTrigger asChild>
+                            <div className="flex justify-between items-center p-3 bg-muted rounded-lg cursor-pointer hover:bg-muted/80">
+                              <div className="flex items-center gap-2">
+                                {expandedProjects[projectId] ? 
+                                  <ChevronDown className="h-4 w-4" /> : 
+                                  <ChevronRight className="h-4 w-4" />
+                                }
+                                <div>
+                                  <div className="font-medium">{projectCode}</div>
+                                  <div className="text-sm text-muted-foreground">{projectName}</div>
+                                  <div className="text-xs text-muted-foreground">Asignaciones del equipo</div>
+                                </div>
+                              </div>
+                              <div className="text-right">
+                                <div className="font-semibold">{data.days.toFixed(1)} días</div>
                                 <div className="text-sm text-muted-foreground">
-                                  Asignaciones del equipo
+                                  (Total del equipo)
                                 </div>
                               </div>
                             </div>
-                            <div className="text-right">
-                              <div className="font-semibold">{data.days.toFixed(1)} días</div>
-                              <div className="text-sm text-muted-foreground">
-                                (Total del equipo)
-                              </div>
+                          </CollapsibleTrigger>
+                          <CollapsibleContent className="mt-2 ml-6">
+                            <div className="space-y-2">
+                              {Object.values(data.memberBreakdown).map((member, index) => (
+                                <div key={index} className="flex justify-between items-center p-2 bg-background rounded text-sm">
+                                  <span className="text-left">{member.name}</span>
+                                  <span className="font-medium">{member.days.toFixed(1)} días</span>
+                                </div>
+                              ))}
                             </div>
-                          </div>
-                        </CollapsibleTrigger>
-                        <CollapsibleContent className="mt-2 ml-6">
-                          <div className="space-y-2">
-                            {Object.values(data.memberBreakdown).map((member, index) => (
-                              <div key={index} className="flex justify-between items-center p-2 bg-background rounded text-sm">
-                                <span className="text-left">{member.name}</span>
-                                <span>{member.days.toFixed(1)} días</span>
-                              </div>
-                            ))}
-                          </div>
-                        </CollapsibleContent>
-                      </Collapsible>
-                    </div>
-                  ))}
+                          </CollapsibleContent>
+                        </Collapsible>
+                      </div>
+                    );
+                  })}
                   
                   {summary.unassignedDays > 0 && (
                     <div>
