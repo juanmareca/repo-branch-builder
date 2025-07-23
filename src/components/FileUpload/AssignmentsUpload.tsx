@@ -134,30 +134,32 @@ const AssignmentsUpload = () => {
           const records: AssignmentRecord[] = [];
           // Analizar la primera fila para identificar las columnas de fechas
           const headerRow = jsonData[0];
-          console.log('📋 Header row completo:', headerRow);
+          console.log('📋 HEADER ROW COMPLETO:', headerRow);
           console.log('📋 Número total de columnas:', headerRow?.length);
           
           const dateColumns: { index: number; date: string }[] = [];
           
           if (headerRow) {
-            for (let i = 3; i < headerRow.length; i++) { // Empezar desde columna D (índice 3)
+            // Probar diferentes rangos de columnas para encontrar fechas
+            console.log('🔍 BUSCANDO FECHAS EN TODAS LAS COLUMNAS...');
+            for (let i = 0; i < headerRow.length; i++) {
               const cellValue = headerRow[i];
-              console.log(`📅 Analizando columna ${i}: "${cellValue}"`);
+              console.log(`📅 Columna ${i}: "${cellValue}" (tipo: ${typeof cellValue})`);
               
-              if (cellValue && typeof cellValue === 'string') {
-                // Verificar si es una fecha en formato DD/MM/YYYY
-                const dateMatch = cellValue.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+              if (cellValue) {
+                const cellStr = String(cellValue).trim();
+                // Buscar patrones de fecha más flexibles
+                const dateMatch = cellStr.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);
                 if (dateMatch) {
-                  dateColumns.push({ index: i, date: cellValue });
-                  console.log(`✅ Fecha válida encontrada en columna ${i}: ${cellValue}`);
-                } else {
-                  console.log(`❌ No es fecha válida en columna ${i}: "${cellValue}"`);
+                  dateColumns.push({ index: i, date: cellStr });
+                  console.log(`✅ FECHA VÁLIDA encontrada en columna ${i}: "${cellStr}"`);
                 }
               }
             }
           }
           
-          console.log('📊 Total de columnas de fechas encontradas:', dateColumns.length);
+          console.log('📊 TOTAL de columnas de fechas encontradas:', dateColumns.length);
+          console.log('📊 Columnas de fechas:', dateColumns);
           
           console.log('🔍 Iniciando procesamiento de filas de datos...');
           console.log('📝 Total de filas en Excel:', jsonData.length);
