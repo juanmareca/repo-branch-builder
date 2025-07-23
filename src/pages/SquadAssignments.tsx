@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
-import { CalendarIcon, ArrowLeft, Plus, Search } from 'lucide-react';
+import { CalendarIcon, ArrowLeft, Plus, Search, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { format, addMonths, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isWeekend, getDay } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -850,9 +850,20 @@ export default function SquadAssignments({ userRole, userData }: { userRole?: st
           <>
             <Card className="mb-6">
               <CardHeader>
-                <CardTitle>
-                  Calendario de {selectedPersonData?.nombre}
-                </CardTitle>
+                <div className="flex items-center justify-between">
+                  <CardTitle>
+                    Calendario de {selectedPersonData?.nombre}
+                  </CardTitle>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => setSelectedPerson('')}
+                    className="gap-2"
+                  >
+                    <X className="h-4 w-4" />
+                    Cerrar
+                  </Button>
+                </div>
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
