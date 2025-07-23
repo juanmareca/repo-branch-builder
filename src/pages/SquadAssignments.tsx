@@ -536,10 +536,10 @@ export default function SquadAssignments({ userRole, userData }: { userRole?: st
     <div className="min-h-screen bg-gradient-to-br from-background to-muted p-4">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
-        <div className="flex items-center gap-4 mb-6">
+        <div className="flex items-center justify-end gap-4 mb-6">
           <Button variant="outline" onClick={() => navigate('/squad-dashboard')} className="gap-2">
             <ArrowLeft className="h-4 w-4" />
-            Panel Principal
+            Panel de Squad Lead
           </Button>
           <div className="flex items-center gap-2">
             <CalendarIcon className="h-6 w-6 text-primary" />

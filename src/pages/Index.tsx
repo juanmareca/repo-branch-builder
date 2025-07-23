@@ -92,10 +92,10 @@ const Index = ({ userRole, userData }: { userRole?: string; userData?: any }) =>
       <div className="container mx-auto py-8 px-4">
         {/* Header con botón de volver para Squad Leads */}
         {isSquadLeadView && (
-          <div className="flex items-center gap-4 mb-6">
+          <div className="flex items-center justify-end gap-4 mb-6">
             <Button variant="outline" onClick={() => navigate('/squad-dashboard')} className="gap-2">
               <ArrowLeft className="h-4 w-4" />
-              Panel Principal
+              Panel de Squad Lead
             </Button>
           </div>
         )}
