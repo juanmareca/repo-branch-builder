@@ -87,13 +87,21 @@ export default function CapacitiesManagement() {
   const [showUpload, setShowUpload] = useState(false);
   const [viewMode, setViewMode] = useState<'table' | 'card'>('table');
   
-  // Search and filters
+  // Search and filters - Selected filters
   const [searchTerm, setSearchTerm] = useState('');
   const [personFilter, setPersonFilter] = useState<string[]>([]);
   const [skillFilter, setSkillFilter] = useState<string[]>([]);
   const [languageFilter, setLanguageFilter] = useState<string[]>([]);
   const [industryFilter, setIndustryFilter] = useState<string[]>([]);
   const [levelFilter, setLevelFilter] = useState<string[]>([]);
+  
+  // Applied filters (only these are used for filtering)
+  const [appliedSearchTerm, setAppliedSearchTerm] = useState('');
+  const [appliedPersonFilter, setAppliedPersonFilter] = useState<string[]>([]);
+  const [appliedSkillFilter, setAppliedSkillFilter] = useState<string[]>([]);
+  const [appliedLanguageFilter, setAppliedLanguageFilter] = useState<string[]>([]);
+  const [appliedIndustryFilter, setAppliedIndustryFilter] = useState<string[]>([]);
+  const [appliedLevelFilter, setAppliedLevelFilter] = useState<string[]>([]);
   const [showFilters, setShowFilters] = useState(false);
   const [showColumns, setShowColumns] = useState(false);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
@@ -199,43 +207,43 @@ export default function CapacitiesManagement() {
     // Aplicar filtros
     let filtered = employees;
 
-    if (searchTerm) {
+    if (appliedSearchTerm) {
       filtered = filtered.filter(employee =>
-        employee.person_name.toLowerCase().includes(searchTerm.toLowerCase())
+        employee.person_name.toLowerCase().includes(appliedSearchTerm.toLowerCase())
       );
     }
 
-    if (personFilter.length > 0) {
-      filtered = filtered.filter(employee => personFilter.includes(employee.person_name));
+    if (appliedPersonFilter.length > 0) {
+      filtered = filtered.filter(employee => appliedPersonFilter.includes(employee.person_name));
     }
 
-    if (skillFilter.length > 0) {
+    if (appliedSkillFilter.length > 0) {
       filtered = filtered.filter(employee => 
-        skillFilter.some(skill => 
+        appliedSkillFilter.some(skill => 
           Object.keys(employee.sap_modules).includes(skill) ||
           Object.keys(employee.sap_implementation).includes(skill)
         )
       );
     }
 
-    if (languageFilter.length > 0) {
+    if (appliedLanguageFilter.length > 0) {
       filtered = filtered.filter(employee => 
-        languageFilter.some(language => Object.keys(employee.languages).includes(language))
+        appliedLanguageFilter.some(language => Object.keys(employee.languages).includes(language))
       );
     }
 
-    if (industryFilter.length > 0) {
+    if (appliedIndustryFilter.length > 0) {
       filtered = filtered.filter(employee => 
-        industryFilter.some(industry => 
+        appliedIndustryFilter.some(industry => 
           Object.keys(employee.industries).includes(industry) && 
           employee.industries[industry] === 'Sí'
         )
       );
     }
 
-    if (levelFilter.length > 0) {
+    if (appliedLevelFilter.length > 0) {
       filtered = filtered.filter(employee => 
-        levelFilter.some(level => 
+        appliedLevelFilter.some(level => 
           Object.values(employee.sap_modules).includes(level) ||
           Object.values(employee.sap_implementation).includes(level) ||
           Object.values(employee.languages).includes(level) ||
@@ -246,7 +254,7 @@ export default function CapacitiesManagement() {
 
     setFilteredEmployees(filtered);
     setCurrentPage(1); // Reset to first page when filters change
-  }, [capacities, searchTerm, personFilter, skillFilter, languageFilter, industryFilter, levelFilter]);
+  }, [capacities, appliedSearchTerm, appliedPersonFilter, appliedSkillFilter, appliedLanguageFilter, appliedIndustryFilter, appliedLevelFilter]);
 
   const fetchCapacities = async () => {
     try {
@@ -404,6 +412,30 @@ export default function CapacitiesManagement() {
     setLanguageFilter([]);
     setIndustryFilter([]);
     setLevelFilter([]);
+    setAppliedSearchTerm('');
+    setAppliedPersonFilter([]);
+    setAppliedSkillFilter([]);
+    setAppliedLanguageFilter([]);
+    setAppliedIndustryFilter([]);
+    setAppliedLevelFilter([]);
+  };
+
+  const applyCurrentFilters = () => {
+    setAppliedSearchTerm(searchTerm);
+    setAppliedPersonFilter([...personFilter]);
+    setAppliedSkillFilter([...skillFilter]);
+    setAppliedLanguageFilter([...languageFilter]);
+    setAppliedIndustryFilter([...industryFilter]);
+    setAppliedLevelFilter([...levelFilter]);
+  };
+
+  const hasActiveFilters = () => {
+    return appliedPersonFilter.length > 0 || 
+           appliedSkillFilter.length > 0 || 
+           appliedLanguageFilter.length > 0 || 
+           appliedIndustryFilter.length > 0 || 
+           appliedLevelFilter.length > 0 ||
+           appliedSearchTerm.length > 0;
   };
 
   const toggleFilter = (filterArray: string[], value: string, setFilter: (arr: string[]) => void) => {

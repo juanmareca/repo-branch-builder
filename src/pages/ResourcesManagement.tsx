@@ -91,13 +91,21 @@ const ResourcesManagement = () => {
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [editingPerson, setEditingPerson] = useState<Person | null>(null);
   
-  // Filters
+  // Filters - Selected filters
   const [squadFilter, setSquadFilter] = useState<string[]>([]);
   const [grupoFilter, setGrupoFilter] = useState<string[]>([]);
   const [categoriaFilter, setCategoriaFilter] = useState<string[]>([]);
   const [oficinaFilter, setOficinaFilter] = useState<string[]>([]);
   const [origenFilter, setOrigenFilter] = useState<string[]>([]);
   const [cexFilter, setCexFilter] = useState<string[]>([]);
+  
+  // Applied filters (only these are used for filtering)
+  const [appliedSquadFilter, setAppliedSquadFilter] = useState<string[]>([]);
+  const [appliedGrupoFilter, setAppliedGrupoFilter] = useState<string[]>([]);
+  const [appliedCategoriaFilter, setAppliedCategoriaFilter] = useState<string[]>([]);
+  const [appliedOficinaFilter, setAppliedOficinaFilter] = useState<string[]>([]);
+  const [appliedOrigenFilter, setAppliedOrigenFilter] = useState<string[]>([]);
+  const [appliedCexFilter, setAppliedCexFilter] = useState<string[]>([]);
   
   // Sorting
   const [sortField, setSortField] = useState<keyof Person>('nombre');
@@ -175,7 +183,7 @@ const ResourcesManagement = () => {
 
   useEffect(() => {
     applyFilters();
-  }, [resources, searchTerm, squadFilter, grupoFilter, categoriaFilter, oficinaFilter, cexFilter, origenFilter, sortField, sortDirection]);
+  }, [resources, searchTerm, appliedSquadFilter, appliedGrupoFilter, appliedCategoriaFilter, appliedOficinaFilter, appliedCexFilter, appliedOrigenFilter, sortField, sortDirection]);
 
   const fetchResources = async () => {
     try {
@@ -240,33 +248,33 @@ const ResourcesManagement = () => {
     }
 
     // Squad Lead filter
-    if (squadFilter.length > 0) {
-      filtered = filtered.filter(resource => squadFilter.includes(resource.squad_lead));
+    if (appliedSquadFilter.length > 0) {
+      filtered = filtered.filter(resource => appliedSquadFilter.includes(resource.squad_lead));
     }
 
     // Grupo filter
-    if (grupoFilter.length > 0) {
-      filtered = filtered.filter(resource => grupoFilter.includes(resource.grupo));
+    if (appliedGrupoFilter.length > 0) {
+      filtered = filtered.filter(resource => appliedGrupoFilter.includes(resource.grupo));
     }
 
     // Categoría filter
-    if (categoriaFilter.length > 0) {
-      filtered = filtered.filter(resource => categoriaFilter.includes(resource.categoria));
+    if (appliedCategoriaFilter.length > 0) {
+      filtered = filtered.filter(resource => appliedCategoriaFilter.includes(resource.categoria));
     }
 
     // Oficina filter
-    if (oficinaFilter.length > 0) {
-      filtered = filtered.filter(resource => oficinaFilter.includes(resource.oficina));
+    if (appliedOficinaFilter.length > 0) {
+      filtered = filtered.filter(resource => appliedOficinaFilter.includes(resource.oficina));
     }
 
     // CEX filter
-    if (cexFilter.length > 0) {
-      filtered = filtered.filter(resource => cexFilter.includes(resource.cex));
+    if (appliedCexFilter.length > 0) {
+      filtered = filtered.filter(resource => appliedCexFilter.includes(resource.cex));
     }
 
     // Origen filter
-    if (origenFilter.length > 0) {
-      filtered = filtered.filter(resource => origenFilter.includes(resource.origen));
+    if (appliedOrigenFilter.length > 0) {
+      filtered = filtered.filter(resource => appliedOrigenFilter.includes(resource.origen));
     }
 
     // Apply sorting
@@ -289,7 +297,7 @@ const ResourcesManagement = () => {
 
     setFilteredResources(filtered);
     setCurrentPage(1); // Reset to first page when filters change
-  }, [resources, searchTerm, squadFilter, grupoFilter, categoriaFilter, oficinaFilter, sortField, sortDirection]);
+  }, [resources, searchTerm, appliedSquadFilter, appliedGrupoFilter, appliedCategoriaFilter, appliedOficinaFilter, appliedCexFilter, appliedOrigenFilter, sortField, sortDirection]);
 
   const handleAddResource = async () => {
     if (!formData.num_pers || !formData.nombre) {
@@ -478,6 +486,30 @@ const ResourcesManagement = () => {
     setOficinaFilter([]);
     setCexFilter([]);
     setOrigenFilter([]);
+    setAppliedSquadFilter([]);
+    setAppliedGrupoFilter([]);
+    setAppliedCategoriaFilter([]);
+    setAppliedOficinaFilter([]);
+    setAppliedCexFilter([]);
+    setAppliedOrigenFilter([]);
+  };
+
+  const applyCurrentFilters = () => {
+    setAppliedSquadFilter([...squadFilter]);
+    setAppliedGrupoFilter([...grupoFilter]);
+    setAppliedCategoriaFilter([...categoriaFilter]);
+    setAppliedOficinaFilter([...oficinaFilter]);
+    setAppliedCexFilter([...cexFilter]);
+    setAppliedOrigenFilter([...origenFilter]);
+  };
+
+  const hasActiveFilters = () => {
+    return appliedSquadFilter.length > 0 || 
+           appliedGrupoFilter.length > 0 || 
+           appliedCategoriaFilter.length > 0 || 
+           appliedOficinaFilter.length > 0 || 
+           appliedCexFilter.length > 0 || 
+           appliedOrigenFilter.length > 0;
   };
 
   const handleEditPerson = (person: Person) => {
@@ -997,10 +1029,14 @@ const ResourcesManagement = () => {
             <Button 
               variant="outline" 
               onClick={() => setShowFilters(!showFilters)}
-              className={cn("text-orange-600 border-orange-600", showFilters && "bg-orange-50")}
+              className={cn(
+                hasActiveFilters() 
+                  ? "bg-orange-500 text-white border-orange-500 hover:bg-orange-600 shadow-lg shadow-orange-500/25" 
+                  : "text-orange-600 border-orange-600 hover:bg-orange-50"
+              )}
             >
               <Filter className="h-4 w-4 mr-2" />
-              Filtros
+              {hasActiveFilters() ? "Filtros activos" : "Filtros"}
             </Button>
             <Button 
               variant="outline" 
@@ -1038,10 +1074,6 @@ const ResourcesManagement = () => {
             <CardHeader>
               <div className="flex items-center justify-between">
                 <CardTitle className="text-lg">Filtros por Columna</CardTitle>
-                <Button variant="outline" size="sm" onClick={clearFilters}>
-                  <RotateCcw className="h-4 w-4 mr-2" />
-                  Limpiar Filtros
-                </Button>
               </div>
             </CardHeader>
             <CardContent>
@@ -1235,9 +1267,25 @@ const ResourcesManagement = () => {
                           </Badge>
                         ))}
                       </div>
-                    )}
-                  </div>
-               </div>
+                     )}
+                   </div>
+                </div>
+              </div>
+              <div className="mt-4 flex justify-end gap-2">
+                <Button 
+                  variant="outline" 
+                  onClick={clearFilters}
+                  className={hasActiveFilters() ? "bg-orange-50 border-orange-200 text-orange-800 hover:bg-orange-100" : ""}
+                >
+                  Limpiar filtros
+                </Button>
+                <Button 
+                  onClick={applyCurrentFilters}
+                  className={hasActiveFilters() ? "bg-orange-600 hover:bg-orange-700 text-white" : "bg-white border border-gray-200 text-gray-700 hover:bg-gray-50"}
+                >
+                  Aplicar filtros
+                </Button>
+              </div>
             </CardContent>
           </Card>
         )}
