@@ -6,9 +6,10 @@ import { Button } from '@/components/ui/button';
 interface PersonTableProps {
   persons: Person[];
   onEditPerson?: (person: Person) => void;
+  startIndex?: number;
 }
 
-const PersonTable: React.FC<PersonTableProps> = ({ persons, onEditPerson }) => {
+const PersonTable: React.FC<PersonTableProps> = ({ persons, onEditPerson, startIndex = 0 }) => {
   const [sortedPersons, setSortedPersons] = useState<Person[]>(persons);
   const [sortField, setSortField] = useState<keyof Person | null>(null);
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
@@ -309,7 +310,7 @@ const PersonTable: React.FC<PersonTableProps> = ({ persons, onEditPerson }) => {
                 }`}
               >
                 <td className="text-muted-foreground font-mono bg-background sticky left-0 z-10 border-r border-border">
-                  {index + 1}
+                  {startIndex + index + 1}
                 </td>
                 <td>
                   <div className="flex items-center">

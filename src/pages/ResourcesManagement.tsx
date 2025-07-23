@@ -581,12 +581,67 @@ const ResourcesManagement = () => {
             </Card>
           )}
 
+          {/* Columns Configuration Panel */}
+          {showColumns && (
+            <Card className="mb-6">
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-lg">Configuración de Columnas</CardTitle>
+                  <Button variant="outline" size="sm" onClick={() => setShowColumns(false)}>
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {columns.map((column) => (
+                    <div key={column.key} className="flex items-center space-x-2 p-3 border rounded-lg">
+                      <Checkbox
+                        id={column.key}
+                        checked={column.visible}
+                        onCheckedChange={(checked) => {
+                          setColumns(prev => prev.map(col => 
+                            col.key === column.key ? { ...col, visible: !!checked } : col
+                          ));
+                        }}
+                      />
+                      <Label htmlFor={column.key} className="flex-1 text-sm font-medium">
+                        {column.label}
+                      </Label>
+                    </div>
+                  ))}
+                </div>
+                <div className="mt-4 flex gap-2">
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => {
+                      setColumns(prev => prev.map(col => ({ ...col, visible: true })));
+                    }}
+                  >
+                    Mostrar Todas
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => {
+                      setColumns(getInitialColumns());
+                    }}
+                  >
+                    Restablecer
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
           {/* Table */}
           <Card>
             <CardContent className="p-0">
               <div className="relative overflow-auto">
                 <PersonTable 
                   persons={currentResources}
+                  startIndex={startIndex}
                 />
               </div>
             </CardContent>
