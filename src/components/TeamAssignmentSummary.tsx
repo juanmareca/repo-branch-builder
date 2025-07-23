@@ -420,177 +420,169 @@ export default function TeamAssignmentSummary({
     pdf.text('Resumen Ejecutivo', 20, yPosition);
     yPosition += 15;
     
-    // MÉTRICAS PRINCIPALES - Exactamente como la web con tarjetas elegantes
-    const cardWidth = (pageWidth - 60) / 4;
-    const cardHeight = 65;
-    const metrics = [
+    // TÍTULO RESUMEN EJECUTIVO
+    pdf.setTextColor(31, 41, 55);
+    pdf.setFont('helvetica', 'bold');
+    pdf.setFontSize(18);
+    pdf.text('Resumen Ejecutivo', 20, yPosition);
+    yPosition += 25;
+
+    // TARJETAS EXACTAS COMO LA WEB (4 tarjetas en grid 2x2)
+    const cardWidth = 85;
+    const cardHeight = 60;
+    const spacing = 15;
+    
+    const webMetrics = [
       { 
         label: 'Días Naturales', 
         value: summary.totalDays.toString(), 
-        color: [59, 130, 246], 
-        bgColor: [248, 250, 252],
+        color: [59, 130, 246], // Azul
         borderColor: [59, 130, 246]
       },
       { 
         label: 'Fines de Semana', 
         value: `${summary.weekendDays} (${((summary.weekendDays / summary.totalDays) * 100).toFixed(1)}%)`, 
-        color: [16, 185, 129], 
-        bgColor: [247, 254, 231],
+        color: [16, 185, 129], // Verde
         borderColor: [16, 185, 129]
       },
       { 
         label: 'Festivos Laborables', 
         value: summary.totalHolidayDays.toString(), 
-        color: [168, 85, 247], 
-        bgColor: [252, 245, 255],
+        color: [168, 85, 247], // Púrpura
         borderColor: [168, 85, 247]
       },
       { 
         label: 'Días Laborables', 
         value: `${summary.workDays} (${((summary.workDays / summary.totalDays) * 100).toFixed(1)}%)`, 
-        color: [249, 115, 22], 
-        bgColor: [255, 251, 235],
+        color: [249, 115, 22], // Naranja
         borderColor: [249, 115, 22]
       }
     ];
 
-    // Grid de 2x2 como en la web
-    metrics.forEach((metric, index) => {
+    // Grid 2x2 exacto de la web
+    webMetrics.forEach((metric, index) => {
       const col = index % 2;
       const row = Math.floor(index / 2);
-      const x = 25 + col * (cardWidth + 20);
-      const y = yPosition + row * (cardHeight + 15);
+      const x = 30 + col * (cardWidth + spacing);
+      const y = yPosition + row * (cardHeight + spacing);
       
-      // Fondo de tarjeta con sombra suave
+      // Fondo blanco de tarjeta
       pdf.setFillColor(255, 255, 255);
-      pdf.roundedRect(x, y, cardWidth, cardHeight, 12, 12, 'F');
+      pdf.roundedRect(x, y, cardWidth, cardHeight, 8, 8, 'F');
       
-      // Borde izquierdo de color (característica distintiva de la web)
+      // Borde izquierdo de color (marca distintiva de la web)
       pdf.setFillColor(metric.borderColor[0], metric.borderColor[1], metric.borderColor[2]);
-      pdf.roundedRect(x, y, 6, cardHeight, 6, 6, 'F');
+      pdf.roundedRect(x, y, 4, cardHeight, 4, 4, 'F');
       
-      // Sombra exterior elegante
-      pdf.setDrawColor(226, 232, 240);
+      // Borde sutil
+      pdf.setDrawColor(229, 231, 235);
       pdf.setLineWidth(0.5);
-      pdf.roundedRect(x, y, cardWidth, cardHeight, 12, 12, 'S');
+      pdf.roundedRect(x, y, cardWidth, cardHeight, 8, 8, 'S');
       
-      // Valor principal - grande y prominente
+      // VALOR PRINCIPAL - GRANDE Y BOLD (como la web)
       pdf.setTextColor(metric.color[0], metric.color[1], metric.color[2]);
       pdf.setFont('helvetica', 'bold');
-      pdf.setFontSize(22);
-      pdf.text(metric.value, x + 15, y + 25);
+      pdf.setFontSize(20);
+      pdf.text(metric.value, x + 10, y + 22);
       
-      // Etiqueta - más pequeña y en gris
+      // ETIQUETA - Pequeña y gris (como la web)
       pdf.setTextColor(107, 114, 128);
       pdf.setFont('helvetica', 'normal');
-      pdf.setFontSize(11);
-      pdf.text(metric.label, x + 15, y + 45);
+      pdf.setFontSize(9);
+      pdf.text(metric.label, x + 10, y + 40);
       
-      // Línea decorativa sutil
+      // Línea sutil debajo
       pdf.setDrawColor(metric.color[0], metric.color[1], metric.color[2], 0.2);
       pdf.setLineWidth(0.5);
-      pdf.line(x + 15, y + 50, x + cardWidth - 15, y + 50);
+      pdf.line(x + 10, y + 45, x + cardWidth - 10, y + 45);
     });
     
-    yPosition += 155; // Espacio para las 2 filas de tarjetas
+    yPosition += 150; // Espacio para las tarjetas
 
-    // ANÁLISIS DE CAPACIDAD - Exactamente como la web
-    if (yPosition > pageHeight - 150) {
+    // ANÁLISIS DE CAPACIDAD - Simplificado y limpio como la web
+    if (yPosition > pageHeight - 140) {
       pdf.addPage();
       yPosition = 30;
     }
     
-    // Título de sección con estilo web
+    // Título
     pdf.setTextColor(31, 41, 55);
     pdf.setFont('helvetica', 'bold');
     pdf.setFontSize(18);
     pdf.text('Análisis de Capacidad', 20, yPosition);
     yPosition += 30;
 
-    // Layout horizontal: Gráfico + Panel lateral (EXACTAMENTE como la web)
-    const chartSize = 120;
-    const chartX = 30;
-    const panelX = chartX + chartSize + 30;
-    const panelWidth = 140;
-
-    // 1. GRÁFICO DE DONUT PERFECTO (como la web)
+    // Layout simple: Gráfico + Panel (como la web)
+    const chartSize = 100;
+    const chartX = 40;
+    const panelX = chartX + chartSize + 40;
+    
+    // 1. GRÁFICO DE DONUT
     if (capacityChartImage) {
       pdf.addImage(capacityChartImage, 'PNG', chartX, yPosition, chartSize, chartSize);
     }
 
-    // 2. PANEL LATERAL EXACTO (como la tarjeta derecha de la web)
+    // 2. PANEL DE INFORMACIÓN (como la tarjeta de la web)
     const assignedPercentage = ((summary.workDays * teamMembers.length - summary.unassignedDays) / (summary.workDays * teamMembers.length)) * 100;
     
-    // Contenedor del panel con fondo y bordes elegantes
+    // Contenedor del panel limpio
+    const panelWidth = 120;
     pdf.setFillColor(255, 255, 255);
-    pdf.roundedRect(panelX, yPosition, panelWidth, 120, 12, 12, 'F');
+    pdf.roundedRect(panelX, yPosition, panelWidth, 100, 8, 8, 'F');
     
-    // Borde sutil del panel
+    // Borde elegante
     pdf.setDrawColor(229, 231, 235);
     pdf.setLineWidth(1);
-    pdf.roundedRect(panelX, yPosition, panelWidth, 120, 12, 12, 'S');
+    pdf.roundedRect(panelX, yPosition, panelWidth, 100, 8, 8, 'S');
     
-    // Header del panel con fondo gris claro
-    pdf.setFillColor(249, 250, 251);
-    pdf.roundedRect(panelX, yPosition, panelWidth, 25, 12, 12, 'F');
-    pdf.rect(panelX, yPosition + 15, panelWidth, 10, 'F'); // Para completar el rectángulo
+    // Header del panel
+    pdf.setFillColor(248, 250, 252);
+    pdf.roundedRect(panelX, yPosition, panelWidth, 20, 8, 8, 'F');
+    pdf.rect(panelX, yPosition + 10, panelWidth, 10, 'F');
     
-    // Título del panel
+    // Título "Análisis de Capacidad"
     pdf.setTextColor(55, 65, 81);
     pdf.setFont('helvetica', 'bold');
-    pdf.setFontSize(12);
-    pdf.text('Análisis de Capacidad', panelX + panelWidth/2, yPosition + 17, { align: 'center' });
+    pdf.setFontSize(10);
+    pdf.text('Análisis de Capacidad', panelX + panelWidth/2, yPosition + 13, { align: 'center' });
     
-    // Contenido principal del panel
-    let panelY = yPosition + 40;
-    
-    // Porcentaje principal grande (exacto de la web)
+    // Porcentaje principal GRANDE
     pdf.setTextColor(59, 130, 246);
     pdf.setFont('helvetica', 'bold');
-    pdf.setFontSize(28);
-    pdf.text(`${summary.availableCapacity.toFixed(1)}%`, panelX + panelWidth/2, panelY, { align: 'center' });
+    pdf.setFontSize(24);
+    pdf.text(`${summary.availableCapacity.toFixed(1)}%`, panelX + panelWidth/2, yPosition + 40, { align: 'center' });
     
-    // Etiqueta "Disponible"
+    // "Disponible"
     pdf.setTextColor(107, 114, 128);
     pdf.setFont('helvetica', 'normal');
-    pdf.setFontSize(12);
-    pdf.text('Capacidad Disponible', panelX + panelWidth/2, panelY + 20, { align: 'center' });
+    pdf.setFontSize(11);
+    pdf.text('Capacidad Disponible', panelX + panelWidth/2, yPosition + 55, { align: 'center' });
     
-    panelY += 35;
-    
-    // Separador visual
-    pdf.setDrawColor(229, 231, 235);
-    pdf.setLineWidth(0.5);
-    pdf.line(panelX + 15, panelY, panelX + panelWidth - 15, panelY);
-    
-    panelY += 15;
-    
-    // Detalles adicionales (como en la web)
+    // Detalles
     pdf.setTextColor(75, 85, 99);
     pdf.setFont('helvetica', 'normal');
-    pdf.setFontSize(10);
-    pdf.text(`${summary.unassignedDays.toFixed(1)} días sin asignar`, panelX + 10, panelY);
-    
-    panelY += 12;
-    pdf.setTextColor(156, 163, 175);
     pdf.setFontSize(9);
-    pdf.text(`de ${(summary.workDays * teamMembers.length).toFixed(1)} días totales`, panelX + 10, panelY);
+    pdf.text(`${summary.unassignedDays.toFixed(1)} días sin asignar`, panelX + 8, yPosition + 70);
+    
+    pdf.setTextColor(156, 163, 175);
+    pdf.setFontSize(8);
+    pdf.text(`de ${(summary.workDays * teamMembers.length).toFixed(1)} días totales`, panelX + 8, yPosition + 85);
 
-    // 3. LEYENDA CON CÍRCULOS DE COLORES (debajo del gráfico, como en la web)
+    // 3. LEYENDA debajo del gráfico (como la web)
     const legendY = yPosition + chartSize + 15;
     
-    // Círculo azul - Asignado
+    // Círculo azul
     pdf.setFillColor(59, 130, 246);
-    pdf.circle(chartX + 15, legendY, 5, 'F');
+    pdf.circle(chartX + 20, legendY, 4, 'F');
     pdf.setTextColor(75, 85, 99);
     pdf.setFont('helvetica', 'normal');
-    pdf.setFontSize(10);
-    pdf.text(`Asignado (${assignedPercentage.toFixed(1)}%)`, chartX + 25, legendY + 2);
+    pdf.setFontSize(9);
+    pdf.text(`Asignado (${assignedPercentage.toFixed(1)}%)`, chartX + 30, legendY + 2);
 
-    // Círculo verde - Disponible  
+    // Círculo verde
     pdf.setFillColor(16, 185, 129);
-    pdf.circle(chartX + 15, legendY + 15, 5, 'F');
-    pdf.text(`Disponible (${summary.availableCapacity.toFixed(1)}%)`, chartX + 25, legendY + 17);
+    pdf.circle(chartX + 20, legendY + 12, 4, 'F');
+    pdf.text(`Disponible (${summary.availableCapacity.toFixed(1)}%)`, chartX + 30, legendY + 14);
     
     yPosition += 150; // Espacio para toda la sección de análisis
     
