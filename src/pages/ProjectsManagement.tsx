@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { format } from 'date-fns';
+import { format, startOfMonth, endOfMonth } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -51,7 +51,8 @@ import {
   CalendarIcon,
   ArrowLeft,
   GripVertical,
-  MoreHorizontal
+  MoreHorizontal,
+  BarChart3
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
@@ -60,6 +61,9 @@ import { useNavigate } from 'react-router-dom';
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
 import ProjectsUpload from '@/components/FileUpload/ProjectsUpload';
 import EditProjectDialog from '@/components/EditProjectDialog';
+import { useCurrentUser } from '@/hooks/useCurrentUser';
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
+import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer } from 'recharts';
 import * as XLSX from 'xlsx';
 
 interface Project {
@@ -116,6 +120,13 @@ const ProjectsManagement = () => {
   const [isDefaultViewSaved, setIsDefaultViewSaved] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [editingProject, setEditingProject] = useState<Project | null>(null);
+  
+  // Chart states
+  const [showCharts, setShowCharts] = useState(false);
+  const [chartStartDate, setChartStartDate] = useState<Date>(startOfMonth(new Date()));
+  const [chartEndDate, setChartEndDate] = useState<Date>(endOfMonth(new Date()));
+  const [selectedMembers, setSelectedMembers] = useState<string[]>([]);
+  const [chartData, setChartData] = useState<any[]>([]);
   
   // Font size control
   const [fontSize, setFontSize] = useState(12);
@@ -187,6 +198,10 @@ const ProjectsManagement = () => {
 
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { currentUser, loading: userLoading } = useCurrentUser();
+  
+  // Lista de miembros del squad para los filtros
+  const [squadMembers, setSquadMembers] = useState<string[]>([]);
 
   // Clean up obsolete localStorage on component mount
   useEffect(() => {
@@ -213,46 +228,178 @@ const ProjectsManagement = () => {
   }, []);
 
   useEffect(() => {
-    fetchProjects();
-  }, []);
+    if (currentUser && !userLoading) {
+      fetchProjects();
+    }
+  }, [currentUser, userLoading]);
 
   useEffect(() => {
     applyFilters();
   }, [projects, searchTerm, tipologiaFilter, clienteFilter, gestorFilter, socioResponsableFilter, origenFilter, sortField, sortDirection]);
 
+  // Función para cargar datos del gráfico
+  const fetchChartData = async () => {
+    if (!currentUser || currentUser.role !== 'squad_lead' || selectedMembers.length === 0) {
+      setChartData([]);
+      return;
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from('assignments')
+        .select(`
+          id,
+          start_date,
+          end_date,
+          hours_allocated,
+          projects:project_id(
+            id,
+            denominacion,
+            codigo_inicial
+          ),
+          persons:person_id(
+            id,
+            nombre,
+            squad_lead
+          )
+        `)
+        .eq('persons.squad_lead', currentUser.name)
+        .in('persons.nombre', selectedMembers)
+        .gte('start_date', format(chartStartDate, 'yyyy-MM-dd'))
+        .lte('end_date', format(chartEndDate, 'yyyy-MM-dd'));
+
+      if (error) throw error;
+
+      // Procesar datos para el gráfico
+      const chartProjects = data?.reduce((acc: any[], assignment: any) => {
+        if (!assignment.projects || !assignment.persons) return acc;
+        
+        const projectName = assignment.projects.denominacion;
+        const days = assignment.hours_allocated ? Math.ceil(assignment.hours_allocated / 8) : 0;
+        
+        const existingProject = acc.find(p => p.proyecto === projectName);
+        if (existingProject) {
+          existingProject.dias += days;
+        } else {
+          acc.push({
+            proyecto: projectName,
+            dias: days
+          });
+        }
+        
+        return acc;
+      }, []) || [];
+
+      setChartData(chartProjects.sort((a, b) => b.dias - a.dias));
+    } catch (error: any) {
+      toast({
+        title: "Error al cargar datos del gráfico",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
+
+  useEffect(() => {
+    if (showCharts) {
+      fetchChartData();
+    }
+  }, [showCharts, chartStartDate, chartEndDate, selectedMembers, currentUser]);
+
   const fetchProjects = async () => {
     try {
       setLoading(true);
-      console.log('🔄 Cargando todos los proyectos...');
+      console.log('🔄 Cargando proyectos...');
       
       let allProjects: Project[] = [];
-      let hasMore = true;
-      let from = 0;
-      const batchSize = 1000;
       
-      while (hasMore) {
-        console.log(`📦 Cargando lote desde ${from} hasta ${from + batchSize - 1}`);
+      if (currentUser?.role === 'squad_lead') {
+        // Para Squad Lead: solo proyectos asignados a su equipo
+        console.log('📋 Cargando proyectos del squad:', currentUser.name);
         
         const { data, error } = await supabase
           .from('projects')
-          .select('*')
-          .order('denominacion', { ascending: true })
-          .range(from, from + batchSize - 1);
+          .select(`
+            *,
+            assignments!inner(
+              id,
+              persons!inner(
+                id,
+                nombre,
+                squad_lead
+              )
+            )
+          `)
+          .eq('assignments.persons.squad_lead', currentUser.name)
+          .order('denominacion', { ascending: true });
 
         if (error) throw error;
         
-        if (data && data.length > 0) {
-          allProjects = [...allProjects, ...data];
-          from += batchSize;
+        // Remover duplicados por ID de proyecto
+        const uniqueProjects = data?.reduce((acc: Project[], project: any) => {
+          if (!acc.find(p => p.id === project.id)) {
+            // Limpiamos el objeto del proyecto para que solo tenga las propiedades de Project
+            const cleanProject: Project = {
+              id: project.id,
+              codigo_inicial: project.codigo_inicial,
+              denominacion: project.denominacion,
+              descripcion: project.descripcion,
+              cliente: project.cliente,
+              grupo_cliente: project.grupo_cliente,
+              gestor_proyecto: project.gestor_proyecto,
+              socio_responsable: project.socio_responsable,
+              tipologia: project.tipologia,
+              tipologia_2: project.tipologia_2,
+              created_at: project.created_at,
+              updated_at: project.updated_at,
+              origen: project.origen
+            };
+            acc.push(cleanProject);
+          }
+          return acc;
+        }, []) || [];
+        
+        allProjects = uniqueProjects;
+        
+        // También cargar los miembros del squad
+        const { data: membersData } = await supabase
+          .from('persons')
+          .select('nombre')
+          .eq('squad_lead', currentUser.name);
+        
+        setSquadMembers(membersData?.map(m => m.nombre) || []);
+        
+      } else {
+        // Para Admin: todos los proyectos
+        console.log('🔄 Cargando todos los proyectos...');
+        
+        let hasMore = true;
+        let from = 0;
+        const batchSize = 1000;
+        
+        while (hasMore) {
+          console.log(`📦 Cargando lote desde ${from} hasta ${from + batchSize - 1}`);
           
-          // Si el lote es menor que batchSize, hemos llegado al final
-          if (data.length < batchSize) {
+          const { data, error } = await supabase
+            .from('projects')
+            .select('*')
+            .order('denominacion', { ascending: true })
+            .range(from, from + batchSize - 1);
+
+          if (error) throw error;
+          
+          if (data && data.length > 0) {
+            allProjects = [...allProjects, ...data];
+            from += batchSize;
+            
+            if (data.length < batchSize) {
+              hasMore = false;
+            }
+            
+            console.log(`📊 Lote cargado: ${data.length} proyectos. Total acumulado: ${allProjects.length}`);
+          } else {
             hasMore = false;
           }
-          
-          console.log(`📊 Lote cargado: ${data.length} proyectos. Total acumulado: ${allProjects.length}`);
-        } else {
-          hasMore = false;
         }
       }
       
@@ -768,14 +915,15 @@ const ProjectsManagement = () => {
         {/* Action Buttons */}
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-4">
-            {/* Add Project Dialog */}
-            <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-              <DialogTrigger asChild>
-                <Button className="bg-purple-600 hover:bg-purple-700 text-white">
-                  <Plus className="h-4 w-4 mr-2" />
-                  Agregar Proyecto
-                </Button>
-              </DialogTrigger>
+            {/* Add Project Dialog - Solo para administradores */}
+            {currentUser?.role === 'admin' && (
+              <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button className="bg-purple-600 hover:bg-purple-700 text-white">
+                    <Plus className="h-4 w-4 mr-2" />
+                    Agregar Proyecto
+                  </Button>
+                </DialogTrigger>
               <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                   <DialogTitle className="flex items-center gap-2">
@@ -886,25 +1034,43 @@ const ProjectsManagement = () => {
                 </div>
               </DialogContent>
             </Dialog>
+            )}
 
-            <Button
-              onClick={() => setShowUpload(!showUpload)}
-              variant="outline"
-              className="text-purple-600 border-purple-600 hover:bg-purple-50"
-            >
-              <Download className="h-4 w-4 mr-2" />
-              Cargar Excel
-            </Button>
+            {/* Botones de upload - Solo para administradores */}
+            {currentUser?.role === 'admin' && (
+              <>
+                <Button
+                  onClick={() => setShowUpload(!showUpload)}
+                  variant="outline"
+                  className="text-purple-600 border-purple-600 hover:bg-purple-50"
+                >
+                  <Download className="h-4 w-4 mr-2" />
+                  Cargar Excel
+                </Button>
 
-            <Button 
-              variant="outline" 
-              onClick={handleExportExcel}
-              disabled={filteredProjects.length === 0}
-              className="text-purple-600 border-purple-600 hover:bg-purple-50"
-            >
-              <Download className="h-4 w-4 mr-2" />
-              Exportar Excel
-            </Button>
+                <Button 
+                  variant="outline" 
+                  onClick={handleExportExcel}
+                  disabled={filteredProjects.length === 0}
+                  className="text-purple-600 border-purple-600 hover:bg-purple-50"
+                >
+                  <Download className="h-4 w-4 mr-2" />
+                  Exportar Excel
+                </Button>
+              </>
+            )}
+
+            {/* Botón de gráficos - Solo para Squad Leads */}
+            {currentUser?.role === 'squad_lead' && (
+              <Button
+                onClick={() => setShowCharts(!showCharts)}
+                variant="outline"
+                className="text-green-600 border-green-600 hover:bg-green-50"
+              >
+                <BarChart3 className="h-4 w-4 mr-2" />
+                {showCharts ? "Ocultar Gráficos" : "Ver Gráficos"}
+              </Button>
+            )}
           </div>
 
           <div className="flex items-center gap-2">
@@ -934,6 +1100,129 @@ const ProjectsManagement = () => {
         {showUpload && (
           <div className="mb-8">
             <ProjectsUpload />
+          </div>
+        )}
+
+        {/* Charts Section - Solo para Squad Leads */}
+        {showCharts && currentUser?.role === 'squad_lead' && (
+          <div className="mb-8">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <BarChart3 className="h-5 w-5" />
+                  Gráficos de Asignación de Proyectos
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {/* Filtros de fechas y miembros */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                  <div className="space-y-2">
+                    <Label>Fecha de Inicio</Label>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          className={cn(
+                            "w-full justify-start text-left font-normal",
+                            !chartStartDate && "text-muted-foreground"
+                          )}
+                        >
+                          <CalendarIcon className="mr-2 h-4 w-4" />
+                          {chartStartDate ? format(chartStartDate, "dd/MM/yyyy") : "Seleccionar fecha"}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0">
+                        <Calendar
+                          mode="single"
+                          selected={chartStartDate}
+                          onSelect={(date) => date && setChartStartDate(date)}
+                          initialFocus
+                        />
+                      </PopoverContent>
+                    </Popover>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Fecha de Fin</Label>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          className={cn(
+                            "w-full justify-start text-left font-normal",
+                            !chartEndDate && "text-muted-foreground"
+                          )}
+                        >
+                          <CalendarIcon className="mr-2 h-4 w-4" />
+                          {chartEndDate ? format(chartEndDate, "dd/MM/yyyy") : "Seleccionar fecha"}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0">
+                        <Calendar
+                          mode="single"
+                          selected={chartEndDate}
+                          onSelect={(date) => date && setChartEndDate(date)}
+                          initialFocus
+                        />
+                      </PopoverContent>
+                    </Popover>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Miembros del Equipo</Label>
+                    <Select value={selectedMembers.join(',')} onValueChange={(value) => setSelectedMembers(value ? value.split(',') : [])}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Seleccionar miembros" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value={squadMembers.join(',')}>Todos los miembros</SelectItem>
+                        {squadMembers.map((member) => (
+                          <SelectItem key={member} value={member}>
+                            {member}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                {/* Gráfico */}
+                {chartData.length > 0 ? (
+                  <div className="h-96">
+                    <ChartContainer
+                      config={{
+                        dias: {
+                          label: "Días Asignados",
+                          color: "hsl(var(--primary))",
+                        },
+                      }}
+                    >
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart data={chartData}>
+                          <XAxis 
+                            dataKey="proyecto" 
+                            angle={-45}
+                            textAnchor="end"
+                            height={100}
+                            interval={0}
+                          />
+                          <YAxis />
+                          <ChartTooltip content={<ChartTooltipContent />} />
+                          <Bar dataKey="dias" fill="var(--color-dias)" />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </ChartContainer>
+                  </div>
+                ) : (
+                  <div className="text-center py-8 text-muted-foreground">
+                    {selectedMembers.length === 0 
+                      ? "Selecciona miembros del equipo para ver los gráficos"
+                      : "No hay datos para el período seleccionado"
+                    }
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           </div>
         )}
 
