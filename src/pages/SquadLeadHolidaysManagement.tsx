@@ -490,7 +490,7 @@ const SquadLeadHolidaysManagement = () => {
           <Card className="border-l-4 border-l-blue-500 bg-gradient-to-br from-blue-50 to-blue-100/50 dark:from-blue-950/20 dark:to-blue-900/10">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
               <CardTitle className="text-sm font-medium text-blue-700 dark:text-blue-400">
-                Festivos Filtrados
+                Festivos Internacionales
               </CardTitle>
               <div className="h-8 w-8 bg-blue-100 dark:bg-blue-900/50 rounded-lg flex items-center justify-center">
                 <Filter className="h-4 w-4 text-blue-600 dark:text-blue-400" />
@@ -498,15 +498,18 @@ const SquadLeadHolidaysManagement = () => {
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold text-blue-800 dark:text-blue-300">
-                {filteredHolidays.length}
+                {holidays.filter(h => h.pais !== 'España' && new Date(h.date).getFullYear() === new Date().getFullYear()).length}
               </div>
+              <p className="text-xs italic text-blue-600 dark:text-blue-400 mt-1">
+                Año {new Date().getFullYear()}
+              </p>
             </CardContent>
           </Card>
 
           <Card className="border-l-4 border-l-green-500 bg-gradient-to-br from-green-50 to-green-100/50 dark:from-green-950/20 dark:to-green-900/10">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
               <CardTitle className="text-sm font-medium text-green-700 dark:text-green-400">
-                Países
+                Festivos Nacionales España
               </CardTitle>
               <div className="h-8 w-8 bg-green-100 dark:bg-green-900/50 rounded-lg flex items-center justify-center">
                 <CalendarIcon className="h-4 w-4 text-green-600 dark:text-green-400" />
@@ -514,15 +517,18 @@ const SquadLeadHolidaysManagement = () => {
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold text-green-800 dark:text-green-300">
-                {getUniqueValues('pais').length}
+                {holidays.filter(h => h.pais === 'España' && h.comunidad_autonoma === 'NACIONAL' && new Date(h.date).getFullYear() === new Date().getFullYear()).length}
               </div>
+              <p className="text-xs italic text-green-600 dark:text-green-400 mt-1">
+                Año {new Date().getFullYear()}
+              </p>
             </CardContent>
           </Card>
 
           <Card className="border-l-4 border-l-purple-500 bg-gradient-to-br from-purple-50 to-purple-100/50 dark:from-purple-950/20 dark:to-purple-900/10">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
               <CardTitle className="text-sm font-medium text-purple-700 dark:text-purple-400">
-                Comunidades
+                Festivos de Comunidades Autónomas (España)
               </CardTitle>
               <div className="h-8 w-8 bg-purple-100 dark:bg-purple-900/50 rounded-lg flex items-center justify-center">
                 <CalendarIcon className="h-4 w-4 text-purple-600 dark:text-purple-400" />
@@ -530,8 +536,11 @@ const SquadLeadHolidaysManagement = () => {
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold text-purple-800 dark:text-purple-300">
-                {getUniqueValues('comunidad_autonoma').length}
+                {holidays.filter(h => h.pais === 'España' && h.comunidad_autonoma !== 'NACIONAL' && new Date(h.date).getFullYear() === new Date().getFullYear()).length}
               </div>
+              <p className="text-xs italic text-purple-600 dark:text-purple-400 mt-1">
+                Año {new Date().getFullYear()}
+              </p>
             </CardContent>
           </Card>
         </div>
