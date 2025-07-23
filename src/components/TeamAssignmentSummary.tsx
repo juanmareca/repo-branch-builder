@@ -104,7 +104,9 @@ export default function TeamAssignmentSummary({
         const dayStr = format(day, 'yyyy-MM-dd');
         const isHoliday = holidays.some(h => 
           h.date === dayStr && 
-          (h.comunidad_autonoma === member.oficina || h.comunidad_autonoma === '')
+          (h.comunidad_autonoma === 'NACIONAL' || 
+           h.comunidad_autonoma === '' || 
+           h.comunidad_autonoma.toLowerCase() === member.oficina.toLowerCase())
         );
         return isHoliday && !isWeekend(day);
       }).length;
@@ -237,7 +239,9 @@ export default function TeamAssignmentSummary({
               const isWeekendDay = isWeekend(day);
               const isHolidayDay = holidays.some(h => 
                 h.date === dayStr && 
-                (h.comunidad_autonoma === member.oficina || h.comunidad_autonoma === '')
+                (h.comunidad_autonoma === 'NACIONAL' || 
+                 h.comunidad_autonoma === '' || 
+                 h.comunidad_autonoma.toLowerCase() === member.oficina.toLowerCase())
               );
               return !isWeekendDay && !isHolidayDay;
             }).length;
@@ -504,17 +508,16 @@ export default function TeamAssignmentSummary({
       pdf.setDrawColor(226, 232, 240);
       pdf.rect(20, yPosition - 5, pageWidth - 40, 18, 'S');
       
-      // Proyecto y código
+      // Proyecto y código (solo la parte después del guión)
       const project = projects.find(p => p.id === projectId);
       const projectCode = project?.codigo_inicial || '';
       const projectName = project?.denominacion || data.name;
+      const displayName = projectCode ? projectCode.split(' - ').slice(1).join(' - ') || projectName : projectName;
       
       pdf.setTextColor(15, 23, 42);
       pdf.setFont('helvetica', 'bold');
       pdf.setFontSize(10);
-      pdf.text(`${projectCode}`, 25, yPosition + 3);
-      pdf.setFont('helvetica', 'normal');
-      pdf.text(`${projectName}`, 25, yPosition + 10);
+      pdf.text(displayName, 25, yPosition + 7);
       
       // Días alineados a la derecha
       pdf.setFont('helvetica', 'bold');
@@ -796,8 +799,9 @@ export default function TeamAssignmentSummary({
                                   <ChevronRight className="h-4 w-4" />
                                 }
                                 <div>
-                                  <div className="font-medium">{projectCode}</div>
-                                  <div className="text-sm text-muted-foreground">{projectName}</div>
+                                  <div className="font-medium">
+                                    {projectCode ? projectCode.split(' - ').slice(1).join(' - ') || projectName : projectName}
+                                  </div>
                                   <div className="text-xs text-muted-foreground">Asignaciones del equipo</div>
                                 </div>
                               </div>
