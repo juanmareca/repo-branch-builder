@@ -533,25 +533,102 @@ export default function SquadAssignments({ userRole, userData }: { userRole?: st
   });
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background to-muted p-4">
-      <div className="max-w-7xl mx-auto">
-        {/* Header */}
+    <div className="min-h-screen bg-background">
+      <div className="container mx-auto py-8 px-4">
+        {/* Header con botones de navegación */}
         <div className="flex items-center justify-end gap-4 mb-6">
           <Button variant="outline" onClick={() => navigate('/squad-dashboard')} className="gap-2">
             <ArrowLeft className="h-4 w-4" />
             Panel de Squad Lead
           </Button>
-          <div className="flex items-center gap-2">
-            <CalendarIcon className="h-6 w-6 text-primary" />
+          <Button variant="outline" onClick={() => window.location.reload()} className="gap-2">
+            <ArrowLeft className="h-4 w-4" />
+            Cerrar sesión
+          </Button>
+        </div>
+        
+        {/* Título principal */}
+        <div className="mb-8">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="flex-shrink-0 h-12 w-12 bg-primary/10 rounded-xl flex items-center justify-center">
+              <CalendarIcon className="w-6 h-6 text-primary" />
+            </div>
             <div>
-              <h1 className="text-2xl font-bold">Asignaciones Avanzadas - Squad Lead: {currentSquadLeadName || 'REVILLA MAILLO, JUAN MANUEL'}</h1>
+              <h1 className="text-3xl font-bold text-foreground">
+                Asignaciones - REVILLA MAILLO, JUAN MANUEL
+              </h1>
               <p className="text-muted-foreground">
-                <span className="text-blue-600">Miembros del equipo: {persons.length} personas</span> | 
-                <span className="text-blue-600 ml-1">Proyectos activos: {projects.length} proyectos</span> | 
-                <span className="text-blue-600 ml-1">Festivos configurados: {holidays.length} días</span>
+                Gestiona asignaciones de proyectos y calendarios
               </p>
             </div>
           </div>
+        </div>
+
+        {/* Tarjetas de estadísticas */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <Card className="border-l-4 border-l-blue-500 bg-gradient-to-br from-blue-50 to-blue-100/50 dark:from-blue-950/20 dark:to-blue-900/10">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+              <CardTitle className="text-sm font-medium text-blue-700 dark:text-blue-400">
+                Miembros del Equipo
+              </CardTitle>
+              <div className="h-8 w-8 bg-blue-100 dark:bg-blue-900/50 rounded-lg flex items-center justify-center">
+                <CalendarIcon className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold text-blue-800 dark:text-blue-300">
+                {persons.length}
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-l-4 border-l-green-500 bg-gradient-to-br from-green-50 to-green-100/50 dark:from-green-950/20 dark:to-green-900/10">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+              <CardTitle className="text-sm font-medium text-green-700 dark:text-green-400">
+                Total Asignaciones
+              </CardTitle>
+              <div className="h-8 w-8 bg-green-100 dark:bg-green-900/50 rounded-lg flex items-center justify-center">
+                <CalendarIcon className="h-4 w-4 text-green-600 dark:text-green-400" />
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold text-green-800 dark:text-green-300">
+                {assignments.length}
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-l-4 border-l-purple-500 bg-gradient-to-br from-purple-50 to-purple-100/50 dark:from-purple-950/20 dark:to-purple-900/10">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+              <CardTitle className="text-sm font-medium text-purple-700 dark:text-purple-400">
+                Proyectos Activos
+              </CardTitle>
+              <div className="h-8 w-8 bg-purple-100 dark:bg-purple-900/50 rounded-lg flex items-center justify-center">
+                <CalendarIcon className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold text-purple-800 dark:text-purple-300">
+                {projects.length}
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-l-4 border-l-orange-500 bg-gradient-to-br from-orange-50 to-orange-100/50 dark:from-orange-950/20 dark:to-orange-900/10">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+              <CardTitle className="text-sm font-medium text-orange-700 dark:text-orange-400">
+                Oficinas
+              </CardTitle>
+              <div className="h-8 w-8 bg-orange-100 dark:bg-orange-900/50 rounded-lg flex items-center justify-center">
+                <CalendarIcon className="h-4 w-4 text-orange-600 dark:text-orange-400" />
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold text-orange-800 dark:text-orange-300">
+                {offices.length}
+              </div>
+            </CardContent>
+          </Card>
         </div>
 
         {/* Assignment Form */}
