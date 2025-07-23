@@ -66,6 +66,11 @@ import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer } from 'recharts';
 import * as XLSX from 'xlsx';
 
+interface CurrentSquadLead {
+  name: string;
+  availableSquadLeads: string[];
+}
+
 interface Project {
   id: string;
   codigo_inicial: string;
@@ -203,6 +208,9 @@ const ProjectsManagement = () => {
   
   // Lista de miembros del squad para los filtros
   const [squadMembers, setSquadMembers] = useState<string[]>([]);
+  // Lista de squad leads disponibles
+  const [availableSquadLeads, setAvailableSquadLeads] = useState<string[]>([]);
+  const [selectedSquadLead, setSelectedSquadLead] = useState<string>('');
 
   // Clean up obsolete localStorage on component mount
   useEffect(() => {
@@ -230,9 +238,47 @@ const ProjectsManagement = () => {
 
   useEffect(() => {
     if (currentUser && !userLoading) {
-      fetchProjects();
+      if (currentUser.role === 'squad_lead') {
+        loadSquadLeads();
+      } else {
+        fetchProjects();
+      }
     }
   }, [currentUser, userLoading]);
+
+  const loadSquadLeads = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('persons')
+        .select('squad_lead')
+        .not('squad_lead', 'eq', '')
+        .order('squad_lead');
+
+      if (error) throw error;
+      
+      const uniqueSquadLeads = [...new Set(data?.map(p => p.squad_lead) || [])];
+      setAvailableSquadLeads(uniqueSquadLeads);
+      
+      // Seleccionar el primer squad lead como default
+      if (uniqueSquadLeads.length > 0) {
+        const defaultSquadLead = uniqueSquadLeads[0];
+        setSelectedSquadLead(defaultSquadLead);
+        localStorage.setItem('current-squad-lead', defaultSquadLead);
+      }
+    } catch (error: any) {
+      toast({
+        title: "Error al cargar squad leads",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
+
+  useEffect(() => {
+    if (selectedSquadLead && currentUser?.role === 'squad_lead') {
+      fetchProjects();
+    }
+  }, [selectedSquadLead]);
 
   useEffect(() => {
     applyFilters();
@@ -314,15 +360,15 @@ const ProjectsManagement = () => {
       
       let allProjects: Project[] = [];
       
-      if (currentUser?.role === 'squad_lead') {
+      if (currentUser?.role === 'squad_lead' && selectedSquadLead) {
         // Para Squad Lead: obtener proyectos donde hay asignaciones de su equipo
-        console.log('📋 Cargando proyectos del squad:', currentUser.name);
+        console.log('📋 Cargando proyectos del squad:', selectedSquadLead);
         
         // Primero obtenemos todos los miembros del squad
         const { data: squadData, error: squadError } = await supabase
           .from('persons')
           .select('id, nombre')
-          .eq('squad_lead', currentUser.name);
+          .eq('squad_lead', selectedSquadLead);
 
         if (squadError) throw squadError;
         
@@ -903,6 +949,31 @@ const ProjectsManagement = () => {
                   <p className="text-muted-foreground">Administra todos los proyectos del sistema</p>
                 </div>
               </div>
+              
+              {/* Selector de Squad Lead - Solo para Squad Leads */}
+              {currentUser?.role === 'squad_lead' && (
+                <div className="flex items-center gap-2 ml-6">
+                  <Label className="text-sm font-medium">Squad Lead:</Label>
+                  <Select 
+                    value={selectedSquadLead} 
+                    onValueChange={(value) => {
+                      setSelectedSquadLead(value);
+                      localStorage.setItem('current-squad-lead', value);
+                    }}
+                  >
+                    <SelectTrigger className="w-80">
+                      <SelectValue placeholder="Seleccionar Squad Lead" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {availableSquadLeads.map((squadLead) => (
+                        <SelectItem key={squadLead} value={squadLead}>
+                          {squadLead}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
             </div>
             <div className="flex items-center gap-4">
               <Button 
