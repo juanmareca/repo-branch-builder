@@ -14,13 +14,15 @@ import {
   Settings,
   BarChart3,
   Loader2,
-  LogOut
+  LogOut,
+  GitMerge
 } from 'lucide-react';
 import { useAdminStats } from '@/hooks/useAdminStats';
 import HolidaysUpload from '@/components/FileUpload/HolidaysUpload';
 import ResourcesUpload from '@/components/FileUpload/ResourcesUpload';
 import ProjectsUpload from '@/components/FileUpload/ProjectsUpload';
 import CapacitiesUpload from '@/components/FileUpload/CapacitiesUpload';
+import AssignmentsUpload from '@/components/FileUpload/AssignmentsUpload';
 import { useNavigate } from 'react-router-dom';
 
 const AdminDashboard = () => {
@@ -175,6 +177,7 @@ const AdminDashboard = () => {
           <ProjectsUpload />
           <CapacitiesUpload />
           <HolidaysUpload />
+          <AssignmentsUpload />
         </div>
 
         {/* Action Buttons */}
