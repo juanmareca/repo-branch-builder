@@ -83,6 +83,7 @@ export default function SquadAssignments({ userRole, userData }: { userRole?: st
   const [offices, setOffices] = useState<string[]>([]);
   const [countries, setCountries] = useState<string[]>([]);
   const [communities, setCommunities] = useState<string[]>([]);
+  const [showTeamSummary, setShowTeamSummary] = useState<boolean>(true);
   
   const currentDate = new Date();
   const months = Array.from({ length: 3 }, (_, i) => addMonths(currentDate, i));
@@ -676,13 +677,16 @@ export default function SquadAssignments({ userRole, userData }: { userRole?: st
         </div>
 
         {/* Team Assignment Summary */}
-        <TeamAssignmentSummary
-          squadLeadName={currentSquadLeadName || ''}
-          teamMembers={persons}
-          assignments={assignments}
-          holidays={holidays}
-          projects={projects}
-        />
+        {showTeamSummary && (
+          <TeamAssignmentSummary
+            squadLeadName={currentSquadLeadName || ''}
+            teamMembers={persons}
+            assignments={assignments}
+            holidays={holidays}
+            projects={projects}
+            onClose={() => setShowTeamSummary(false)}
+          />
+        )}
 
         {/* Assignment Form */}
         <Card className="mb-6">
