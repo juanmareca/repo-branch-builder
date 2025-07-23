@@ -330,10 +330,13 @@ const AssignmentsUpload = () => {
         if (insertError) {
           console.error('Error inserting assignments batch:', insertError);
           toast.error(`Error al insertar lote de asignaciones: ${insertError.message}`);
-          return;
+          throw insertError; // Stop the process
         }
+        
+        console.log(`✅ Lote ${Math.floor(i/batchSize) + 1} insertado: ${batch.length} asignaciones`);
       }
       
+      console.log(`🎉 MIGRACIÓN COMPLETADA: ${assignmentsToInsert.length} asignaciones importadas`);
       toast.success(`✅ Migración completada: ${assignmentsToInsert.length} asignaciones importadas`);
       
       // Limpiar estado
