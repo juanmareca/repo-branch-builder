@@ -126,28 +126,10 @@ export default function SquadAssignments({ userRole, userData }: { userRole?: st
         .from('projects')
         .select('id, denominacion, codigo_inicial');
       
-      // Fetch assignments - ONLY for squad members
-      let assignmentsData = [];
-      if (currentSquadLeadName && squadPersons.length > 0) {
-        const squadPersonIds = squadPersons.map(p => p.id).filter(Boolean);
-        
-        if (squadPersonIds.length > 0) {
-          console.log('Cargando asignaciones para squad lead:', currentSquadLeadName);
-          console.log('Personas del squad:', squadPersonIds.length);
-          
-          const { data: squadAssignments, error: assignmentsError } = await supabase
-            .from('assignments')
-            .select('*')
-            .in('person_id', squadPersonIds);
-          
-          if (assignmentsError) {
-            console.error('Error fetching assignments:', assignmentsError);
-          } else {
-            assignmentsData = squadAssignments || [];
-            console.log('Asignaciones cargadas:', assignmentsData.length);
-          }
-        }
-      }
+      // Fetch ALL assignments (back to original working logic)
+      const { data: assignmentsData } = await supabase
+        .from('assignments')
+        .select('*');
       
       // Fetch holidays
       const { data: holidaysData } = await supabase
