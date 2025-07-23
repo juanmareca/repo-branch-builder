@@ -36,7 +36,8 @@ interface TeamSummaryProps {
   assignments: Assignment[];
   holidays: Holiday[];
   projects: { id: string; denominacion: string; codigo_inicial: string; }[];
-  onClose: () => void;
+  isExpanded: boolean;
+  onToggleExpanded: () => void;
 }
 
 interface TeamSummaryData {
@@ -62,7 +63,8 @@ export default function TeamAssignmentSummary({
   assignments, 
   holidays, 
   projects,
-  onClose
+  isExpanded,
+  onToggleExpanded
 }: TeamSummaryProps) {
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
@@ -253,13 +255,14 @@ export default function TeamAssignmentSummary({
             <BarChart3 className="h-5 w-5" />
             Resumen de Asignaciones del Equipo de {squadLeadName}
           </CardTitle>
-          <Button variant="ghost" size="sm" onClick={onClose}>
-            <X className="h-4 w-4" />
+          <Button variant="ghost" size="sm" onClick={onToggleExpanded}>
+            {isExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
           </Button>
         </div>
       </CardHeader>
-      <CardContent>
-        {!showSummary ? (
+      {isExpanded && (
+        <CardContent>
+          {!showSummary ? (
           <div className="space-y-4">
             <p className="text-muted-foreground">
               Selecciona un período para ver el resumen de asignaciones del equipo completo.
@@ -500,7 +503,8 @@ export default function TeamAssignmentSummary({
             </div>
           )
         )}
-      </CardContent>
+        </CardContent>
+      )}
     </Card>
   );
 }

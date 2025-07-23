@@ -677,16 +677,15 @@ export default function SquadAssignments({ userRole, userData }: { userRole?: st
         </div>
 
         {/* Team Assignment Summary */}
-        {showTeamSummary && (
-          <TeamAssignmentSummary
-            squadLeadName={currentSquadLeadName || ''}
-            teamMembers={persons}
-            assignments={assignments}
-            holidays={holidays}
-            projects={projects}
-            onClose={() => setShowTeamSummary(false)}
-          />
-        )}
+        <TeamAssignmentSummary
+          squadLeadName={currentSquadLeadName || ''}
+          teamMembers={persons}
+          assignments={assignments}
+          holidays={holidays}
+          projects={projects}
+          isExpanded={showTeamSummary}
+          onToggleExpanded={() => setShowTeamSummary(!showTeamSummary)}
+        />
 
         {/* Assignment Form */}
         <Card className="mb-6">
