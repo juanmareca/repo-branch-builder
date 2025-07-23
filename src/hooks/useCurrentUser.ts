@@ -16,7 +16,7 @@ export const useCurrentUser = () => {
     const getUserFromContext = () => {
       const path = window.location.pathname;
       
-      if (path.includes('/squad-projects') || path.includes('/squad-assignments') || path.includes('/squad-holidays')) {
+      if (path.includes('/squad-') || path === '/squad-dashboard') {
         // Para determinar el squad lead real, usaremos el localStorage o parámetros URL
         // Por ahora, permitir que se seleccione desde la UI
         const savedSquadLead = localStorage.getItem('current-squad-lead');
@@ -29,11 +29,11 @@ export const useCurrentUser = () => {
           };
         }
         
-        // Si no hay squad lead guardado, usar un valor por defecto temporal
+        // Si no hay squad lead guardado, usar REVILLA MAILLO, JUAN MANUEL por defecto
         return {
-          name: 'ACOSTA SERRANO, CARLOS ALBERTO',
+          name: 'REVILLA MAILLO, JUAN MANUEL',
           role: 'squad_lead' as const,
-          squadName: 'Squad Alpha'
+          squadName: 'Squad de REVILLA MAILLO, JUAN MANUEL'
         };
       } else {
         // Usuario Administrador
