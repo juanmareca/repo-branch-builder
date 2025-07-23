@@ -676,7 +676,7 @@ export default function SquadAssignments({ userRole, userData }: { userRole?: st
           </Card>
         </div>
 
-        {/* Team Assignment Summary */}
+        {/* 1. Team Assignment Summary */}
         <TeamAssignmentSummary
           squadLeadName={currentSquadLeadName || ''}
           teamMembers={persons}
@@ -687,7 +687,19 @@ export default function SquadAssignments({ userRole, userData }: { userRole?: st
           onToggleExpanded={() => setShowTeamSummary(!showTeamSummary)}
         />
 
-        {/* Assignment Form */}
+        {/* Espacio entre secciones */}
+        <div className="h-8"></div>
+
+        {/* 2. Generador de Informe de Staffing */}
+        <StaffingReport 
+          squadLeadName={currentSquadLeadName || ''}
+          squadPersons={squadPersons}
+        />
+
+        {/* Espacio entre secciones */}
+        <div className="h-8"></div>
+
+        {/* 3. Nueva Asignación */}
         <Card className="mb-6">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -1107,11 +1119,6 @@ export default function SquadAssignments({ userRole, userData }: { userRole?: st
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Informe de Staffing */}
-      <StaffingReport 
-        squadLeadName={currentSquadLeadName || ''}
-        squadPersons={squadPersons}
-      />
     </div>
   );
 }
