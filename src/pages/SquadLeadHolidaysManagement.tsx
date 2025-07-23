@@ -461,7 +461,7 @@ const SquadLeadHolidaysManagement = () => {
                 className="flex items-center gap-2 hover:bg-red-50 hover:text-red-700 hover:border-red-200"
               >
                 <LogOut className="h-4 w-4" />
-                Salir
+                Cerrar sesión
               </Button>
             </div>
           </div>
