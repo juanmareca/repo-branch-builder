@@ -113,6 +113,9 @@ export default function TeamAssignmentSummary({
       totalHolidayDays += memberHolidayDays;
     });
     
+    console.log('Total holiday days calculated:', totalHolidayDays);
+    console.log('Member holidays:', memberHolidays);
+    
     const workDays = totalDays - weekendDays;
     
     // Calculate project assignments for all team members with member breakdown
