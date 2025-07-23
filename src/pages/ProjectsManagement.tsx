@@ -902,10 +902,14 @@ const ProjectsManagement = () => {
             <Button 
               variant="outline" 
               onClick={() => setShowFilters(!showFilters)}
-              className={cn("text-orange-600 border-orange-600", showFilters && "bg-orange-50")}
+              className={cn(
+                hasActiveFilters() 
+                  ? "bg-orange-500 text-white border-orange-500 hover:bg-orange-600 shadow-lg shadow-orange-500/25" 
+                  : "text-orange-600 border-orange-600 hover:bg-orange-50"
+              )}
             >
               <Filter className="h-4 w-4 mr-2" />
-              Filtros
+              {hasActiveFilters() ? "Filtros activos" : "Filtros"}
             </Button>
             <Button 
               variant="outline" 
