@@ -113,46 +113,14 @@ const App = () => {
             <Route path="/resources" element={<ResourcesManagement />} />
             <Route path="/projects" element={<ProjectsManagement />} />
             <Route path="/configuration" element={<ConfigurationManagement />} />
-            <Route path="/squad-dashboard" element={
-              <ProtectedRoute requiredRole="squad_lead">
-                <SquadLeadDashboard />
-              </ProtectedRoute>
-            } />
-            <Route path="/squad-assignments" element={
-              <ProtectedRoute requiredRole="squad_lead">
-                <SquadAssignments />
-              </ProtectedRoute>
-            } />
-            <Route path="/squad-team" element={
-              <ProtectedRoute requiredRole="squad_lead">
-                <Index />
-              </ProtectedRoute>
-            } />
-            <Route path="/squad-projects" element={
-              <ProtectedRoute requiredRole="squad_lead">
-                <ProjectsManagement />
-              </ProtectedRoute>
-            } />
-            <Route path="/squad-capacities" element={
-              <ProtectedRoute requiredRole="squad_lead">
-                <CapacitiesManagement />
-              </ProtectedRoute>
-            } />
-            <Route path="/squad-holidays" element={
-              <ProtectedRoute requiredRole="squad_lead">
-                <SquadLeadHolidaysManagement />
-              </ProtectedRoute>
-            } />
-            <Route path="/squad-availability" element={
-              <ProtectedRoute requiredRole="squad_lead">
-                <Index />
-              </ProtectedRoute>
-            } />
-            <Route path="/squad-reports" element={
-              <ProtectedRoute requiredRole="squad_lead">
-                <Index />
-              </ProtectedRoute>
-            } />
+            <Route path="/squad-dashboard" element={<SquadLeadDashboard />} />
+            <Route path="/squad-assignments" element={<SquadAssignments />} />
+            <Route path="/squad-team" element={<Index />} />
+            <Route path="/squad-projects" element={<ProjectsManagement />} />
+            <Route path="/squad-capacities" element={<CapacitiesManagement />} />
+            <Route path="/squad-holidays" element={<SquadLeadHolidaysManagement />} />
+            <Route path="/squad-availability" element={<Index />} />
+            <Route path="/squad-reports" element={<Index />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
