@@ -18,6 +18,7 @@ import AuditLogs from "./pages/AuditLogs";
 import CapacitiesManagement from "./pages/CapacitiesManagement";
 import ProjectsManagement from "./pages/ProjectsManagement";
 import ResourcesManagement from "./pages/ResourcesManagement";
+import ConfigurationManagement from "./pages/ConfigurationManagement";
 
 const queryClient = new QueryClient();
 
@@ -102,6 +103,7 @@ const App = () => {
             <Route path="/capacities" element={userRole === 'admin' ? <CapacitiesManagement /> : <Navigate to="/" replace />} />
             <Route path="/resources" element={userRole === 'admin' ? <ResourcesManagement /> : <Navigate to="/" replace />} />
             <Route path="/projects" element={userRole === 'admin' ? <ProjectsManagement /> : <Navigate to="/" replace />} />
+            <Route path="/configuration" element={userRole === 'admin' ? <ConfigurationManagement /> : <Navigate to="/" replace />} />
             
             {/* Squad Lead Routes */}
             <Route path="/squad-dashboard" element={userRole === 'squad_lead' ? <SquadLeadDashboard /> : <Navigate to="/" replace />} />
