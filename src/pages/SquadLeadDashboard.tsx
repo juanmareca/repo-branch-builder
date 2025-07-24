@@ -273,7 +273,7 @@ export default function SquadLeadDashboard() {
   };
 
   const handleLogout = () => {
-    navigate('/');
+    window.location.href = '/';
   };
 
   if (isLoading) {
