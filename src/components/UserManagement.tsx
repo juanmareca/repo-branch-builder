@@ -184,8 +184,8 @@ export default function UserManagement() {
         }
       ];
 
-      // Agregar todos los squad leads
-      const squadLeadUsers = APP_CONFIG.SQUAD_LEADS.map(sl => ({
+      // Solo agregar los primeros 5 squad leads para evitar rate limit
+      const squadLeadUsers = APP_CONFIG.SQUAD_LEADS.slice(0, 5).map(sl => ({
         email: `${sl.code}@empresa.com`,
         password: `Squad${sl.code}!`,
         name: sl.name,
@@ -200,8 +200,9 @@ export default function UserManagement() {
       let existingCount = 0;
       const errors: string[] = [];
 
-      for (const user of allUsers) {
-        console.log(`🔍 Verificando usuario: ${user.name} (${user.email})`);
+      for (let i = 0; i < allUsers.length; i++) {
+        const user = allUsers[i];
+        console.log(`🔍 [${i+1}/${allUsers.length}] Procesando: ${user.name}`);
         
         // Verificar si ya existe
         const { data: existing, error: checkError } = await supabase
@@ -224,48 +225,79 @@ export default function UserManagement() {
 
         console.log(`➕ Creando usuario: ${user.name}`);
 
-        // Crear en Auth
-        const { data: authData, error: authError } = await supabase.auth.signUp({
-          email: user.email,
-          password: user.password,
-          options: {
-            data: {
-              name: user.name,
-              employee_code: user.employee_code
-            }
-          }
-        });
+        // Crear en Auth con retry para rate limits
+        let authSuccess = false;
+        let retries = 0;
+        const maxRetries = 3;
 
-        if (authError) {
-          console.error(`❌ Error Auth para ${user.name}:`, authError);
-          if (!authError.message.includes('already registered')) {
-            errors.push(`Error Auth ${user.name}: ${authError.message}`);
+        while (!authSuccess && retries < maxRetries) {
+          try {
+            const { data: authData, error: authError } = await supabase.auth.signUp({
+              email: user.email,
+              password: user.password,
+              options: {
+                data: {
+                  name: user.name,
+                  employee_code: user.employee_code
+                }
+              }
+            });
+
+            if (authError) {
+              if (authError.code === 'over_request_rate_limit') {
+                console.log(`⏳ Rate limit alcanzado, esperando 10 segundos... (intento ${retries + 1})`);
+                await new Promise(resolve => setTimeout(resolve, 10000));
+                retries++;
+                continue;
+              } else if (authError.message.includes('already registered')) {
+                console.log(`✅ Usuario ya registrado: ${user.name}`);
+                existingCount++;
+                authSuccess = true;
+                break;
+              } else {
+                throw authError;
+              }
+            } else {
+              console.log(`✅ Usuario creado en Auth: ${user.name}`);
+              
+              // Esperar para que se ejecute el trigger
+              await new Promise(resolve => setTimeout(resolve, 2000));
+
+              // Actualizar el rol en el perfil
+              if (authData?.user) {
+                const { error: updateError } = await supabase
+                  .from('profiles')
+                  .update({ 
+                    role: user.role,
+                    employee_code: user.employee_code
+                  })
+                  .eq('id', authData.user.id);
+
+                if (updateError) {
+                  console.error(`❌ Error actualizando perfil ${user.name}:`, updateError);
+                  errors.push(`Error perfil ${user.name}: ${updateError.message}`);
+                } else {
+                  console.log(`✅ Perfil actualizado: ${user.name} → ${user.role}`);
+                  createdCount++;
+                }
+              }
+              authSuccess = true;
+            }
+          } catch (error: any) {
+            console.error(`❌ Error creando ${user.name}:`, error);
+            errors.push(`Error ${user.name}: ${error.message}`);
+            break;
           }
-          continue;
         }
 
-        console.log(`✅ Usuario creado en Auth: ${user.name}`);
+        if (!authSuccess && retries >= maxRetries) {
+          errors.push(`${user.name}: Máximo de reintentos alcanzado`);
+        }
 
-        // Esperar un momento para que se ejecute el trigger
-        await new Promise(resolve => setTimeout(resolve, 1000));
-
-        // Actualizar el rol en el perfil
-        if (authData?.user) {
-          const { error: updateError } = await supabase
-            .from('profiles')
-            .update({ 
-              role: user.role,
-              employee_code: user.employee_code
-            })
-            .eq('id', authData.user.id);
-
-          if (updateError) {
-            console.error(`❌ Error actualizando perfil ${user.name}:`, updateError);
-            errors.push(`Error perfil ${user.name}: ${updateError.message}`);
-          } else {
-            console.log(`✅ Perfil actualizado: ${user.name} → ${user.role}`);
-            createdCount++;
-          }
+        // Esperar entre usuarios para evitar rate limit
+        if (i < allUsers.length - 1) {
+          console.log('⏳ Esperando 3 segundos antes del siguiente usuario...');
+          await new Promise(resolve => setTimeout(resolve, 3000));
         }
       }
 
@@ -274,8 +306,8 @@ export default function UserManagement() {
       if (errors.length > 0) {
         console.error('❌ Errores encontrados:', errors);
         toast({
-          title: "⚠️ Inicialización con errores",
-          description: `Creados: ${createdCount}, Existían: ${existingCount}, Errores: ${errors.length}`,
+          title: "⚠️ Inicialización parcial",
+          description: `Creados: ${createdCount}, Existían: ${existingCount}, Errores: ${errors.length}. Revisa la consola para detalles.`,
           variant: "destructive"
         });
       } else {
