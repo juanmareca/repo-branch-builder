@@ -20,6 +20,7 @@ import CapacitiesManagement from "./pages/CapacitiesManagement";
 import ProjectsManagement from "./pages/ProjectsManagement";
 import ResourcesManagement from "./pages/ResourcesManagement";
 import ConfigurationManagement from "./pages/ConfigurationManagement";
+import AuthPage from "./pages/AuthPage";
 
 const queryClient = new QueryClient();
 
@@ -102,6 +103,7 @@ const App = () => {
         <Sonner />
         <BrowserRouter>
           <Routes>
+            <Route path="/auth" element={<AuthPage />} />
             <Route path="/" element={renderCurrentPage()} />
             <Route path="/admin" element={
               <ProtectedRoute requiredRole="admin">
