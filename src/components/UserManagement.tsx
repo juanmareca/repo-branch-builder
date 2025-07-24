@@ -289,14 +289,17 @@ export default function UserManagement() {
         }
       }
 
+      const successMessage = shouldReplace 
+        ? `✅ Usuarios reemplazados correctamente. Creados: ${createdCount}${errorCount > 0 ? `, Errores: ${errorCount}` : ''}`
+        : `✅ Usuarios añadidos correctamente. Creados: ${createdCount}${errorCount > 0 ? `, Errores: ${errorCount}` : ''}`;
+
       toast({
-        title: "✅ Carga completada",
-        description: shouldReplace 
-          ? `Usuarios reemplazados. Creados: ${createdCount}, Errores: ${errorCount}`
-          : `Usuarios añadidos. Creados: ${createdCount}, Errores: ${errorCount}`,
+        title: "Carga completada",
+        description: successMessage,
       });
 
-      loadUsers();
+      // Recargar usuarios sin causar problemas de sesión
+      await loadUsers();
     } catch (error: any) {
       toast({
         title: "❌ Error al procesar archivo",
