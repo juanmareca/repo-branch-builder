@@ -274,6 +274,16 @@ export default function UserManagement() {
 
           // Crear perfil directamente en la tabla profiles
           const userId = crypto.randomUUID();
+          
+          console.log(`Creando usuario: ${user.name} con rol: ${user.role}`);
+          console.log('Datos enviados:', {
+            id: userId,
+            name: user.name,
+            password: user.password,
+            role: user.role,
+            is_active: true
+          });
+
           const { error: profileError } = await supabase
             .from('profiles')
             .insert({
@@ -285,9 +295,11 @@ export default function UserManagement() {
             });
 
           if (profileError) {
+            console.error(`Error creando usuario ${user.name}:`, profileError);
             throw profileError;
           }
 
+          console.log(`Usuario ${user.name} creado exitosamente`);
           createdCount++;
           
           // Reducir la carga del sistema con pausa más larga cada 10 usuarios
