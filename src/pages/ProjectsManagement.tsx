@@ -62,6 +62,7 @@ import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
 import ProjectsUpload from '@/components/FileUpload/ProjectsUpload';
 import EditProjectDialog from '@/components/EditProjectDialog';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
+import { APP_CONFIG } from '@/config/constants';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer } from 'recharts';
 import * as XLSX from 'xlsx';
@@ -263,7 +264,7 @@ const ProjectsManagement = () => {
       if (uniqueSquadLeads.length > 0) {
         const defaultSquadLead = uniqueSquadLeads[0];
         setSelectedSquadLead(defaultSquadLead);
-        localStorage.setItem('current-squad-lead', defaultSquadLead);
+        localStorage.setItem(APP_CONFIG.STORAGE_KEYS.CURRENT_SQUAD_LEAD, defaultSquadLead);
       }
     } catch (error: any) {
       toast({
@@ -958,7 +959,7 @@ const ProjectsManagement = () => {
                     value={selectedSquadLead} 
                     onValueChange={(value) => {
                       setSelectedSquadLead(value);
-                      localStorage.setItem('current-squad-lead', value);
+                      localStorage.setItem(APP_CONFIG.STORAGE_KEYS.CURRENT_SQUAD_LEAD, value);
                     }}
                   >
                     <SelectTrigger className="w-80">

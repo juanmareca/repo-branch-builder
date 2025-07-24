@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { APP_CONFIG } from '@/config/constants';
 
 interface CurrentUser {
   name: string;
@@ -17,7 +18,7 @@ export const useCurrentUser = () => {
       
       if (path.includes('/squad-') || path === '/squad-dashboard') {
         // Obtener el squad lead actual del localStorage
-        const savedSquadLead = localStorage.getItem('current-squad-lead');
+        const savedSquadLead = localStorage.getItem(APP_CONFIG.STORAGE_KEYS.CURRENT_SQUAD_LEAD);
         console.log('useCurrentUser - savedSquadLead from localStorage:', savedSquadLead);
         
         if (savedSquadLead) {

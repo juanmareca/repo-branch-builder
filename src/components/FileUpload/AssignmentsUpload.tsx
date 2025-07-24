@@ -9,6 +9,7 @@ import * as XLSX from 'xlsx';
 import { toast } from 'sonner';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
+import { APP_CONFIG } from '@/config/constants';
 
 interface ValidationError {
   type: 'person' | 'project';
@@ -403,9 +404,9 @@ const AssignmentsUpload = () => {
             project_id: projectId,
             start_date: date,
             end_date: date,
-            hours_allocated: Math.round((percentage / 100) * 8), // Asumiendo 8 horas por día
-            type: 'project', // Tipo por defecto cuando no se especifica
-            status: 'assigned',
+            hours_allocated: Math.round((percentage / 100) * APP_CONFIG.WORK.DEFAULT_HOURS_PER_DAY),
+            type: APP_CONFIG.WORK.DEFAULT_ASSIGNMENT_TYPE,
+            status: APP_CONFIG.WORK.DEFAULT_STATUS,
             notes: `Migrado desde Excel - ${percentage}% asignación`
           });
         });

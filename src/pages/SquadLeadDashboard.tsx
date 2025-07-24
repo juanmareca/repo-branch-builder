@@ -15,6 +15,7 @@ import {
   CalendarDays,
   GripVertical
 } from 'lucide-react';
+import { APP_CONFIG } from '@/config/constants';
 
 interface DashboardCard {
   id: string;
@@ -106,7 +107,7 @@ export default function SquadLeadDashboard() {
   const loadSavedOrder = async () => {
     try {
       // Intentar cargar desde localStorage primero como respaldo
-      const localOrder = localStorage.getItem('squad-dashboard-order');
+      const localOrder = localStorage.getItem(APP_CONFIG.STORAGE_KEYS.SQUAD_DASHBOARD_ORDER);
       if (localOrder) {
         try {
           const savedOrder = JSON.parse(localOrder);
@@ -148,7 +149,7 @@ export default function SquadLeadDashboard() {
         
         setCards([...orderedCards, ...missingCards]);
         // También guardar en localStorage
-        localStorage.setItem('squad-dashboard-order', JSON.stringify(data.card_order));
+        localStorage.setItem(APP_CONFIG.STORAGE_KEYS.SQUAD_DASHBOARD_ORDER, JSON.stringify(data.card_order));
       }
     } catch (error) {
       console.log('Error loading saved order:', error);
@@ -159,7 +160,7 @@ export default function SquadLeadDashboard() {
 
   const saveOrder = async (newOrder: string[]) => {
     // Siempre guardar en localStorage primero (siempre funciona)
-    localStorage.setItem('squad-dashboard-order', JSON.stringify(newOrder));
+    localStorage.setItem(APP_CONFIG.STORAGE_KEYS.SQUAD_DASHBOARD_ORDER, JSON.stringify(newOrder));
     
     // Intentar guardar en Supabase sin mostrar errores al usuario
     try {

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { APP_CONFIG } from '@/config/constants';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card } from '@/components/ui/card';
 import { Eye, EyeOff, User } from 'lucide-react';
@@ -79,9 +80,9 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ onLogin }) => {
   }, [selectedRole]);
 
   const handleLogin = () => {
-    if (selectedRole === 'admin') {
-      if (username === 'admin' && password === 'admin123') {
-        onLogin('admin', { username });
+    if (selectedRole === APP_CONFIG.AUTH.ROLES.ADMIN) {
+      if (username === APP_CONFIG.AUTH.ADMIN_CREDENTIALS.USERNAME && password === APP_CONFIG.AUTH.ADMIN_CREDENTIALS.PASSWORD) {
+        onLogin(APP_CONFIG.AUTH.ROLES.ADMIN, { username });
       } else {
         toast({
           title: "Error de autenticación",
@@ -89,10 +90,10 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ onLogin }) => {
           variant: "destructive"
         });
       }
-    } else if (selectedRole === 'squad_lead') {
+    } else if (selectedRole === APP_CONFIG.AUTH.ROLES.SQUAD_LEAD) {
       const selectedLead = squadLeads.find(lead => lead.name === selectedSquadLead);
       if (selectedLead && employeeCode === selectedLead.code) {
-        onLogin('squad_lead', { name: selectedSquadLead, code: employeeCode });
+        onLogin(APP_CONFIG.AUTH.ROLES.SQUAD_LEAD, { name: selectedSquadLead, code: employeeCode });
       } else {
         toast({
           title: "Error de autenticación",
