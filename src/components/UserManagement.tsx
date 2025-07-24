@@ -91,6 +91,7 @@ export default function UserManagement() {
           id: userId,
           name: newUser.name,
           role: newUser.role,
+          password: newUser.password, // Agregar el password
           is_active: true
         });
 
@@ -231,6 +232,7 @@ export default function UserManagement() {
             .insert({
               id: userId,
               name: user.name,
+              password: user.password, // Incluir el password del Excel
               role: user.role as any,
               is_active: true
             });
@@ -404,7 +406,7 @@ export default function UserManagement() {
                   {/* Columna Password */}
                   <div className="border p-2 rounded bg-background flex items-center justify-between">
                     <p style={{ fontFamily: 'Arial', fontSize: '12px', fontWeight: 'normal' }}>
-                      {showPasswords[user.id] ? 'password123' : '••••••••'}
+                      {showPasswords[user.id] ? (user.password || 'Sin password') : '••••••••'}
                     </p>
                     <Button
                       type="button"
