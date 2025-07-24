@@ -12,6 +12,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { APP_CONFIG } from '@/config/constants';
 import UserManagement from '@/components/UserManagement';
+import UsersUpload from '@/components/FileUpload/UsersUpload';
 
 interface ConfigurationData {
   auth: {
@@ -247,7 +248,10 @@ export default function ConfigurationManagement() {
 
           {/* Gestión de Usuarios */}
           <TabsContent value="users">
-            <UserManagement />
+            <div className="space-y-6">
+              <UsersUpload onUploadComplete={() => window.location.reload()} />
+              <UserManagement />
+            </div>
           </TabsContent>
 
           {/* Autenticación */}
