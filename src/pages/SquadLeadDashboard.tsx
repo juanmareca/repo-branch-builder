@@ -143,7 +143,7 @@ export default function SquadLeadDashboard() {
         .from('squad_lead_preferences')
         .select('card_order')
         .eq('squad_lead_name', squadLeadName)
-        .single();
+        .maybeSingle();
 
       if (!error && data && data.card_order && data.card_order.length > 0) {
         const orderedCards = data.card_order
@@ -172,6 +172,12 @@ export default function SquadLeadDashboard() {
     // Intentar guardar en Supabase sin mostrar errores al usuario
     try {
       const squadLeadName = currentUser?.name;
+      
+      // Solo guardar si tenemos el nombre del squad lead
+      if (!squadLeadName) {
+        console.log('Info: No se puede guardar en Supabase - falta nombre del squad lead');
+        return;
+      }
       
       const { error } = await supabase
         .from('squad_lead_preferences')
