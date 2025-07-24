@@ -1,284 +1,154 @@
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { supabase } from '@/integrations/supabase/client';
+import React, { useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Eye, EyeOff, Loader2 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
-export default function AuthPage() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [name, setName] = useState('');
-  const [employeeCode, setEmployeeCode] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
+const AuthPage = () => {
   const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState('');
-  const [error, setError] = useState('');
+  const [name, setName] = useState('');
+  const [password, setPassword] = useState('');
   const navigate = useNavigate();
+  const { toast } = useToast();
 
-  useEffect(() => {
-    // Verificar si ya está autenticado
-    const checkAuth = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session) {
-        // Redirigir según el rol
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('role')
-          .eq('id', session.user.id)
-          .single();
-        
-        if (profile) {
-          if (profile.role === 'admin') {
-            navigate('/admin');
-          } else if (profile.role === 'squad_lead') {
-            navigate('/squad-dashboard');
-          } else {
-            navigate('/');
-          }
-        }
-      }
-    };
-
-    checkAuth();
-  }, [navigate]);
-
-  const handleSignIn = async (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    setError('');
-    setMessage('');
 
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email: email.trim(),
-        password,
-      });
-
-      if (error) throw error;
-
-      if (data.user) {
-        // Obtener el perfil del usuario para redirigir según su rol
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('role')
-          .eq('id', data.user.id)
-          .single();
-
-        if (profile) {
-          if (profile.role === 'admin') {
-            navigate('/admin');
-          } else if (profile.role === 'squad_lead') {
-            navigate('/squad-dashboard');
-          } else {
-            navigate('/');
-          }
-        } else {
-          navigate('/');
-        }
-      }
-    } catch (error: any) {
-      setError(error.message || 'Error al iniciar sesión');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleSignUp = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    setError('');
-    setMessage('');
-
-    try {
-      const redirectUrl = `${window.location.origin}/auth`;
+      console.log('🔐 Intentando login para:', name);
       
-      const { data, error } = await supabase.auth.signUp({
-        email: email.trim(),
-        password,
-        options: {
-          emailRedirectTo: redirectUrl,
-          data: {
-            name: name.trim(),
-            employee_code: employeeCode.trim()
-          }
-        }
+      // Buscar usuario en la tabla profiles por nombre y password
+      const { data: user, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('name', name)
+        .eq('password', password)
+        .eq('is_active', true)
+        .maybeSingle();
+
+      if (error) {
+        console.error('❌ Error en consulta:', error);
+        throw error;
+      }
+
+      if (!user) {
+        console.log('❌ Usuario no encontrado o credenciales incorrectas');
+        toast({
+          title: "❌ Error de acceso",
+          description: "Nombre de usuario o contraseña incorrectos",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      console.log('✅ Usuario encontrado:', user);
+
+      // Guardar usuario en localStorage
+      const userData = {
+        id: user.id,
+        name: user.name,
+        email: user.email || '',
+        role: user.role,
+        squadName: user.squad_name,
+        employeeCode: user.employee_code
+      };
+
+      localStorage.setItem('currentUser', JSON.stringify(userData));
+
+      toast({
+        title: "✅ Acceso concedido",
+        description: `Bienvenido, ${user.name}`,
       });
 
-      if (error) throw error;
-
-      if (data.user) {
-        setMessage('¡Registro exitoso! Revisa tu correo para confirmar tu cuenta.');
-        setEmail('');
-        setPassword('');
-        setName('');
-        setEmployeeCode('');
-      }
-    } catch (error: any) {
-      if (error.message.includes('already registered')) {
-        setError('Este email ya está registrado. Intenta iniciar sesión.');
+      // Redirigir según el rol
+      console.log('🔄 Redirigiendo según rol:', user.role);
+      if (user.role === 'admin') {
+        navigate('/admin');
+      } else if (user.role === 'squad_lead') {
+        navigate('/squad-dashboard');
       } else {
-        setError(error.message || 'Error al registrarse');
+        navigate('/');
       }
+
+    } catch (error: any) {
+      console.error('❌ Error durante login:', error);
+      toast({
+        title: "❌ Error",
+        description: "Error al intentar acceder al sistema",
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-secondary/20 p-4">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
-          <CardTitle className="text-2xl font-bold">Sistema de Gestión</CardTitle>
-          <CardDescription>
-            Accede a tu cuenta para gestionar proyectos y equipos
-          </CardDescription>
+          <CardTitle className="text-2xl font-bold text-gray-900 dark:text-white">
+            Acceso al Sistema
+          </CardTitle>
+          <p className="text-gray-600 dark:text-gray-400 mt-2">
+            Ingresa tus credenciales para acceder
+          </p>
         </CardHeader>
         <CardContent>
-          <Tabs defaultValue="signin" className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="signin">Iniciar Sesión</TabsTrigger>
-              <TabsTrigger value="signup">Registrarse</TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="signin">
-              <form onSubmit={handleSignIn} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="signin-email">Email</Label>
-                  <Input
-                    id="signin-email"
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="tu@email.com"
-                    required
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="signin-password">Contraseña</Label>
-                  <div className="relative">
-                    <Input
-                      id="signin-password"
-                      type={showPassword ? "text" : "password"}
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      placeholder="••••••••"
-                      required
-                    />
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                      onClick={() => setShowPassword(!showPassword)}
-                    >
-                      {showPassword ? (
-                        <EyeOff className="h-4 w-4" />
-                      ) : (
-                        <Eye className="h-4 w-4" />
-                      )}
-                    </Button>
-                  </div>
-                </div>
-
-                <Button type="submit" className="w-full" disabled={loading}>
-                  {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  Iniciar Sesión
-                </Button>
-              </form>
-            </TabsContent>
-            
-            <TabsContent value="signup">
-              <form onSubmit={handleSignUp} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="signup-name">Nombre Completo</Label>
-                  <Input
-                    id="signup-name"
-                    type="text"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    placeholder="Tu nombre completo"
-                    required
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="signup-employee-code">Código de Empleado (Opcional)</Label>
-                  <Input
-                    id="signup-employee-code"
-                    type="text"
-                    value={employeeCode}
-                    onChange={(e) => setEmployeeCode(e.target.value)}
-                    placeholder="Ej: EMP001"
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="signup-email">Email</Label>
-                  <Input
-                    id="signup-email"
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="tu@email.com"
-                    required
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="signup-password">Contraseña</Label>
-                  <div className="relative">
-                    <Input
-                      id="signup-password"
-                      type={showPassword ? "text" : "password"}
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      placeholder="••••••••"
-                      required
-                      minLength={6}
-                    />
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                      onClick={() => setShowPassword(!showPassword)}
-                    >
-                      {showPassword ? (
-                        <EyeOff className="h-4 w-4" />
-                      ) : (
-                        <Eye className="h-4 w-4" />
-                      )}
-                    </Button>
-                  </div>
-                </div>
-
-                <Button type="submit" className="w-full" disabled={loading}>
-                  {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  Registrarse
-                </Button>
-              </form>
-            </TabsContent>
-          </Tabs>
-
-          {error && (
-            <Alert className="mt-4 border-destructive/50 text-destructive">
-              <AlertDescription>{error}</AlertDescription>
-            </Alert>
-          )}
-
-          {message && (
-            <Alert className="mt-4 border-green-500/50 text-green-700">
-              <AlertDescription>{message}</AlertDescription>
-            </Alert>
-          )}
+          <form onSubmit={handleLogin} className="space-y-4">
+            <div>
+              <Label htmlFor="name">Nombre de usuario</Label>
+              <Input
+                id="name"
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Tu nombre completo"
+                required
+                disabled={loading}
+              />
+            </div>
+            <div>
+              <Label htmlFor="password">Contraseña</Label>
+              <Input
+                id="password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Tu contraseña"
+                required
+                disabled={loading}
+              />
+            </div>
+            <Button 
+              type="submit" 
+              className="w-full" 
+              disabled={loading}
+            >
+              {loading ? 'Verificando...' : 'Acceder'}
+            </Button>
+          </form>
+          
+          <div className="mt-6 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
+              <strong>Usa los usuarios creados en el sistema</strong>
+            </p>
+            <div className="text-xs space-y-1">
+              <div>
+                Nombre: El nombre completo del usuario en el sistema
+              </div>
+              <div>
+                Contraseña: La contraseña asignada al usuario
+              </div>
+            </div>
+          </div>
         </CardContent>
       </Card>
     </div>
   );
-}
+};
+
+export default AuthPage;

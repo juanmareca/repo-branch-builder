@@ -1,13 +1,12 @@
-import React, { useState } from "react";
+import React from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { ProtectedRoute } from "@/components/ProtectedRoute";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
-import SplashScreen from "./pages/SplashScreen";
-import LoadingScreen from "./pages/LoadingScreen";
 import AdminDashboard from "./pages/AdminDashboard";
 import SquadLeadDashboard from "./pages/SquadLeadDashboard";
 import SquadAssignments from "./pages/SquadAssignments";
@@ -24,65 +23,6 @@ import AuthPage from "./pages/AuthPage";
 const queryClient = new QueryClient();
 
 const App = () => {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [userRole, setUserRole] = useState<string>('');
-  const [userData, setUserData] = useState<any>(null);
-
-  const handleLogin = (role: string, userData?: any) => {
-    console.log('App - handleLogin called with role:', role);
-    setUserRole(role);
-    setUserData(userData);
-    setIsLoading(true);
-  };
-
-  const handleLoadingComplete = () => {
-    console.log('App - Loading complete. UserRole is:', userRole);
-    setIsLoading(false);
-    setIsAuthenticated(true);
-    
-    // Limpiar el historial del navegador y forzar redirección correcta
-    if (userRole === 'admin') {
-      window.history.replaceState(null, '', '/admin');
-    } else if (userRole === 'squad_lead') {
-      window.history.replaceState(null, '', '/squad-dashboard');
-    }
-  };
-
-  const handleLogout = () => {
-    setIsAuthenticated(false);
-    setUserRole('');
-    setUserData(null);
-  };
-
-  console.log('App render - isAuthenticated:', isAuthenticated, 'isLoading:', isLoading, 'userRole:', userRole);
-
-  if (!isAuthenticated && !isLoading) {
-    return (
-      <QueryClientProvider client={queryClient}>
-        <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <SplashScreen onLogin={handleLogin} />
-        </TooltipProvider>
-      </QueryClientProvider>
-    );
-  }
-
-  if (isLoading) {
-    return (
-      <QueryClientProvider client={queryClient}>
-        <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <LoadingScreen onComplete={handleLoadingComplete} />
-        </TooltipProvider>
-      </QueryClientProvider>
-    );
-  }
-
-  // Cuando está autenticado, mostrar la aplicación con routing normal
-
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
@@ -90,36 +30,101 @@ const App = () => {
         <Sonner />
         <BrowserRouter>
           <Routes>
-            <Route path="/" element={
-              userRole === 'admin' ? <Navigate to="/admin" replace /> : 
-              userRole === 'squad_lead' ? <Navigate to="/squad-dashboard" replace /> :
-              <Index />
-            } />
-            
-            {/* Admin Routes */}
-            <Route path="/admin" element={userRole === 'admin' ? <AdminDashboard /> : <Navigate to="/" replace />} />
-            <Route path="/holidays" element={userRole === 'admin' ? <HolidaysManagement /> : <Navigate to="/" replace />} />
-            <Route path="/backups" element={userRole === 'admin' ? <BackupsManagement /> : <Navigate to="/" replace />} />
-            <Route path="/audit-logs" element={userRole === 'admin' ? <AuditLogs /> : <Navigate to="/" replace />} />
-            <Route path="/capacities" element={userRole === 'admin' ? <CapacitiesManagement /> : <Navigate to="/" replace />} />
-            <Route path="/resources" element={userRole === 'admin' ? <ResourcesManagement /> : <Navigate to="/" replace />} />
-            <Route path="/projects" element={userRole === 'admin' ? <ProjectsManagement /> : <Navigate to="/" replace />} />
-            <Route path="/configuration" element={userRole === 'admin' ? <ConfigurationManagement /> : <Navigate to="/" replace />} />
-            
-            {/* Auth Route */}
+            {/* Ruta de autenticación - pública */}
             <Route path="/auth" element={<AuthPage />} />
             
-            {/* Squad Lead Routes */}
-            <Route path="/squad-dashboard" element={userRole === 'squad_lead' ? <SquadLeadDashboard /> : <Navigate to="/" replace />} />
-            <Route path="/squad-assignments" element={userRole === 'squad_lead' ? <SquadAssignments /> : <Navigate to="/" replace />} />
-            <Route path="/squad-team" element={userRole === 'squad_lead' ? <Index /> : <Navigate to="/" replace />} />
-            <Route path="/squad-projects" element={userRole === 'squad_lead' ? <ProjectsManagement /> : <Navigate to="/" replace />} />
-            <Route path="/squad-capacities" element={userRole === 'squad_lead' ? <CapacitiesManagement /> : <Navigate to="/" replace />} />
-            <Route path="/squad-holidays" element={userRole === 'squad_lead' ? <SquadLeadHolidaysManagement /> : <Navigate to="/" replace />} />
-            <Route path="/squad-availability" element={userRole === 'squad_lead' ? <Index /> : <Navigate to="/" replace />} />
-            <Route path="/squad-reports" element={userRole === 'squad_lead' ? <Index /> : <Navigate to="/" replace />} />
+            {/* Rutas protegidas - requieren login */}
+            <Route path="/" element={
+              <ProtectedRoute>
+                <Index />
+              </ProtectedRoute>
+            } />
             
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+            {/* Admin Routes - solo administradores */}
+            <Route path="/admin" element={
+              <ProtectedRoute requiredRole="admin">
+                <AdminDashboard />
+              </ProtectedRoute>
+            } />
+            <Route path="/holidays" element={
+              <ProtectedRoute requiredRole="admin">
+                <HolidaysManagement />
+              </ProtectedRoute>
+            } />
+            <Route path="/backups" element={
+              <ProtectedRoute requiredRole="admin">
+                <BackupsManagement />
+              </ProtectedRoute>
+            } />
+            <Route path="/audit-logs" element={
+              <ProtectedRoute requiredRole="admin">
+                <AuditLogs />
+              </ProtectedRoute>
+            } />
+            <Route path="/capacities" element={
+              <ProtectedRoute requiredRole="admin">
+                <CapacitiesManagement />
+              </ProtectedRoute>
+            } />
+            <Route path="/resources" element={
+              <ProtectedRoute requiredRole="admin">
+                <ResourcesManagement />
+              </ProtectedRoute>
+            } />
+            <Route path="/projects" element={
+              <ProtectedRoute requiredRole="admin">
+                <ProjectsManagement />
+              </ProtectedRoute>
+            } />
+            <Route path="/configuration" element={
+              <ProtectedRoute requiredRole="admin">
+                <ConfigurationManagement />
+              </ProtectedRoute>
+            } />
+            
+            {/* Squad Lead Routes - solo squad leads */}
+            <Route path="/squad-dashboard" element={
+              <ProtectedRoute requiredRole="squad_lead">
+                <SquadLeadDashboard />
+              </ProtectedRoute>
+            } />
+            <Route path="/squad-assignments" element={
+              <ProtectedRoute requiredRole="squad_lead">
+                <SquadAssignments />
+              </ProtectedRoute>
+            } />
+            <Route path="/squad-team" element={
+              <ProtectedRoute requiredRole="squad_lead">
+                <Index />
+              </ProtectedRoute>
+            } />
+            <Route path="/squad-projects" element={
+              <ProtectedRoute requiredRole="squad_lead">
+                <ProjectsManagement />
+              </ProtectedRoute>
+            } />
+            <Route path="/squad-capacities" element={
+              <ProtectedRoute requiredRole="squad_lead">
+                <CapacitiesManagement />
+              </ProtectedRoute>
+            } />
+            <Route path="/squad-holidays" element={
+              <ProtectedRoute requiredRole="squad_lead">
+                <SquadLeadHolidaysManagement />
+              </ProtectedRoute>
+            } />
+            <Route path="/squad-availability" element={
+              <ProtectedRoute requiredRole="squad_lead">
+                <Index />
+              </ProtectedRoute>
+            } />
+            <Route path="/squad-reports" element={
+              <ProtectedRoute requiredRole="squad_lead">
+                <Index />
+              </ProtectedRoute>
+            } />
+            
+            {/* Catch-all - 404 */}
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>

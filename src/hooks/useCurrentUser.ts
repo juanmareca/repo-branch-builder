@@ -17,59 +17,22 @@ export const useCurrentUser = () => {
   useEffect(() => {
     const loadCurrentUser = async () => {
       try {
-        // **TEMPORAL**: Sistema de autenticación simulado para la presentación
-        const simUser = localStorage.getItem('currentUser');
-        if (simUser) {
-          setCurrentUser(JSON.parse(simUser));
-          setLoading(false);
-          return;
-        }
-
-        // Obtener usuario autenticado (sistema real)
-        const { data: { user } } = await supabase.auth.getUser();
-        
-        if (!user) {
-          // **TEMPORAL**: Si no hay usuario autenticado, crear uno de prueba
-          console.log('No hay usuario autenticado, usando usuario temporal para presentación');
-          const tempUser: CurrentUser = {
-            id: 'temp-squad-lead-001',
-            name: 'Squad Lead Demo',
-            email: 'squadlead@demo.com',
-            role: 'squad_lead',
-            squadName: 'Demo Squad'
-          };
-          setCurrentUser(tempUser);
-          localStorage.setItem('currentUser', JSON.stringify(tempUser));
-          setLoading(false);
-          return;
-        }
-
-        // Obtener perfil del usuario
-        const { data: profile, error } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', user.id)
-          .single();
-
-        if (error) {
-          console.error('Error fetching user profile:', error);
-          setCurrentUser(null);
-        } else {
-          const userData: CurrentUser = {
-            id: profile.id,
-            name: profile.name,
-            email: profile.email,
-            role: profile.role,
-            squadName: profile.squad_name,
-            employeeCode: profile.employee_code
-          };
+        // Verificar si hay usuario en localStorage
+        const savedUser = localStorage.getItem('currentUser');
+        if (savedUser) {
+          const userData = JSON.parse(savedUser);
+          console.log('✅ Usuario cargado desde localStorage:', userData);
           setCurrentUser(userData);
-          localStorage.setItem('currentUser', JSON.stringify(userData));
+          setLoading(false);
+          return;
         }
-      } catch (error) {
-        console.error('Error loading current user:', error);
+
+        console.log('❌ No hay usuario en localStorage');
         setCurrentUser(null);
-      } finally {
+        setLoading(false);
+      } catch (error) {
+        console.error('❌ Error loading current user:', error);
+        setCurrentUser(null);
         setLoading(false);
       }
     };
