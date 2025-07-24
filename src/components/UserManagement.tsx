@@ -82,33 +82,18 @@ export default function UserManagement() {
     try {
       setLoading(true);
       
-      // Generar email único basado en el nombre
-      const email = `${newUser.name.toLowerCase().replace(/\s+/g, '.')}@empresa.com`;
+      // Crear perfil directamente en la tabla profiles
+      const userId = crypto.randomUUID();
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .insert({
+          id: userId,
+          name: newUser.name,
+          role: newUser.role,
+          is_active: true
+        });
 
-      // Crear usuario en Supabase Auth
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email,
-        password: newUser.password,
-        options: {
-          data: {
-            name: newUser.name
-          }
-        }
-      });
-
-      if (authError) throw authError;
-
-      // Actualizar perfil con rol
-      if (authData.user) {
-        const { error: profileError } = await supabase
-          .from('profiles')
-          .update({
-            role: newUser.role
-          })
-          .eq('id', authData.user.id);
-
-        if (profileError) throw profileError;
-      }
+      if (profileError) throw profileError;
 
       toast({
         title: "✅ Usuario creado",
@@ -205,29 +190,23 @@ export default function UserManagement() {
 
       for (const user of users) {
         try {
-          const email = `${user.name.toLowerCase().replace(/\s+/g, '.')}@empresa.com`;
-          
-          const { data: authData, error: authError } = await supabase.auth.signUp({
-            email,
-            password: user.password,
-            options: {
-              data: { name: user.name }
-            }
-          });
+          // Crear perfil directamente en la tabla profiles
+          const userId = crypto.randomUUID();
+          const { error: profileError } = await supabase
+            .from('profiles')
+            .insert({
+              id: userId,
+              name: user.name,
+              role: user.role as any,
+              is_active: true
+            });
 
-          if (authError && !authError.message.includes('already registered')) {
-            throw authError;
-          }
-
-          if (authData.user) {
-            await supabase
-              .from('profiles')
-              .update({ role: user.role as any })
-              .eq('id', authData.user.id);
+          if (profileError) {
+            throw profileError;
           }
 
           createdCount++;
-          await new Promise(resolve => setTimeout(resolve, 1000));
+          await new Promise(resolve => setTimeout(resolve, 100)); // Reducir tiempo de espera
         } catch (error) {
           errorCount++;
           console.error(`Error creando usuario ${user.name}:`, error);
