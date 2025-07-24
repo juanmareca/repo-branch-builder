@@ -30,7 +30,7 @@ interface DashboardCard {
 export default function SquadLeadDashboard() {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { currentUser } = useCurrentUser();
+  const { currentUser, loading } = useCurrentUser();
   
   // Debug del usuario actual
   console.log('🔍 SquadLeadDashboard - currentUser:', currentUser);
@@ -293,7 +293,8 @@ export default function SquadLeadDashboard() {
     window.location.href = '/';
   };
 
-  if (isLoading) {
+  // Si el usuario está cargando o no hay usuario, mostrar loading
+  if (loading || isLoading || !currentUser) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-background to-muted p-4 flex items-center justify-center">
         <div className="text-center">
