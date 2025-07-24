@@ -4,6 +4,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { ProtectedRoute } from "@/components/ProtectedRoute";
 import SplashScreen from "./pages/SplashScreen";
 import LoadingScreen from "./pages/LoadingScreen";
 import Index from "./pages/Index";
@@ -102,22 +103,86 @@ const App = () => {
         <BrowserRouter>
           <Routes>
             <Route path="/" element={renderCurrentPage()} />
-            <Route path="/admin" element={<AdminDashboard />} />
-            <Route path="/holidays" element={<HolidaysManagement />} />
-            <Route path="/backups" element={<BackupsManagement />} />
-            <Route path="/audit-logs" element={<AuditLogs />} />
-            <Route path="/capacities" element={<CapacitiesManagement />} />
-            <Route path="/resources" element={<ResourcesManagement />} />
-            <Route path="/projects" element={<ProjectsManagement />} />
-            <Route path="/configuration" element={<ConfigurationManagement />} />
-            <Route path="/squad-dashboard" element={<SquadLeadDashboard />} />
-            <Route path="/squad-assignments" element={<SquadAssignments />} />
-            <Route path="/squad-team" element={<Index />} />
-            <Route path="/squad-projects" element={<ProjectsManagement />} />
-            <Route path="/squad-capacities" element={<CapacitiesManagement />} />
-            <Route path="/squad-holidays" element={<SquadLeadHolidaysManagement />} />
-            <Route path="/squad-availability" element={<Index />} />
-            <Route path="/squad-reports" element={<Index />} />
+            <Route path="/admin" element={
+              <ProtectedRoute requiredRole="admin">
+                <AdminDashboard />
+              </ProtectedRoute>
+            } />
+            <Route path="/holidays" element={
+              <ProtectedRoute requiredRole="admin">
+                <HolidaysManagement />
+              </ProtectedRoute>
+            } />
+            <Route path="/backups" element={
+              <ProtectedRoute requiredRole="admin">
+                <BackupsManagement />
+              </ProtectedRoute>
+            } />
+            <Route path="/audit-logs" element={
+              <ProtectedRoute requiredRole="admin">
+                <AuditLogs />
+              </ProtectedRoute>
+            } />
+            <Route path="/capacities" element={
+              <ProtectedRoute requiredRole="admin">
+                <CapacitiesManagement />
+              </ProtectedRoute>
+            } />
+            <Route path="/resources" element={
+              <ProtectedRoute requiredRole="admin">
+                <ResourcesManagement />
+              </ProtectedRoute>
+            } />
+            <Route path="/projects" element={
+              <ProtectedRoute requiredRole="admin">
+                <ProjectsManagement />
+              </ProtectedRoute>
+            } />
+            <Route path="/configuration" element={
+              <ProtectedRoute requiredRole="admin">
+                <ConfigurationManagement />
+              </ProtectedRoute>
+            } />
+            <Route path="/squad-dashboard" element={
+              <ProtectedRoute requiredRole="squad_lead">
+                <SquadLeadDashboard />
+              </ProtectedRoute>
+            } />
+            <Route path="/squad-assignments" element={
+              <ProtectedRoute requiredRole="squad_lead">
+                <SquadAssignments />
+              </ProtectedRoute>
+            } />
+            <Route path="/squad-team" element={
+              <ProtectedRoute requiredRole="squad_lead">
+                <Index />
+              </ProtectedRoute>
+            } />
+            <Route path="/squad-projects" element={
+              <ProtectedRoute requiredRole="squad_lead">
+                <ProjectsManagement />
+              </ProtectedRoute>
+            } />
+            <Route path="/squad-capacities" element={
+              <ProtectedRoute requiredRole="squad_lead">
+                <CapacitiesManagement />
+              </ProtectedRoute>
+            } />
+            <Route path="/squad-holidays" element={
+              <ProtectedRoute requiredRole="squad_lead">
+                <SquadLeadHolidaysManagement />
+              </ProtectedRoute>
+            } />
+            <Route path="/squad-availability" element={
+              <ProtectedRoute requiredRole="squad_lead">
+                <Index />
+              </ProtectedRoute>
+            } />
+            <Route path="/squad-reports" element={
+              <ProtectedRoute requiredRole="squad_lead">
+                <Index />
+              </ProtectedRoute>
+            } />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
