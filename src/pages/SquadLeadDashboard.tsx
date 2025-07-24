@@ -104,8 +104,12 @@ export default function SquadLeadDashboard() {
 
   // Cargar preferencias guardadas
   useEffect(() => {
-    loadSavedOrder();
-  }, []);
+    if (currentUser) {
+      loadSavedOrder();
+    } else {
+      setIsLoading(false);
+    }
+  }, [currentUser]);
 
   const loadSavedOrder = async () => {
     try {
