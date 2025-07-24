@@ -166,49 +166,83 @@ export default function UserManagement() {
     try {
       setLoading(true);
 
-      // Crear usuario administrador
-      const adminEmail = 'admin@empresa.com';
-      const adminPassword = 'Admin123!';
-
-      const { data: adminAuth, error: adminError } = await supabase.auth.signUp({
-        email: adminEmail,
-        password: adminPassword,
-        options: {
-          data: {
-            name: 'Administrador',
-            employee_code: 'ADMIN001'
-          }
+      const defaultUsers = [
+        {
+          email: 'admin@empresa.com',
+          password: 'Admin123!',
+          name: 'Administrador',
+          role: 'admin' as const,
+          employee_code: 'ADMIN001'
+        },
+        {
+          email: 'operaciones@empresa.com',
+          password: 'Operations123!',
+          name: 'Operaciones',
+          role: 'operations' as const,
+          employee_code: 'OPR001'
         }
-      });
+      ];
 
-      if (adminError && !adminError.message.includes('already registered')) {
-        throw adminError;
-      }
+      // Agregar todos los squad leads
+      const squadLeadUsers = APP_CONFIG.SQUAD_LEADS.map(sl => ({
+        email: `${sl.code}@empresa.com`,
+        password: `Squad${sl.code}!`,
+        name: sl.name,
+        role: 'squad_lead' as const,
+        employee_code: sl.code
+      }));
 
-      // Crear usuarios para cada squad lead
-      for (const squadLead of APP_CONFIG.SQUAD_LEADS) {
-        const email = `${squadLead.code}@empresa.com`;
-        const password = `Squad${squadLead.code}!`;
+      const allUsers = [...defaultUsers, ...squadLeadUsers];
+      let createdCount = 0;
 
-        const { error: squadError } = await supabase.auth.signUp({
-          email,
-          password,
+      for (const user of allUsers) {
+        // Verificar si ya existe
+        const { data: existing } = await supabase
+          .from('profiles')
+          .select('email')
+          .eq('email', user.email)
+          .single();
+
+        if (existing) {
+          continue; // Ya existe
+        }
+
+        // Crear en Auth
+        const { data: authData, error: authError } = await supabase.auth.signUp({
+          email: user.email,
+          password: user.password,
           options: {
             data: {
-              name: squadLead.name,
-              employee_code: squadLead.code
+              name: user.name,
+              employee_code: user.employee_code
             }
           }
         });
 
-        if (squadError && !squadError.message.includes('already registered')) {
-          console.error(`Error creating squad lead ${squadLead.name}:`, squadError);
+        if (authError && !authError.message.includes('already registered')) {
+          console.error(`Error creating ${user.name}:`, authError);
+          continue;
+        }
+
+        // Si se creó correctamente, actualizar el rol en el perfil
+        if (authData?.user) {
+          const { error: updateError } = await supabase
+            .from('profiles')
+            .update({ 
+              role: user.role,
+              employee_code: user.employee_code
+            })
+            .eq('id', authData.user.id);
+
+          if (!updateError) {
+            createdCount++;
+          }
         }
       }
 
       toast({
         title: "✅ Usuarios inicializados",
-        description: "Se han creado los usuarios por defecto del sistema",
+        description: `Se crearon ${createdCount} usuarios con sus roles correctos`,
       });
 
       loadUsers();
