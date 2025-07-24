@@ -283,7 +283,7 @@ export default function UserManagement() {
           </div>
         </div>
         <div className="flex gap-2">
-          <Button onClick={() => setShowNewUserForm(true)} disabled={loading}>
+          <Button onClick={() => setShowNewUserForm(true)} disabled={loading} className="bg-white text-black border hover:bg-gray-50">
             <UserPlus className="h-4 w-4 mr-2" />
             Nuevo Usuario
           </Button>
