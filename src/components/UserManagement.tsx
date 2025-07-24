@@ -388,29 +388,6 @@ export default function UserManagement() {
             <UserPlus className="h-4 w-4 mr-2" />
             Nuevo Usuario
           </Button>
-          <div>
-            <Input
-              id="excel-upload"
-              type="file"
-              accept=".xlsx,.xls"
-              className="hidden"
-              onChange={(e) => {
-                const file = e.target.files?.[0];
-                if (file) {
-                  uploadUsersFromExcel(file);
-                  e.target.value = '';
-                }
-              }}
-            />
-            <Button 
-              onClick={() => document.getElementById('excel-upload')?.click()}
-              disabled={loading}
-              variant="outline"
-            >
-              <Upload className="h-4 w-4 mr-2" />
-              Cargar Excel
-            </Button>
-          </div>
           <Button 
             onClick={deleteAllUsers}
             disabled={loading}
