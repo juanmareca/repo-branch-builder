@@ -93,6 +93,8 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ onLogin }) => {
     } else if (selectedRole === APP_CONFIG.AUTH.ROLES.SQUAD_LEAD) {
       const selectedLead = squadLeads.find(lead => lead.name === selectedSquadLead);
       if (selectedLead && employeeCode === selectedLead.code) {
+        // Guardar el squad lead seleccionado en localStorage
+        localStorage.setItem(APP_CONFIG.STORAGE_KEYS.CURRENT_SQUAD_LEAD, selectedSquadLead);
         onLogin(APP_CONFIG.AUTH.ROLES.SQUAD_LEAD, { name: selectedSquadLead, code: employeeCode });
       } else {
         toast({

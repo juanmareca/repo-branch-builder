@@ -130,7 +130,7 @@ export default function SquadLeadDashboard() {
       }
 
       // Intentar cargar desde Supabase como secundario
-      const squadLeadName = currentUser?.name || 'Demo Squad Lead';
+      const squadLeadName = currentUser?.name;
       
       const { data, error } = await supabase
         .from('squad_lead_preferences')
@@ -164,7 +164,7 @@ export default function SquadLeadDashboard() {
     
     // Intentar guardar en Supabase sin mostrar errores al usuario
     try {
-      const squadLeadName = currentUser?.name || 'Demo Squad Lead';
+      const squadLeadName = currentUser?.name;
       
       const { error } = await supabase
         .from('squad_lead_preferences')
@@ -294,7 +294,7 @@ export default function SquadLeadDashboard() {
         {/* Header */}
         <div className="flex justify-between items-center mb-8">
           <div>
-            <h1 className="text-3xl font-bold text-foreground">Panel de Squad Lead - {currentUser?.name || 'Squad Lead'}</h1>
+            <h1 className="text-3xl font-bold text-foreground">Panel de Squad Lead - {currentUser?.name}</h1>
             <p className="text-muted-foreground mt-2">Gestiona tu equipo y proyectos</p>
           </div>
           <Button variant="outline" onClick={handleLogout} className="gap-2">
