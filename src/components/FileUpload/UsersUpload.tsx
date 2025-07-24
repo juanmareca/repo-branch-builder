@@ -167,7 +167,7 @@ export default function UsersUpload({ onUploadComplete }: UsersUploadProps) {
 
       for (const user of usersToCreate) {
         try {
-          console.log(`Creando usuario: ${user.name}`);
+          console.log(`Creando usuario: ${user.name} con rol: ${user.role}`);
           
           // Crear perfil directamente en la tabla profiles sin email
           const userId = crypto.randomUUID();
@@ -179,6 +179,8 @@ export default function UsersUpload({ onUploadComplete }: UsersUploadProps) {
               role: user.role,
               is_active: true
             });
+
+          console.log('Datos enviados:', { id: userId, name: user.name, role: user.role, is_active: true });
 
           if (profileError) {
             console.error(`Error creando perfil para ${user.name}:`, profileError);
