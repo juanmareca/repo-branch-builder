@@ -115,9 +115,56 @@ const Index = () => {
 
   const filteredPersons = getTeamMembers();
 
+  const simulateLogin = (role: 'admin' | 'squad_lead') => {
+    const users = {
+      admin: {
+        id: 'admin-001',
+        name: 'Administrador Demo',
+        email: 'admin@demo.com',
+        role: 'admin' as const
+      },
+      squad_lead: {
+        id: 'squad-lead-001', 
+        name: 'ACOSTA SERRANO, CARLOS ALBERTO',
+        email: 'carlos.acosta@demo.com',
+        role: 'squad_lead' as const,
+        squadName: 'Equipo Carlos'
+      }
+    };
+    
+    localStorage.setItem('currentUser', JSON.stringify(users[role]));
+    window.location.reload();
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <div className="container mx-auto py-8 px-4">
+        {/* TEMPORAL: Botones de login para presentación */}
+        {!currentUser && (
+          <Card className="mb-8 bg-yellow-50 border-yellow-200">
+            <CardHeader>
+              <CardTitle className="text-yellow-800">🚀 SISTEMA DE DEMO PARA PRESENTACIÓN</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-yellow-700 mb-4">Selecciona tu rol para acceder al sistema:</p>
+              <div className="flex gap-4">
+                <Button 
+                  onClick={() => simulateLogin('admin')}
+                  className="bg-blue-600 hover:bg-blue-700"
+                >
+                  🔧 Entrar como ADMINISTRADOR
+                </Button>
+                <Button 
+                  onClick={() => simulateLogin('squad_lead')}
+                  className="bg-green-600 hover:bg-green-700"
+                >
+                  👥 Entrar como SQUAD LEAD
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Header con botón de volver para Squad Leads */}
         {isSquadLeadView && (
           <div className="flex items-center justify-end gap-4 mb-6">
@@ -125,7 +172,10 @@ const Index = () => {
               <ChevronLeft className="h-4 w-4" />
               Panel de Squad Lead
             </Button>
-            <Button variant="outline" onClick={() => window.location.reload()} className="gap-2">
+            <Button variant="outline" onClick={() => {
+              localStorage.removeItem('currentUser');
+              window.location.reload();
+            }} className="gap-2">
               <LogOut className="h-4 w-4" />
               Cerrar sesión
             </Button>
