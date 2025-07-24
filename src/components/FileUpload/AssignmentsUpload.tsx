@@ -404,7 +404,7 @@ const AssignmentsUpload = () => {
             start_date: date,
             end_date: date,
             hours_allocated: Math.round((percentage / 100) * 8), // Asumiendo 8 horas por día
-            type: 'development', // Usar tipo válido en lugar de 'project'
+            type: 'project', // Tipo por defecto cuando no se especifica
             status: 'assigned',
             notes: `Migrado desde Excel - ${percentage}% asignación`
           });
