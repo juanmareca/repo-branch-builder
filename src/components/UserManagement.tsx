@@ -23,12 +23,9 @@ interface UserProfile {
 }
 
 interface NewUser {
-  email: string;
-  password: string;
   name: string;
+  password: string;
   role: 'admin' | 'squad_lead' | 'operations';
-  employee_code?: string;
-  squad_name?: string;
 }
 
 export default function UserManagement() {
@@ -38,12 +35,9 @@ export default function UserManagement() {
   const [showPasswords, setShowPasswords] = useState<{ [key: string]: boolean }>({});
   const [editingUser, setEditingUser] = useState<string | null>(null);
   const [newUser, setNewUser] = useState<NewUser>({
-    email: '',
-    password: '',
     name: '',
-    role: 'operations',
-    employee_code: '',
-    squad_name: ''
+    password: '',
+    role: 'operations'
   });
   const [showNewUserForm, setShowNewUserForm] = useState(false);
 
@@ -86,29 +80,29 @@ export default function UserManagement() {
   const createUser = async () => {
     try {
       setLoading(true);
+      
+      // Generar email único basado en el nombre
+      const email = `${newUser.name.toLowerCase().replace(/\s+/g, '.')}@empresa.com`;
 
       // Crear usuario en Supabase Auth
       const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: newUser.email,
+        email,
         password: newUser.password,
         options: {
           data: {
-            name: newUser.name,
-            employee_code: newUser.employee_code
+            name: newUser.name
           }
         }
       });
 
       if (authError) throw authError;
 
-      // Actualizar perfil con rol y datos adicionales
+      // Actualizar perfil con rol
       if (authData.user) {
         const { error: profileError } = await supabase
           .from('profiles')
           .update({
-            role: newUser.role,
-            squad_name: newUser.squad_name,
-            employee_code: newUser.employee_code
+            role: newUser.role
           })
           .eq('id', authData.user.id);
 
@@ -122,12 +116,9 @@ export default function UserManagement() {
 
       // Resetear formulario
       setNewUser({
-        email: '',
-        password: '',
         name: '',
-        role: 'operations',
-        employee_code: '',
-        squad_name: ''
+        password: '',
+        role: 'operations'
       });
       setShowNewUserForm(false);
       loadUsers();
@@ -365,10 +356,6 @@ export default function UserManagement() {
           </div>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" onClick={initializeDefaultUsers} disabled={loading}>
-            <Key className="h-4 w-4 mr-2" />
-            Inicializar Usuarios
-          </Button>
           <Button onClick={() => setShowNewUserForm(true)} disabled={loading}>
             <UserPlus className="h-4 w-4 mr-2" />
             Nuevo Usuario
@@ -388,26 +375,25 @@ export default function UserManagement() {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-3 gap-4">
               <div>
-                <Label htmlFor="newEmail">Email</Label>
+                <Label htmlFor="newName">Nombre</Label>
                 <Input
-                  id="newEmail"
-                  type="email"
-                  value={newUser.email}
-                  onChange={(e) => setNewUser(prev => ({ ...prev, email: e.target.value }))}
-                  placeholder="usuario@empresa.com"
+                  id="newName"
+                  value={newUser.name}
+                  onChange={(e) => setNewUser(prev => ({ ...prev, name: e.target.value }))}
+                  placeholder="Nombre completo"
                 />
               </div>
               <div>
-                <Label htmlFor="newPassword">Contraseña</Label>
+                <Label htmlFor="newPassword">Password</Label>
                 <div className="relative">
                   <Input
                     id="newPassword"
                     type={showPasswords['new'] ? 'text' : 'password'}
                     value={newUser.password}
                     onChange={(e) => setNewUser(prev => ({ ...prev, password: e.target.value }))}
-                    placeholder="Mínimo 8 caracteres"
+                    placeholder="Contraseña"
                   />
                   <Button
                     type="button"
@@ -425,51 +411,24 @@ export default function UserManagement() {
                 </div>
               </div>
               <div>
-                <Label htmlFor="newName">Nombre Completo</Label>
-                <Input
-                  id="newName"
-                  value={newUser.name}
-                  onChange={(e) => setNewUser(prev => ({ ...prev, name: e.target.value }))}
-                  placeholder="Nombre y apellidos"
-                />
-              </div>
-              <div>
                 <Label htmlFor="newRole">Rol</Label>
                 <Select value={newUser.role} onValueChange={(value: any) => setNewUser(prev => ({ ...prev, role: value }))}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="bg-background border shadow-lg z-50">
                     <SelectItem value="admin">Administrador</SelectItem>
                     <SelectItem value="squad_lead">Squad Lead</SelectItem>
                     <SelectItem value="operations">Operaciones</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
-              <div>
-                <Label htmlFor="newEmployeeCode">Código Empleado</Label>
-                <Input
-                  id="newEmployeeCode"
-                  value={newUser.employee_code}
-                  onChange={(e) => setNewUser(prev => ({ ...prev, employee_code: e.target.value }))}
-                  placeholder="4000001"
-                />
-              </div>
-              <div>
-                <Label htmlFor="newSquadName">Squad (opcional)</Label>
-                <Input
-                  id="newSquadName"
-                  value={newUser.squad_name}
-                  onChange={(e) => setNewUser(prev => ({ ...prev, squad_name: e.target.value }))}
-                  placeholder="Nombre del squad"
-                />
-              </div>
             </div>
             <div className="flex justify-end gap-2">
               <Button variant="outline" onClick={() => setShowNewUserForm(false)}>
                 Cancelar
               </Button>
-              <Button onClick={createUser} disabled={loading || !newUser.email || !newUser.password || !newUser.name}>
+              <Button onClick={createUser} disabled={loading || !newUser.name || !newUser.password}>
                 <Save className="h-4 w-4 mr-2" />
                 Crear Usuario
               </Button>
@@ -527,13 +486,23 @@ export default function UserManagement() {
 
                 {editingUser === user.id && (
                   <div className="mt-4 pt-4 border-t space-y-4">
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-3 gap-4">
                       <div>
                         <Label>Nombre</Label>
                         <Input
                           value={user.name}
                           onChange={(e) => setUsers(prev => prev.map(u => 
                             u.id === user.id ? { ...u, name: e.target.value } : u
+                          ))}
+                        />
+                      </div>
+                      <div>
+                        <Label>Password</Label>
+                        <Input
+                          type="password"
+                          placeholder="Dejar vacío para mantener actual"
+                          onChange={(e) => setUsers(prev => prev.map(u => 
+                            u.id === user.id ? { ...u, newPassword: e.target.value } : u
                           ))}
                         />
                       </div>
@@ -548,30 +517,12 @@ export default function UserManagement() {
                           <SelectTrigger>
                             <SelectValue />
                           </SelectTrigger>
-                          <SelectContent>
+                          <SelectContent className="bg-background border shadow-lg z-50">
                             <SelectItem value="admin">Administrador</SelectItem>
                             <SelectItem value="squad_lead">Squad Lead</SelectItem>
                             <SelectItem value="operations">Operaciones</SelectItem>
                           </SelectContent>
                         </Select>
-                      </div>
-                      <div>
-                        <Label>Código Empleado</Label>
-                        <Input
-                          value={user.employee_code || ''}
-                          onChange={(e) => setUsers(prev => prev.map(u => 
-                            u.id === user.id ? { ...u, employee_code: e.target.value } : u
-                          ))}
-                        />
-                      </div>
-                      <div>
-                        <Label>Squad</Label>
-                        <Input
-                          value={user.squad_name || ''}
-                          onChange={(e) => setUsers(prev => prev.map(u => 
-                            u.id === user.id ? { ...u, squad_name: e.target.value } : u
-                          ))}
-                        />
                       </div>
                     </div>
                     <div className="flex justify-end gap-2">
@@ -589,7 +540,7 @@ export default function UserManagement() {
 
             {users.length === 0 && !loading && (
               <div className="text-center py-8 text-muted-foreground">
-                No hay usuarios registrados. Haz clic en "Inicializar Usuarios" para crear los usuarios por defecto.
+                No hay usuarios registrados en el sistema.
               </div>
             )}
           </div>
