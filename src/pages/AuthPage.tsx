@@ -50,10 +50,10 @@ const AuthPage = () => {
       // Guardar usuario en localStorage
       const userData = {
         id: user.id,
-        name: user.name,
+        name: user.name, // Usar el nombre exacto de la base de datos
         email: user.email || '',
         role: user.role,
-        squadName: user.squad_name,
+        squadName: user.name, // Para squad leads, usar el mismo nombre
         employeeCode: user.employee_code
       };
 
