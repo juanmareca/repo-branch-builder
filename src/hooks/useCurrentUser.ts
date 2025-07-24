@@ -1,10 +1,13 @@
 import { useState, useEffect } from 'react';
-import { APP_CONFIG } from '@/config/constants';
+import { supabase } from '@/integrations/supabase/client';
 
 interface CurrentUser {
+  id: string;
   name: string;
-  role: 'admin' | 'squad_lead';
+  email: string;
+  role: 'admin' | 'squad_lead' | 'operations';
   squadName?: string;
+  employeeCode?: string;
 }
 
 export const useCurrentUser = () => {
@@ -12,48 +15,57 @@ export const useCurrentUser = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Obtener el usuario actual del localStorage donde se guarda desde SplashScreen
-    const getUserFromContext = () => {
-      const path = window.location.pathname;
-      
-      if (path.includes('/squad-') || path === '/squad-dashboard') {
-        // Obtener el squad lead actual del localStorage
-        const savedSquadLead = localStorage.getItem(APP_CONFIG.STORAGE_KEYS.CURRENT_SQUAD_LEAD);
-        console.log('useCurrentUser - savedSquadLead from localStorage:', savedSquadLead);
+    const loadCurrentUser = async () => {
+      try {
+        // Obtener usuario autenticado
+        const { data: { user } } = await supabase.auth.getUser();
         
-        if (savedSquadLead && savedSquadLead !== 'null' && savedSquadLead !== '') {
-          return {
-            name: savedSquadLead,
-            role: 'squad_lead' as const,
-            squadName: `Squad de ${savedSquadLead}`
-          };
-        } else {
-          console.log('No squad lead found in localStorage, redirecting to login');
-          // Si no hay squad lead guardado, redirigir al splash
-          window.location.href = '/';
-          return null;
+        if (!user) {
+          setCurrentUser(null);
+          setLoading(false);
+          return;
         }
-      } else if (path.includes('/admin')) {
-        // Usuario Administrador
-        return {
-          name: 'Administrador',
-          role: 'admin' as const
-        };
-      } else {
-        // Default case
-        return {
-          name: 'Usuario',
-          role: 'admin' as const
-        };
+
+        // Obtener perfil del usuario
+        const { data: profile, error } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', user.id)
+          .single();
+
+        if (error) {
+          console.error('Error fetching user profile:', error);
+          setCurrentUser(null);
+        } else {
+          setCurrentUser({
+            id: profile.id,
+            name: profile.name,
+            email: profile.email,
+            role: profile.role,
+            squadName: profile.squad_name,
+            employeeCode: profile.employee_code
+          });
+        }
+      } catch (error) {
+        console.error('Error loading current user:', error);
+        setCurrentUser(null);
+      } finally {
+        setLoading(false);
       }
     };
 
-    const user = getUserFromContext();
-    console.log('useCurrentUser - user determined:', user);
-    if (user) {
-      setCurrentUser(user);
-    }
-    setLoading(false);
+    loadCurrentUser();
+
+    // Escuchar cambios en la autenticación
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_OUT' || !session) {
+        setCurrentUser(null);
+      } else if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+        loadCurrentUser();
+      }
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
   return { currentUser, loading };

@@ -1,0 +1,478 @@
+import React, { useState, useEffect } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
+import { Switch } from '@/components/ui/switch';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Eye, EyeOff, UserPlus, Users, Key, Edit, Trash2, Save, X } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
+import { APP_CONFIG } from '@/config/constants';
+
+interface UserProfile {
+  id: string;
+  email: string;
+  name: string;
+  role: 'admin' | 'squad_lead' | 'operations';
+  employee_code?: string;
+  squad_name?: string;
+  is_active: boolean;
+}
+
+interface NewUser {
+  email: string;
+  password: string;
+  name: string;
+  role: 'admin' | 'squad_lead' | 'operations';
+  employee_code?: string;
+  squad_name?: string;
+}
+
+export default function UserManagement() {
+  const { toast } = useToast();
+  const [users, setUsers] = useState<UserProfile[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [showPasswords, setShowPasswords] = useState<{ [key: string]: boolean }>({});
+  const [editingUser, setEditingUser] = useState<string | null>(null);
+  const [newUser, setNewUser] = useState<NewUser>({
+    email: '',
+    password: '',
+    name: '',
+    role: 'operations',
+    employee_code: '',
+    squad_name: ''
+  });
+  const [showNewUserForm, setShowNewUserForm] = useState(false);
+
+  const loadUsers = async () => {
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .order('name');
+
+      if (error) throw error;
+      setUsers(data || []);
+    } catch (error: any) {
+      toast({
+        title: "❌ Error al cargar usuarios",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const createUser = async () => {
+    try {
+      setLoading(true);
+
+      // Crear usuario en Supabase Auth
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email: newUser.email,
+        password: newUser.password,
+        options: {
+          data: {
+            name: newUser.name,
+            employee_code: newUser.employee_code
+          }
+        }
+      });
+
+      if (authError) throw authError;
+
+      // Actualizar perfil con rol y datos adicionales
+      if (authData.user) {
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .update({
+            role: newUser.role,
+            squad_name: newUser.squad_name,
+            employee_code: newUser.employee_code
+          })
+          .eq('id', authData.user.id);
+
+        if (profileError) throw profileError;
+      }
+
+      toast({
+        title: "✅ Usuario creado",
+        description: `Usuario ${newUser.name} creado correctamente`,
+      });
+
+      // Resetear formulario
+      setNewUser({
+        email: '',
+        password: '',
+        name: '',
+        role: 'operations',
+        employee_code: '',
+        squad_name: ''
+      });
+      setShowNewUserForm(false);
+      loadUsers();
+    } catch (error: any) {
+      toast({
+        title: "❌ Error al crear usuario",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const updateUser = async (userId: string, updates: Partial<UserProfile>) => {
+    try {
+      setLoading(true);
+      const { error } = await supabase
+        .from('profiles')
+        .update(updates)
+        .eq('id', userId);
+
+      if (error) throw error;
+
+      toast({
+        title: "✅ Usuario actualizado",
+        description: "Los cambios se han guardado correctamente",
+      });
+
+      setEditingUser(null);
+      loadUsers();
+    } catch (error: any) {
+      toast({
+        title: "❌ Error al actualizar usuario",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const togglePasswordVisibility = (userId: string) => {
+    setShowPasswords(prev => ({
+      ...prev,
+      [userId]: !prev[userId]
+    }));
+  };
+
+  const initializeDefaultUsers = async () => {
+    try {
+      setLoading(true);
+
+      // Crear usuario administrador
+      const adminEmail = 'admin@empresa.com';
+      const adminPassword = 'Admin123!';
+
+      const { data: adminAuth, error: adminError } = await supabase.auth.signUp({
+        email: adminEmail,
+        password: adminPassword,
+        options: {
+          data: {
+            name: 'Administrador',
+            employee_code: 'ADMIN001'
+          }
+        }
+      });
+
+      if (adminError && !adminError.message.includes('already registered')) {
+        throw adminError;
+      }
+
+      // Crear usuarios para cada squad lead
+      for (const squadLead of APP_CONFIG.SQUAD_LEADS) {
+        const email = `${squadLead.code}@empresa.com`;
+        const password = `Squad${squadLead.code}!`;
+
+        const { error: squadError } = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            data: {
+              name: squadLead.name,
+              employee_code: squadLead.code
+            }
+          }
+        });
+
+        if (squadError && !squadError.message.includes('already registered')) {
+          console.error(`Error creating squad lead ${squadLead.name}:`, squadError);
+        }
+      }
+
+      toast({
+        title: "✅ Usuarios inicializados",
+        description: "Se han creado los usuarios por defecto del sistema",
+      });
+
+      loadUsers();
+    } catch (error: any) {
+      toast({
+        title: "❌ Error al inicializar usuarios",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadUsers();
+  }, []);
+
+  return (
+    <div className="space-y-6">
+      {/* Header y acciones */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="h-10 w-10 bg-primary/10 rounded-lg flex items-center justify-center">
+            <Users className="w-5 h-5 text-primary" />
+          </div>
+          <div>
+            <h2 className="text-xl font-semibold">Gestión de Usuarios</h2>
+            <p className="text-sm text-muted-foreground">
+              Administra los usuarios del sistema y sus roles
+            </p>
+          </div>
+        </div>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={initializeDefaultUsers} disabled={loading}>
+            <Key className="h-4 w-4 mr-2" />
+            Inicializar Usuarios
+          </Button>
+          <Button onClick={() => setShowNewUserForm(true)} disabled={loading}>
+            <UserPlus className="h-4 w-4 mr-2" />
+            Nuevo Usuario
+          </Button>
+        </div>
+      </div>
+
+      {/* Formulario nuevo usuario */}
+      {showNewUserForm && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center justify-between">
+              <span>Crear Nuevo Usuario</span>
+              <Button variant="ghost" size="icon" onClick={() => setShowNewUserForm(false)}>
+                <X className="h-4 w-4" />
+              </Button>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="newEmail">Email</Label>
+                <Input
+                  id="newEmail"
+                  type="email"
+                  value={newUser.email}
+                  onChange={(e) => setNewUser(prev => ({ ...prev, email: e.target.value }))}
+                  placeholder="usuario@empresa.com"
+                />
+              </div>
+              <div>
+                <Label htmlFor="newPassword">Contraseña</Label>
+                <div className="relative">
+                  <Input
+                    id="newPassword"
+                    type={showPasswords['new'] ? 'text' : 'password'}
+                    value={newUser.password}
+                    onChange={(e) => setNewUser(prev => ({ ...prev, password: e.target.value }))}
+                    placeholder="Mínimo 8 caracteres"
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="absolute right-0 top-0 h-full px-3"
+                    onClick={() => togglePasswordVisibility('new')}
+                  >
+                    {showPasswords['new'] ? (
+                      <EyeOff className="h-4 w-4" />
+                    ) : (
+                      <Eye className="h-4 w-4" />
+                    )}
+                  </Button>
+                </div>
+              </div>
+              <div>
+                <Label htmlFor="newName">Nombre Completo</Label>
+                <Input
+                  id="newName"
+                  value={newUser.name}
+                  onChange={(e) => setNewUser(prev => ({ ...prev, name: e.target.value }))}
+                  placeholder="Nombre y apellidos"
+                />
+              </div>
+              <div>
+                <Label htmlFor="newRole">Rol</Label>
+                <Select value={newUser.role} onValueChange={(value: any) => setNewUser(prev => ({ ...prev, role: value }))}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="admin">Administrador</SelectItem>
+                    <SelectItem value="squad_lead">Squad Lead</SelectItem>
+                    <SelectItem value="operations">Operaciones</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label htmlFor="newEmployeeCode">Código Empleado</Label>
+                <Input
+                  id="newEmployeeCode"
+                  value={newUser.employee_code}
+                  onChange={(e) => setNewUser(prev => ({ ...prev, employee_code: e.target.value }))}
+                  placeholder="4000001"
+                />
+              </div>
+              <div>
+                <Label htmlFor="newSquadName">Squad (opcional)</Label>
+                <Input
+                  id="newSquadName"
+                  value={newUser.squad_name}
+                  onChange={(e) => setNewUser(prev => ({ ...prev, squad_name: e.target.value }))}
+                  placeholder="Nombre del squad"
+                />
+              </div>
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setShowNewUserForm(false)}>
+                Cancelar
+              </Button>
+              <Button onClick={createUser} disabled={loading || !newUser.email || !newUser.password || !newUser.name}>
+                <Save className="h-4 w-4 mr-2" />
+                Crear Usuario
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Lista de usuarios */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Usuarios del Sistema ({users.length})</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            {users.map((user) => (
+              <div key={user.id} className="border rounded-lg p-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <h3 className="font-medium">{user.name}</h3>
+                        <Badge variant={user.role === 'admin' ? 'destructive' : user.role === 'squad_lead' ? 'default' : 'secondary'}>
+                          {user.role === 'admin' ? 'Admin' : user.role === 'squad_lead' ? 'Squad Lead' : 'Operaciones'}
+                        </Badge>
+                        {!user.is_active && <Badge variant="outline">Inactivo</Badge>}
+                      </div>
+                      <p className="text-sm text-muted-foreground">{user.email}</p>
+                      {user.employee_code && (
+                        <p className="text-xs text-muted-foreground">Código: {user.employee_code}</p>
+                      )}
+                      {user.squad_name && (
+                        <p className="text-xs text-muted-foreground">Squad: {user.squad_name}</p>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2">
+                      <Label htmlFor={`active-${user.id}`} className="text-sm">Activo</Label>
+                      <Switch
+                        id={`active-${user.id}`}
+                        checked={user.is_active}
+                        onCheckedChange={(checked) => updateUser(user.id, { is_active: checked })}
+                      />
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() => setEditingUser(editingUser === user.id ? null : user.id)}
+                    >
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+
+                {editingUser === user.id && (
+                  <div className="mt-4 pt-4 border-t space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label>Nombre</Label>
+                        <Input
+                          value={user.name}
+                          onChange={(e) => setUsers(prev => prev.map(u => 
+                            u.id === user.id ? { ...u, name: e.target.value } : u
+                          ))}
+                        />
+                      </div>
+                      <div>
+                        <Label>Rol</Label>
+                        <Select 
+                          value={user.role} 
+                          onValueChange={(value: any) => setUsers(prev => prev.map(u => 
+                            u.id === user.id ? { ...u, role: value } : u
+                          ))}
+                        >
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="admin">Administrador</SelectItem>
+                            <SelectItem value="squad_lead">Squad Lead</SelectItem>
+                            <SelectItem value="operations">Operaciones</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label>Código Empleado</Label>
+                        <Input
+                          value={user.employee_code || ''}
+                          onChange={(e) => setUsers(prev => prev.map(u => 
+                            u.id === user.id ? { ...u, employee_code: e.target.value } : u
+                          ))}
+                        />
+                      </div>
+                      <div>
+                        <Label>Squad</Label>
+                        <Input
+                          value={user.squad_name || ''}
+                          onChange={(e) => setUsers(prev => prev.map(u => 
+                            u.id === user.id ? { ...u, squad_name: e.target.value } : u
+                          ))}
+                        />
+                      </div>
+                    </div>
+                    <div className="flex justify-end gap-2">
+                      <Button variant="outline" onClick={() => setEditingUser(null)}>
+                        Cancelar
+                      </Button>
+                      <Button onClick={() => updateUser(user.id, user)}>
+                        Guardar Cambios
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ))}
+
+            {users.length === 0 && !loading && (
+              <div className="text-center py-8 text-muted-foreground">
+                No hay usuarios registrados. Haz clic en "Inicializar Usuarios" para crear los usuarios por defecto.
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}

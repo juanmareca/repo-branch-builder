@@ -11,6 +11,7 @@ import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { APP_CONFIG } from '@/config/constants';
+import UserManagement from '@/components/UserManagement';
 
 interface ConfigurationData {
   auth: {
@@ -216,8 +217,12 @@ export default function ConfigurationManagement() {
           </div>
         </div>
 
-        <Tabs defaultValue="auth" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-5">
+        <Tabs defaultValue="users" className="space-y-6">
+          <TabsList className="grid w-full grid-cols-6">
+            <TabsTrigger value="users" className="flex items-center gap-2">
+              <Shield className="h-4 w-4" />
+              Usuarios
+            </TabsTrigger>
             <TabsTrigger value="auth" className="flex items-center gap-2">
               <Shield className="h-4 w-4" />
               Autenticación
@@ -239,6 +244,11 @@ export default function ConfigurationManagement() {
               Fuentes de Datos
             </TabsTrigger>
           </TabsList>
+
+          {/* Gestión de Usuarios */}
+          <TabsContent value="users">
+            <UserManagement />
+          </TabsContent>
 
           {/* Autenticación */}
           <TabsContent value="auth">
