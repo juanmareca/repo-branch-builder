@@ -41,6 +41,11 @@ const App = () => {
         localStorage.removeItem('currentUser');
       }
     }
+    
+    // Redirigir desde /auth a la raíz
+    if (window.location.pathname === '/auth') {
+      window.history.replaceState(null, '', '/');
+    }
   }, []);
 
   const handleLogin = (role: string, userData: any) => {
