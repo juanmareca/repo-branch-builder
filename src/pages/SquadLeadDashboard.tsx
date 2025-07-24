@@ -137,12 +137,14 @@ export default function SquadLeadDashboard() {
       }
 
       // Intentar cargar desde Supabase como secundario
-      const squadLeadName = currentUser?.name;
+      // El código de empleado está en el campo password del currentUser
+      const employeeCode = (currentUser as any)?.password;
+      if (!employeeCode) return;
       
       const { data, error } = await supabase
         .from('squad_lead_preferences')
         .select('card_order')
-        .eq('squad_lead_name', squadLeadName)
+        .eq('squad_lead_name', employeeCode)
         .maybeSingle();
 
       if (!error && data && data.card_order && data.card_order.length > 0) {
@@ -171,7 +173,8 @@ export default function SquadLeadDashboard() {
     
     // Intentar guardar en Supabase sin mostrar errores al usuario
     try {
-      const employeeCode = currentUser?.employeeCode;
+      // El código de empleado está en el campo password del currentUser
+      const employeeCode = (currentUser as any)?.password;
       
       // Solo guardar si tenemos el código de empleado
       if (!employeeCode) {
