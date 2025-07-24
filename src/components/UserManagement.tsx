@@ -50,14 +50,29 @@ export default function UserManagement() {
   const loadUsers = async () => {
     try {
       setLoading(true);
+      console.log('🔄 Cargando usuarios desde la base de datos...');
+      
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
         .order('name');
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ Error al cargar usuarios:', error);
+        throw error;
+      }
+      
+      console.log('📋 Usuarios cargados:', data?.length || 0, data);
       setUsers(data || []);
+      
+      if (data && data.length > 0) {
+        toast({
+          title: "✅ Usuarios cargados",
+          description: `Se cargaron ${data.length} usuarios del sistema`,
+        });
+      }
     } catch (error: any) {
+      console.error('❌ Error completo:', error);
       toast({
         title: "❌ Error al cargar usuarios",
         description: error.message,
