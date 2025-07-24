@@ -56,11 +56,16 @@ const App = () => {
   const renderCurrentPage = () => {
     if (!currentUser) return null;
 
+    console.log('🔍 App.tsx - renderCurrentPage - currentUser:', currentUser);
+    
     if (currentUser.role === 'admin') {
+      console.log('✅ Redirigiendo a AdminDashboard');
       return <AdminDashboard />;
     } else if (currentUser.role === 'squad_lead') {
+      console.log('✅ Redirigiendo a SquadLeadDashboard');
       return <SquadLeadDashboard />;
     } else {
+      console.log('✅ Redirigiendo a Index');
       return <Index />;
     }
   };
