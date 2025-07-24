@@ -142,18 +142,10 @@ export default function UsersUpload({ onUploadComplete }: UsersUploadProps) {
           continue;
         }
 
-        // Generar email válido desde el nombre
-        const emailBase = row.nombre.trim()
-          .toLowerCase()
-          .replace(/[^a-z\s]/g, '') // Quitar caracteres especiales
-          .replace(/\s+/g, '.') // Espacios por puntos
-          .replace(/^\.+|\.+$/g, ''); // Quitar puntos al inicio/final
-        
         usersToCreate.push({
           name: row.nombre.trim(),
           password: row.password.toString().trim(),
-          role: validRole,
-          email: `${emailBase}@empresa.com`
+          role: validRole
         });
       }
 
@@ -175,15 +167,14 @@ export default function UsersUpload({ onUploadComplete }: UsersUploadProps) {
 
       for (const user of usersToCreate) {
         try {
-          console.log(`Creando usuario: ${user.name} con email: ${user.email}`);
+          console.log(`Creando usuario: ${user.name}`);
           
-          // Solo crear perfil en la tabla profiles (sin Auth por ahora para evitar restricciones)
+          // Crear perfil directamente en la tabla profiles sin email
           const userId = crypto.randomUUID();
           const { error: profileError } = await supabase
             .from('profiles')
             .insert({
               id: userId,
-              email: user.email,
               name: user.name,
               role: user.role,
               is_active: true
