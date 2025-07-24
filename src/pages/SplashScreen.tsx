@@ -82,6 +82,8 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ onLogin }) => {
   const handleLogin = () => {
     if (selectedRole === APP_CONFIG.AUTH.ROLES.ADMIN) {
       if (username === APP_CONFIG.AUTH.ADMIN_CREDENTIALS.USERNAME && password === APP_CONFIG.AUTH.ADMIN_CREDENTIALS.PASSWORD) {
+        // Limpiar cualquier squad lead previo al hacer login como admin
+        localStorage.removeItem(APP_CONFIG.STORAGE_KEYS.CURRENT_SQUAD_LEAD);
         onLogin(APP_CONFIG.AUTH.ROLES.ADMIN, { username });
       } else {
         toast({
@@ -93,8 +95,10 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ onLogin }) => {
     } else if (selectedRole === APP_CONFIG.AUTH.ROLES.SQUAD_LEAD) {
       const selectedLead = squadLeads.find(lead => lead.name === selectedSquadLead);
       if (selectedLead && employeeCode === selectedLead.code) {
-        // Guardar el squad lead seleccionado en localStorage
+        // Limpiar localStorage y guardar el nuevo squad lead seleccionado
+        localStorage.clear(); // Limpiar todo el localStorage
         localStorage.setItem(APP_CONFIG.STORAGE_KEYS.CURRENT_SQUAD_LEAD, selectedSquadLead);
+        console.log('✅ Squad Lead guardado en localStorage:', selectedSquadLead);
         onLogin(APP_CONFIG.AUTH.ROLES.SQUAD_LEAD, { name: selectedSquadLead, code: employeeCode });
       } else {
         toast({

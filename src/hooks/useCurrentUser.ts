@@ -21,27 +21,35 @@ export const useCurrentUser = () => {
         const savedSquadLead = localStorage.getItem(APP_CONFIG.STORAGE_KEYS.CURRENT_SQUAD_LEAD);
         console.log('useCurrentUser - savedSquadLead from localStorage:', savedSquadLead);
         
-        if (savedSquadLead) {
+        if (savedSquadLead && savedSquadLead !== 'null' && savedSquadLead !== '') {
           return {
             name: savedSquadLead,
             role: 'squad_lead' as const,
             squadName: `Squad de ${savedSquadLead}`
           };
         } else {
+          console.log('No squad lead found in localStorage, redirecting to login');
           // Si no hay squad lead guardado, redirigir al splash
           window.location.href = '/';
           return null;
         }
-      } else {
+      } else if (path.includes('/admin')) {
         // Usuario Administrador
         return {
-          name: 'Admin',
+          name: 'Administrador',
+          role: 'admin' as const
+        };
+      } else {
+        // Default case
+        return {
+          name: 'Usuario',
           role: 'admin' as const
         };
       }
     };
 
     const user = getUserFromContext();
+    console.log('useCurrentUser - user determined:', user);
     if (user) {
       setCurrentUser(user);
     }
