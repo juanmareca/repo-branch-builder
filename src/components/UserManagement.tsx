@@ -268,14 +268,6 @@ export default function UserManagement() {
                 }
               }}
             />
-            <Button 
-              onClick={() => document.getElementById('excel-upload')?.click()} 
-              disabled={loading}
-              variant="outline"
-            >
-              <Upload className="h-4 w-4 mr-2" />
-              Subir Excel
-            </Button>
           </div>
         </div>
       </div>
