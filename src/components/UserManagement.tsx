@@ -21,6 +21,7 @@ interface UserProfile {
   employee_code?: string;
   squad_name?: string;
   is_active: boolean;
+  password?: string; // Para mostrar el password cuando está visible
 }
 
 interface NewUser {
