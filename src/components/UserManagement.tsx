@@ -282,7 +282,13 @@ export default function UserManagement() {
           }
 
           createdCount++;
-          await new Promise(resolve => setTimeout(resolve, 100)); // Reducir tiempo de espera
+          
+          // Reducir la carga del sistema con pausa más larga cada 10 usuarios
+          if (createdCount % 10 === 0) {
+            await new Promise(resolve => setTimeout(resolve, 500));
+          } else {
+            await new Promise(resolve => setTimeout(resolve, 50));
+          }
         } catch (error) {
           errorCount++;
           console.error(`Error creando usuario ${user.name}:`, error);
