@@ -28,20 +28,12 @@ const App = () => {
   const [showSplash, setShowSplash] = useState(true);
 
   useEffect(() => {
-    // Verificar si hay usuario guardado
-    const savedUser = localStorage.getItem('currentUser');
-    if (savedUser) {
-      try {
-        const userData = JSON.parse(savedUser);
-        setCurrentUser(userData);
-        setShowSplash(false);
-      } catch (error) {
-        console.error('Error parsing saved user:', error);
-        localStorage.removeItem('currentUser');
-      }
-    }
+    // Limpiar cualquier sesión anterior al iniciar
+    localStorage.removeItem('currentUser');
+    setCurrentUser(null);
+    setShowSplash(true);
     
-    // Redirigir desde /auth a la raíz
+    // Redirigir desde /auth a la raíz si es necesario
     if (window.location.pathname === '/auth') {
       window.history.replaceState(null, '', '/');
     }
