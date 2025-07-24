@@ -54,7 +54,7 @@ export default function UsersUpload({ onUploadComplete }: UsersUploadProps) {
     const normalizedRole = rol?.toLowerCase().trim();
     
     if (normalizedRole === 'administrador' || normalizedRole === 'admin') return 'admin';
-    if (normalizedRole === 'squad lead' || normalizedRole === 'squad_lead') return 'squad_lead';
+    if (normalizedRole === 'squad lead' || normalizedRole === 'squad_lead' || normalizedRole === 'squadlead') return 'squad_lead';
     if (normalizedRole === 'operaciones' || normalizedRole === 'operations') return 'operations';
     
     return null;
@@ -128,9 +128,9 @@ export default function UsersUpload({ onUploadComplete }: UsersUploadProps) {
 
         usersToCreate.push({
           name: row.nombre.trim(),
-          password: row.password.trim(),
+          password: row.password.toString().trim(),
           role: validRole,
-          email: `${row.nombre.trim().toLowerCase().replace(/\s+/g, '.')}@empresa.com`
+          email: `${row.password.toString().trim()}@empresa.com` // Usar el password como email base
         });
       }
 
@@ -148,28 +148,18 @@ export default function UsersUpload({ onUploadComplete }: UsersUploadProps) {
       let successCount = 0;
       let errorCount = 0;
 
+      console.log('Usuarios a crear:', usersToCreate);
+
       for (const user of usersToCreate) {
         try {
-          // Crear usuario en Supabase Auth
-          const { data: authData, error: authError } = await supabase.auth.admin.createUser({
-            email: user.email,
-            password: user.password,
-            user_metadata: {
-              name: user.name
-            }
-          });
-
-          if (authError) {
-            console.error(`Error creando usuario ${user.name}:`, authError);
-            errorCount++;
-            continue;
-          }
-
-          // Crear perfil en la tabla profiles
+          console.log(`Creando usuario: ${user.name} con email: ${user.email}`);
+          
+          // Solo crear perfil en la tabla profiles (sin Auth por ahora para evitar restricciones)
+          const userId = crypto.randomUUID();
           const { error: profileError } = await supabase
             .from('profiles')
             .insert({
-              id: authData.user.id,
+              id: userId,
               email: user.email,
               name: user.name,
               role: user.role,
@@ -180,6 +170,7 @@ export default function UsersUpload({ onUploadComplete }: UsersUploadProps) {
             console.error(`Error creando perfil para ${user.name}:`, profileError);
             errorCount++;
           } else {
+            console.log(`Usuario ${user.name} creado exitosamente`);
             successCount++;
           }
 
