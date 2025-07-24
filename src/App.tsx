@@ -1,10 +1,11 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { ProtectedRoute } from "@/components/ProtectedRoute";
+import SplashScreen from "./pages/SplashScreen";
+import LoadingScreen from "./pages/LoadingScreen";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import AdminDashboard from "./pages/AdminDashboard";
@@ -18,115 +19,92 @@ import CapacitiesManagement from "./pages/CapacitiesManagement";
 import ProjectsManagement from "./pages/ProjectsManagement";
 import ResourcesManagement from "./pages/ResourcesManagement";
 import ConfigurationManagement from "./pages/ConfigurationManagement";
-import AuthPage from "./pages/AuthPage";
+import { APP_CONFIG } from "./config/constants";
 
 const queryClient = new QueryClient();
 
 const App = () => {
+  const [currentUser, setCurrentUser] = useState(null);
+  const [showLoading, setShowLoading] = useState(false);
+  const [showSplash, setShowSplash] = useState(true);
+
+  useEffect(() => {
+    // Verificar si hay usuario guardado
+    const savedUser = localStorage.getItem('currentUser');
+    if (savedUser) {
+      try {
+        const userData = JSON.parse(savedUser);
+        setCurrentUser(userData);
+        setShowSplash(false);
+      } catch (error) {
+        console.error('Error parsing saved user:', error);
+        localStorage.removeItem('currentUser');
+      }
+    }
+  }, []);
+
+  const handleLogin = (role: string, userData: any) => {
+    setShowLoading(true);
+    setShowSplash(false);
+  };
+
+  const handleLoadingComplete = () => {
+    setShowLoading(false);
+    // El usuario ya está guardado en localStorage desde SplashScreen
+    const savedUser = localStorage.getItem('currentUser');
+    if (savedUser) {
+      setCurrentUser(JSON.parse(savedUser));
+    }
+  };
+
+  const renderCurrentPage = () => {
+    if (!currentUser) return null;
+
+    if (currentUser.role === APP_CONFIG.AUTH.ROLES.ADMIN) {
+      return <AdminDashboard />;
+    } else if (currentUser.role === APP_CONFIG.AUTH.ROLES.SQUAD_LEAD) {
+      return <SquadLeadDashboard />;
+    } else {
+      return <Index />;
+    }
+  };
+
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <Toaster />
         <Sonner />
         <BrowserRouter>
-          <Routes>
-            {/* Ruta de autenticación - pública */}
-            <Route path="/auth" element={<AuthPage />} />
-            
-            {/* Rutas protegidas - requieren login */}
-            <Route path="/" element={
-              <ProtectedRoute>
-                <Index />
-              </ProtectedRoute>
-            } />
-            
-            {/* Admin Routes - solo administradores */}
-            <Route path="/admin" element={
-              <ProtectedRoute requiredRole="admin">
-                <AdminDashboard />
-              </ProtectedRoute>
-            } />
-            <Route path="/holidays" element={
-              <ProtectedRoute requiredRole="admin">
-                <HolidaysManagement />
-              </ProtectedRoute>
-            } />
-            <Route path="/backups" element={
-              <ProtectedRoute requiredRole="admin">
-                <BackupsManagement />
-              </ProtectedRoute>
-            } />
-            <Route path="/audit-logs" element={
-              <ProtectedRoute requiredRole="admin">
-                <AuditLogs />
-              </ProtectedRoute>
-            } />
-            <Route path="/capacities" element={
-              <ProtectedRoute requiredRole="admin">
-                <CapacitiesManagement />
-              </ProtectedRoute>
-            } />
-            <Route path="/resources" element={
-              <ProtectedRoute requiredRole="admin">
-                <ResourcesManagement />
-              </ProtectedRoute>
-            } />
-            <Route path="/projects" element={
-              <ProtectedRoute requiredRole="admin">
-                <ProjectsManagement />
-              </ProtectedRoute>
-            } />
-            <Route path="/configuration" element={
-              <ProtectedRoute requiredRole="admin">
-                <ConfigurationManagement />
-              </ProtectedRoute>
-            } />
-            
-            {/* Squad Lead Routes - solo squad leads */}
-            <Route path="/squad-dashboard" element={
-              <ProtectedRoute requiredRole="squad_lead">
-                <SquadLeadDashboard />
-              </ProtectedRoute>
-            } />
-            <Route path="/squad-assignments" element={
-              <ProtectedRoute requiredRole="squad_lead">
-                <SquadAssignments />
-              </ProtectedRoute>
-            } />
-            <Route path="/squad-team" element={
-              <ProtectedRoute requiredRole="squad_lead">
-                <Index />
-              </ProtectedRoute>
-            } />
-            <Route path="/squad-projects" element={
-              <ProtectedRoute requiredRole="squad_lead">
-                <ProjectsManagement />
-              </ProtectedRoute>
-            } />
-            <Route path="/squad-capacities" element={
-              <ProtectedRoute requiredRole="squad_lead">
-                <CapacitiesManagement />
-              </ProtectedRoute>
-            } />
-            <Route path="/squad-holidays" element={
-              <ProtectedRoute requiredRole="squad_lead">
-                <SquadLeadHolidaysManagement />
-              </ProtectedRoute>
-            } />
-            <Route path="/squad-availability" element={
-              <ProtectedRoute requiredRole="squad_lead">
-                <Index />
-              </ProtectedRoute>
-            } />
-            <Route path="/squad-reports" element={
-              <ProtectedRoute requiredRole="squad_lead">
-                <Index />
-              </ProtectedRoute>
-            } />
-            
-            {/* Catch-all - 404 */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
+          {showSplash && (
+            <SplashScreen onLogin={handleLogin} />
+          )}
+          
+          {showLoading && (
+            <LoadingScreen onComplete={handleLoadingComplete} />
+          )}
+
+          {!showSplash && !showLoading && currentUser && (
+            <Routes>
+              <Route path="/" element={renderCurrentPage()} />
+              <Route path="/admin" element={<AdminDashboard />} />
+              <Route path="/holidays" element={<HolidaysManagement />} />
+              <Route path="/backups" element={<BackupsManagement />} />
+              <Route path="/audit-logs" element={<AuditLogs />} />
+              <Route path="/capacities" element={<CapacitiesManagement />} />
+              <Route path="/resources" element={<ResourcesManagement />} />
+              <Route path="/projects" element={<ProjectsManagement />} />
+              <Route path="/configuration" element={<ConfigurationManagement />} />
+              <Route path="/squad-dashboard" element={<SquadLeadDashboard />} />
+              <Route path="/squad-assignments" element={<SquadAssignments />} />
+              <Route path="/squad-team" element={<Index />} />
+              <Route path="/squad-projects" element={<ProjectsManagement />} />
+              <Route path="/squad-capacities" element={<CapacitiesManagement />} />
+              <Route path="/squad-holidays" element={<SquadLeadHolidaysManagement />} />
+              <Route path="/squad-availability" element={<Index />} />
+              <Route path="/squad-reports" element={<Index />} />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          )}
         </BrowserRouter>
       </TooltipProvider>
     </QueryClientProvider>
