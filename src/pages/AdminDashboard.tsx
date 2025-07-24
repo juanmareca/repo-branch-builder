@@ -36,7 +36,7 @@ const AdminDashboard = () => {
 
   const handleLogout = () => {
     localStorage.removeItem('currentUser');
-    navigate('/auth');
+    window.location.href = '/';
   };
 
   if (loading) {
