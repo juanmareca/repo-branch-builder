@@ -165,6 +165,7 @@ export default function UserManagement() {
   const initializeDefaultUsers = async () => {
     try {
       setLoading(true);
+      console.log('🚀 Iniciando creación de usuarios...');
 
       const defaultUsers = [
         {
@@ -193,19 +194,35 @@ export default function UserManagement() {
       }));
 
       const allUsers = [...defaultUsers, ...squadLeadUsers];
+      console.log('👥 Total usuarios a crear:', allUsers.length);
+      
       let createdCount = 0;
+      let existingCount = 0;
+      const errors: string[] = [];
 
       for (const user of allUsers) {
+        console.log(`🔍 Verificando usuario: ${user.name} (${user.email})`);
+        
         // Verificar si ya existe
-        const { data: existing } = await supabase
+        const { data: existing, error: checkError } = await supabase
           .from('profiles')
-          .select('email')
+          .select('email, role')
           .eq('email', user.email)
-          .single();
+          .maybeSingle();
+
+        if (checkError) {
+          console.error('Error verificando usuario:', checkError);
+          errors.push(`Error verificando ${user.name}: ${checkError.message}`);
+          continue;
+        }
 
         if (existing) {
-          continue; // Ya existe
+          console.log(`✅ Usuario ya existe: ${user.name}`);
+          existingCount++;
+          continue;
         }
+
+        console.log(`➕ Creando usuario: ${user.name}`);
 
         // Crear en Auth
         const { data: authData, error: authError } = await supabase.auth.signUp({
@@ -219,12 +236,20 @@ export default function UserManagement() {
           }
         });
 
-        if (authError && !authError.message.includes('already registered')) {
-          console.error(`Error creating ${user.name}:`, authError);
+        if (authError) {
+          console.error(`❌ Error Auth para ${user.name}:`, authError);
+          if (!authError.message.includes('already registered')) {
+            errors.push(`Error Auth ${user.name}: ${authError.message}`);
+          }
           continue;
         }
 
-        // Si se creó correctamente, actualizar el rol en el perfil
+        console.log(`✅ Usuario creado en Auth: ${user.name}`);
+
+        // Esperar un momento para que se ejecute el trigger
+        await new Promise(resolve => setTimeout(resolve, 1000));
+
+        // Actualizar el rol en el perfil
         if (authData?.user) {
           const { error: updateError } = await supabase
             .from('profiles')
@@ -234,19 +259,35 @@ export default function UserManagement() {
             })
             .eq('id', authData.user.id);
 
-          if (!updateError) {
+          if (updateError) {
+            console.error(`❌ Error actualizando perfil ${user.name}:`, updateError);
+            errors.push(`Error perfil ${user.name}: ${updateError.message}`);
+          } else {
+            console.log(`✅ Perfil actualizado: ${user.name} → ${user.role}`);
             createdCount++;
           }
         }
       }
 
-      toast({
-        title: "✅ Usuarios inicializados",
-        description: `Se crearon ${createdCount} usuarios con sus roles correctos`,
-      });
+      console.log(`📊 Resumen: ${createdCount} creados, ${existingCount} existían, ${errors.length} errores`);
 
-      loadUsers();
+      if (errors.length > 0) {
+        console.error('❌ Errores encontrados:', errors);
+        toast({
+          title: "⚠️ Inicialización con errores",
+          description: `Creados: ${createdCount}, Existían: ${existingCount}, Errores: ${errors.length}`,
+          variant: "destructive"
+        });
+      } else {
+        toast({
+          title: "✅ Usuarios inicializados",
+          description: `Creados: ${createdCount}, Ya existían: ${existingCount}`,
+        });
+      }
+
+      await loadUsers();
     } catch (error: any) {
+      console.error('💥 Error general:', error);
       toast({
         title: "❌ Error al inicializar usuarios",
         description: error.message,
