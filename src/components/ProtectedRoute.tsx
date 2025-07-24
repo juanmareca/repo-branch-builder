@@ -13,6 +13,8 @@ export const ProtectedRoute = ({ children, requiredRole }: ProtectedRouteProps) 
   const navigate = useNavigate();
 
   useEffect(() => {
+    console.log('🔍 ProtectedRoute - loading:', loading, 'currentUser:', currentUser);
+    
     if (!loading) {
       if (!currentUser) {
         console.log('🔒 No hay usuario autenticado, redirigiendo a /auth');
