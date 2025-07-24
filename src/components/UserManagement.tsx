@@ -220,11 +220,51 @@ export default function UserManagement() {
         return;
       }
 
+      // Preguntar al usuario si quiere sustituir o añadir
+      const shouldReplace = confirm(
+        `Se encontraron ${users.length} usuarios en el archivo.\n\n` +
+        "¿Quieres SUSTITUIR todos los usuarios existentes con estos nuevos?\n\n" +
+        "• Sí = Eliminar todos los usuarios actuales y crear solo estos nuevos\n" +
+        "• No = Añadir estos usuarios a los que ya existen"
+      );
+
+      if (shouldReplace) {
+        // Eliminar todos los usuarios existentes
+        const { error: deleteError } = await supabase
+          .from('profiles')
+          .delete()
+          .neq('id', '00000000-0000-0000-0000-000000000000'); // Eliminar todos excepto un ID ficticio
+
+        if (deleteError) {
+          console.error('Error eliminando usuarios existentes:', deleteError);
+          toast({
+            title: "❌ Error",
+            description: "Error al eliminar usuarios existentes",
+            variant: "destructive"
+          });
+          return;
+        }
+      }
+
       let createdCount = 0;
       let errorCount = 0;
 
       for (const user of users) {
         try {
+          // Verificar si ya existe (solo si no estamos reemplazando)
+          if (!shouldReplace) {
+            const { data: existingUser } = await supabase
+              .from('profiles')
+              .select('id')
+              .eq('name', user.name)
+              .maybeSingle();
+
+            if (existingUser) {
+              console.log(`Usuario ${user.name} ya existe, saltando...`);
+              continue;
+            }
+          }
+
           // Crear perfil directamente en la tabla profiles
           const userId = crypto.randomUUID();
           const { error: profileError } = await supabase
@@ -251,7 +291,9 @@ export default function UserManagement() {
 
       toast({
         title: "✅ Carga completada",
-        description: `Creados: ${createdCount}, Errores: ${errorCount}`,
+        description: shouldReplace 
+          ? `Usuarios reemplazados. Creados: ${createdCount}, Errores: ${errorCount}`
+          : `Usuarios añadidos. Creados: ${createdCount}, Errores: ${errorCount}`,
       });
 
       loadUsers();
@@ -304,6 +346,14 @@ export default function UserManagement() {
                 }
               }}
             />
+            <Button 
+              onClick={() => document.getElementById('excel-upload')?.click()}
+              disabled={loading}
+              variant="outline"
+            >
+              <Upload className="h-4 w-4 mr-2" />
+              Cargar Excel
+            </Button>
           </div>
         </div>
       </div>
