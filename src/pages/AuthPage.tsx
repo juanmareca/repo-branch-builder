@@ -1,45 +1,31 @@
-import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { supabase } from '@/integrations/supabase/client';
-import { useNavigate } from 'react-router-dom';
-import { Loader2, LogIn, UserPlus, Shield } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
-import { APP_CONFIG } from '@/config/constants';
+import { Eye, EyeOff, Loader2 } from 'lucide-react';
 
-interface AuthPageProps {
-  onAuthSuccess: (role: string) => void;
-}
-
-const AuthPage: React.FC<AuthPageProps> = ({ onAuthSuccess }) => {
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState('login');
+export default function AuthPage() {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [name, setName] = useState('');
+  const [employeeCode, setEmployeeCode] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState('');
+  const [error, setError] = useState('');
   const navigate = useNavigate();
-  const { toast } = useToast();
-
-  // Login form state
-  const [loginEmail, setLoginEmail] = useState('');
-  const [loginPassword, setLoginPassword] = useState('');
-
-  // Register form state  
-  const [registerEmail, setRegisterEmail] = useState('');
-  const [registerPassword, setRegisterPassword] = useState('');
-  const [registerName, setRegisterName] = useState('');
-  const [registerRole, setRegisterRole] = useState<'admin' | 'squad_lead' | 'operations'>('operations');
-  const [registerEmployeeCode, setRegisterEmployeeCode] = useState('');
 
   useEffect(() => {
-    // Check if user is already logged in
-    const checkAuthState = async () => {
+    // Verificar si ya está autenticado
+    const checkAuth = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
-        // Get user profile to determine role
+        // Redirigir según el rol
         const { data: profile } = await supabase
           .from('profiles')
           .select('role')
@@ -47,296 +33,252 @@ const AuthPage: React.FC<AuthPageProps> = ({ onAuthSuccess }) => {
           .single();
         
         if (profile) {
-          onAuthSuccess(profile.role);
-          navigate(profile.role === 'admin' ? '/admin' : '/squad-dashboard');
+          if (profile.role === 'admin') {
+            navigate('/admin');
+          } else if (profile.role === 'squad_lead') {
+            navigate('/squad-dashboard');
+          } else {
+            navigate('/');
+          }
         }
       }
     };
 
-    checkAuthState();
-  }, [navigate, onAuthSuccess]);
+    checkAuth();
+  }, [navigate]);
 
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
-    setError(null);
+    setLoading(true);
+    setError('');
+    setMessage('');
 
     try {
-      const { data, error: authError } = await supabase.auth.signInWithPassword({
-        email: loginEmail,
-        password: loginPassword,
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: email.trim(),
+        password,
       });
 
-      if (authError) {
-        setError(authError.message);
-        return;
-      }
+      if (error) throw error;
 
       if (data.user) {
-        // Get user profile to determine role
-        const { data: profile, error: profileError } = await supabase
+        // Obtener el perfil del usuario para redirigir según su rol
+        const { data: profile } = await supabase
           .from('profiles')
-          .select('role, name, is_active')
+          .select('role')
           .eq('id', data.user.id)
           .single();
 
-        if (profileError || !profile) {
-          setError('No se pudo obtener el perfil del usuario');
-          return;
+        if (profile) {
+          if (profile.role === 'admin') {
+            navigate('/admin');
+          } else if (profile.role === 'squad_lead') {
+            navigate('/squad-dashboard');
+          } else {
+            navigate('/');
+          }
+        } else {
+          navigate('/');
         }
-
-        if (!profile.is_active) {
-          setError('Tu cuenta está desactivada. Contacta al administrador.');
-          await supabase.auth.signOut();
-          return;
-        }
-
-        toast({
-          title: "Acceso concedido",
-          description: `Bienvenido, ${profile.name}`,
-        });
-
-        onAuthSuccess(profile.role);
-        navigate(profile.role === 'admin' ? '/admin' : '/squad-dashboard');
       }
-    } catch (err) {
-      setError('Error inesperado al iniciar sesión');
-      console.error('Login error:', err);
+    } catch (error: any) {
+      setError(error.message || 'Error al iniciar sesión');
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
 
-  const handleRegister = async (e: React.FormEvent) => {
+  const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
-    setError(null);
+    setLoading(true);
+    setError('');
+    setMessage('');
 
     try {
       const redirectUrl = `${window.location.origin}/auth`;
-
-      const { data, error: authError } = await supabase.auth.signUp({
-        email: registerEmail,
-        password: registerPassword,
+      
+      const { data, error } = await supabase.auth.signUp({
+        email: email.trim(),
+        password,
         options: {
           emailRedirectTo: redirectUrl,
           data: {
-            name: registerName,
-            employee_code: registerEmployeeCode,
-            role: registerRole
+            name: name.trim(),
+            employee_code: employeeCode.trim()
           }
         }
       });
 
-      if (authError) {
-        setError(authError.message);
-        return;
-      }
+      if (error) throw error;
 
       if (data.user) {
-        // Update the profile with the selected role (admin can create any role)
-        const { error: profileError } = await supabase
-          .from('profiles')
-          .update({
-            role: registerRole,
-            employee_code: registerEmployeeCode,
-            name: registerName
-          })
-          .eq('id', data.user.id);
-
-        if (profileError) {
-          console.error('Profile update error:', profileError);
-        }
-
-        toast({
-          title: "Registro exitoso",
-          description: "Revisa tu email para confirmar tu cuenta",
-        });
-
-        setActiveTab('login');
-        setRegisterEmail('');
-        setRegisterPassword('');
-        setRegisterName('');
-        setRegisterEmployeeCode('');
+        setMessage('¡Registro exitoso! Revisa tu correo para confirmar tu cuenta.');
+        setEmail('');
+        setPassword('');
+        setName('');
+        setEmployeeCode('');
       }
-    } catch (err) {
-      setError('Error inesperado al registrarse');
-      console.error('Register error:', err);
+    } catch (error: any) {
+      if (error.message.includes('already registered')) {
+        setError('Este email ya está registrado. Intenta iniciar sesión.');
+      } else {
+        setError(error.message || 'Error al registrarse');
+      }
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-secondary/20 p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
-          <div className="flex justify-center mb-4">
-            <div className="p-3 bg-primary rounded-full">
-              <Shield className="w-8 h-8 text-primary-foreground" />
-            </div>
-          </div>
-          <CardTitle className="text-2xl">Sistema de Gestión</CardTitle>
-          <p className="text-muted-foreground">Accede a tu cuenta</p>
+          <CardTitle className="text-2xl font-bold">Sistema de Gestión</CardTitle>
+          <CardDescription>
+            Accede a tu cuenta para gestionar proyectos y equipos
+          </CardDescription>
         </CardHeader>
         <CardContent>
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <Tabs defaultValue="signin" className="w-full">
             <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="login">
-                <LogIn className="w-4 h-4 mr-2" />
-                Iniciar Sesión
-              </TabsTrigger>
-              <TabsTrigger value="register">
-                <UserPlus className="w-4 h-4 mr-2" />
-                Registrarse
-              </TabsTrigger>
+              <TabsTrigger value="signin">Iniciar Sesión</TabsTrigger>
+              <TabsTrigger value="signup">Registrarse</TabsTrigger>
             </TabsList>
-
-            <TabsContent value="login">
-              <form onSubmit={handleLogin} className="space-y-4">
+            
+            <TabsContent value="signin">
+              <form onSubmit={handleSignIn} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
+                  <Label htmlFor="signin-email">Email</Label>
                   <Input
-                    id="email"
+                    id="signin-email"
                     type="email"
-                    value={loginEmail}
-                    onChange={(e) => setLoginEmail(e.target.value)}
-                    required
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
                     placeholder="tu@email.com"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="password">Contraseña</Label>
-                  <Input
-                    id="password"
-                    type="password"
-                    value={loginPassword}
-                    onChange={(e) => setLoginPassword(e.target.value)}
                     required
-                    placeholder="••••••••"
                   />
                 </div>
                 
-                {error && (
-                  <Alert variant="destructive">
-                    <AlertDescription>{error}</AlertDescription>
-                  </Alert>
-                )}
+                <div className="space-y-2">
+                  <Label htmlFor="signin-password">Contraseña</Label>
+                  <div className="relative">
+                    <Input
+                      id="signin-password"
+                      type={showPassword ? "text" : "password"}
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder="••••••••"
+                      required
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                      onClick={() => setShowPassword(!showPassword)}
+                    >
+                      {showPassword ? (
+                        <EyeOff className="h-4 w-4" />
+                      ) : (
+                        <Eye className="h-4 w-4" />
+                      )}
+                    </Button>
+                  </div>
+                </div>
 
-                <Button 
-                  type="submit" 
-                  className="w-full" 
-                  disabled={isLoading}
-                >
-                  {isLoading ? (
-                    <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      Iniciando sesión...
-                    </>
-                  ) : (
-                    <>
-                      <LogIn className="w-4 h-4 mr-2" />
-                      Iniciar Sesión
-                    </>
-                  )}
+                <Button type="submit" className="w-full" disabled={loading}>
+                  {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  Iniciar Sesión
                 </Button>
               </form>
             </TabsContent>
-
-            <TabsContent value="register">
-              <form onSubmit={handleRegister} className="space-y-4">
+            
+            <TabsContent value="signup">
+              <form onSubmit={handleSignUp} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="registerName">Nombre completo</Label>
+                  <Label htmlFor="signup-name">Nombre Completo</Label>
                   <Input
-                    id="registerName"
+                    id="signup-name"
                     type="text"
-                    value={registerName}
-                    onChange={(e) => setRegisterName(e.target.value)}
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder="Tu nombre completo"
                     required
-                    placeholder="Juan Pérez"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="signup-employee-code">Código de Empleado (Opcional)</Label>
+                  <Input
+                    id="signup-employee-code"
+                    type="text"
+                    value={employeeCode}
+                    onChange={(e) => setEmployeeCode(e.target.value)}
+                    placeholder="Ej: EMP001"
                   />
                 </div>
                 
                 <div className="space-y-2">
-                  <Label htmlFor="registerEmail">Email</Label>
+                  <Label htmlFor="signup-email">Email</Label>
                   <Input
-                    id="registerEmail"
+                    id="signup-email"
                     type="email"
-                    value={registerEmail}
-                    onChange={(e) => setRegisterEmail(e.target.value)}
-                    required
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
                     placeholder="tu@email.com"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="registerPassword">Contraseña</Label>
-                  <Input
-                    id="registerPassword"
-                    type="password"
-                    value={registerPassword}
-                    onChange={(e) => setRegisterPassword(e.target.value)}
                     required
-                    placeholder="••••••••"
-                    minLength={6}
                   />
                 </div>
-
+                
                 <div className="space-y-2">
-                  <Label htmlFor="registerRole">Rol</Label>
-                  <Select value={registerRole} onValueChange={(value: 'admin' | 'squad_lead' | 'operations') => setRegisterRole(value)}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecciona un rol" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="operations">Operaciones</SelectItem>
-                      <SelectItem value="squad_lead">Squad Lead</SelectItem>
-                      <SelectItem value="admin">Administrador</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <Label htmlFor="signup-password">Contraseña</Label>
+                  <div className="relative">
+                    <Input
+                      id="signup-password"
+                      type={showPassword ? "text" : "password"}
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder="••••••••"
+                      required
+                      minLength={6}
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                      onClick={() => setShowPassword(!showPassword)}
+                    >
+                      {showPassword ? (
+                        <EyeOff className="h-4 w-4" />
+                      ) : (
+                        <Eye className="h-4 w-4" />
+                      )}
+                    </Button>
+                  </div>
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="registerEmployeeCode">Código de Empleado (opcional)</Label>
-                  <Input
-                    id="registerEmployeeCode"
-                    type="text"
-                    value={registerEmployeeCode}
-                    onChange={(e) => setRegisterEmployeeCode(e.target.value)}
-                    placeholder="4000123"
-                  />
-                </div>
-
-                {error && (
-                  <Alert variant="destructive">
-                    <AlertDescription>{error}</AlertDescription>
-                  </Alert>
-                )}
-
-                <Button 
-                  type="submit" 
-                  className="w-full" 
-                  disabled={isLoading}
-                >
-                  {isLoading ? (
-                    <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      Registrando...
-                    </>
-                  ) : (
-                    <>
-                      <UserPlus className="w-4 h-4 mr-2" />
-                      Registrarse
-                    </>
-                  )}
+                <Button type="submit" className="w-full" disabled={loading}>
+                  {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  Registrarse
                 </Button>
               </form>
             </TabsContent>
           </Tabs>
+
+          {error && (
+            <Alert className="mt-4 border-destructive/50 text-destructive">
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
+
+          {message && (
+            <Alert className="mt-4 border-green-500/50 text-green-700">
+              <AlertDescription>{message}</AlertDescription>
+            </Alert>
+          )}
         </CardContent>
       </Card>
     </div>
   );
-};
-
-export default AuthPage;
+}
