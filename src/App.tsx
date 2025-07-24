@@ -105,46 +105,14 @@ const App = () => {
           <Routes>
             <Route path="/auth" element={<AuthPage />} />
             <Route path="/" element={renderCurrentPage()} />
-            <Route path="/admin" element={
-              <ProtectedRoute requiredRole="admin">
-                <AdminDashboard />
-              </ProtectedRoute>
-            } />
-            <Route path="/holidays" element={
-              <ProtectedRoute requiredRole="admin">
-                <HolidaysManagement />
-              </ProtectedRoute>
-            } />
-            <Route path="/backups" element={
-              <ProtectedRoute requiredRole="admin">
-                <BackupsManagement />
-              </ProtectedRoute>
-            } />
-            <Route path="/audit-logs" element={
-              <ProtectedRoute requiredRole="admin">
-                <AuditLogs />
-              </ProtectedRoute>
-            } />
-            <Route path="/capacities" element={
-              <ProtectedRoute requiredRole="admin">
-                <CapacitiesManagement />
-              </ProtectedRoute>
-            } />
-            <Route path="/resources" element={
-              <ProtectedRoute requiredRole="admin">
-                <ResourcesManagement />
-              </ProtectedRoute>
-            } />
-            <Route path="/projects" element={
-              <ProtectedRoute requiredRole="admin">
-                <ProjectsManagement />
-              </ProtectedRoute>
-            } />
-            <Route path="/configuration" element={
-              <ProtectedRoute requiredRole="admin">
-                <ConfigurationManagement />
-              </ProtectedRoute>
-            } />
+            <Route path="/admin" element={<AdminDashboard />} />
+            <Route path="/holidays" element={<HolidaysManagement />} />
+            <Route path="/backups" element={<BackupsManagement />} />
+            <Route path="/audit-logs" element={<AuditLogs />} />
+            <Route path="/capacities" element={<CapacitiesManagement />} />
+            <Route path="/resources" element={<ResourcesManagement />} />
+            <Route path="/projects" element={<ProjectsManagement />} />
+            <Route path="/configuration" element={<ConfigurationManagement />} />
             <Route path="/squad-dashboard" element={
               <ProtectedRoute requiredRole="squad_lead">
                 <SquadLeadDashboard />
