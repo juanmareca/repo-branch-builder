@@ -88,15 +88,31 @@ export default function UsersUpload({ onUploadComplete }: UsersUploadProps) {
         return;
       }
 
-      // Validar estructura del archivo
+      // Validar estructura del archivo con debugging mejorado
       const requiredColumns = ['nombre', 'password', 'rol'];
-      const headers = Object.keys(jsonData[0] || {}).map(h => h.toLowerCase());
-      const missingColumns = requiredColumns.filter(col => !headers.includes(col));
+      const firstRow = jsonData[0] || {};
+      const originalHeaders = Object.keys(firstRow);
+      
+      console.log('📋 Primeras 3 filas del Excel:', jsonData.slice(0, 3));
+      console.log('📋 Headers originales:', originalHeaders);
+      
+      // Normalizar headers (quitar espacios, convertir a minúsculas)
+      const normalizedHeaders = originalHeaders.map(h => 
+        h.toString().toLowerCase().trim().replace(/\s+/g, '')
+      );
+      
+      console.log('📋 Headers normalizados:', normalizedHeaders);
+      console.log('📋 Columnas requeridas:', requiredColumns);
+      
+      const missingColumns = requiredColumns.filter(col => 
+        !normalizedHeaders.includes(col.toLowerCase())
+      );
 
       if (missingColumns.length > 0) {
+        console.error('❌ Columnas faltantes:', missingColumns);
         toast({
           title: "❌ Estructura incorrecta",
-          description: `El archivo debe contener las columnas: ${requiredColumns.join(', ')}`,
+          description: `El archivo debe contener las columnas: ${requiredColumns.join(', ')}. Encontradas: ${originalHeaders.join(', ')}`,
           variant: "destructive",
         });
         return;
