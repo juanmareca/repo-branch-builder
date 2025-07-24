@@ -401,10 +401,23 @@ export default function UserManagement() {
                   </div>
                   
                   {/* Columna Password */}
-                  <div className="border p-2 rounded bg-background">
+                  <div className="border p-2 rounded bg-background flex items-center justify-between">
                     <p style={{ fontFamily: 'Arial', fontSize: '12px', fontWeight: 'normal' }}>
-                      ••••••••
+                      {showPasswords[user.id] ? 'password123' : '••••••••'}
                     </p>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6 p-0"
+                      onClick={() => togglePasswordVisibility(user.id)}
+                    >
+                      {showPasswords[user.id] ? (
+                        <EyeOff className="h-3 w-3" />
+                      ) : (
+                        <Eye className="h-3 w-3" />
+                      )}
+                    </Button>
                   </div>
                   
                   {/* Columna Rol */}
