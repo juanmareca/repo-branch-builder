@@ -79,17 +79,10 @@ export default function ConfigurationManagement() {
   const loadConfiguration = async () => {
     try {
       setLoading(true);
-      const { data, error } = await supabase
-        .from('app_configuration')
-        .select('*')
-        .single();
-
-      if (error && error.code !== 'PGRST116') {
-        throw error;
-      }
-
-      if (data) {
-        setConfig(data.config_data);
+      // Por ahora cargar desde localStorage hasta que la migración esté lista
+      const savedConfig = localStorage.getItem('app_configuration');
+      if (savedConfig) {
+        setConfig(JSON.parse(savedConfig));
       }
     } catch (error: any) {
       console.log('Error loading configuration:', error);
@@ -103,15 +96,8 @@ export default function ConfigurationManagement() {
     try {
       setLoading(true);
       
-      const { error } = await supabase
-        .from('app_configuration')
-        .upsert({
-          id: 1,
-          config_data: config,
-          updated_at: new Date().toISOString(),
-        });
-
-      if (error) throw error;
+      // Por ahora guardar en localStorage hasta que la migración esté lista
+      localStorage.setItem('app_configuration', JSON.stringify(config));
 
       toast({
         title: "✅ Configuración guardada",
