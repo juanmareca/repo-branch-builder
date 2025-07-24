@@ -28,14 +28,26 @@ import { useNavigate } from 'react-router-dom';
 const AdminDashboard = () => {
   const { stats, loading, error } = useAdminStats();
   const navigate = useNavigate();
+  const [canNavigate, setCanNavigate] = useState(false);
+
+  // Habilitar navegación después de un pequeño delay para evitar clics accidentales
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setCanNavigate(true);
+    }, 1000);
+    return () => clearTimeout(timer);
+  }, []);
 
   const handleNavigation = (route: string) => {
-    console.log('🔄 Navegando a:', route);
-    navigate(route);
+    if (canNavigate) {
+      console.log('Navigating to:', route);
+      navigate(route);
+    } else {
+      console.log('Navigation blocked, still loading...');
+    }
   };
 
   const handleLogout = () => {
-    localStorage.removeItem('currentUser');
     window.location.href = '/';
   };
 
@@ -154,44 +166,6 @@ const AdminDashboard = () => {
               <p className="text-xs text-muted-foreground">Clic para gestionar</p>
               <div className="w-full bg-orange-100 rounded-full h-1 mt-2">
                 <div className="bg-orange-600 h-1 rounded-full w-5/6"></div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Configuración del Sistema */}
-        <div className="grid grid-cols-1 mb-8">
-          <Card className="hover:shadow-lg transition-all group border-indigo-200 hover:border-indigo-300 cursor-pointer" onClick={() => handleNavigation('/configuration')}>
-            <CardHeader className="bg-indigo-50 rounded-t-lg">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-indigo-600 rounded-lg">
-                  <Settings className="h-6 w-6 text-white" />
-                </div>
-                <div>
-                  <CardTitle className="text-indigo-800">Configuración del Sistema</CardTitle>
-                  <p className="text-sm text-indigo-600 mt-1">Gestiona parámetros y configuraciones avanzadas</p>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent className="pt-6">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="space-y-2">
-                  <h4 className="text-sm font-medium text-gray-700">Autenticación</h4>
-                  <p className="text-xs text-gray-500">Credenciales y roles</p>
-                </div>
-                <div className="space-y-2">
-                  <h4 className="text-sm font-medium text-gray-700">Trabajo</h4>
-                  <p className="text-xs text-gray-500">Horas y asignaciones</p>
-                </div>
-                <div className="space-y-2">
-                  <h4 className="text-sm font-medium text-gray-700">Base de Datos</h4>
-                  <p className="text-xs text-gray-500">Estados y tipos</p>
-                </div>
-              </div>
-              <div className="mt-4 p-3 bg-indigo-50 rounded-lg">
-                <p className="text-xs text-indigo-700">
-                  <span className="font-semibold">🔧 Configuración:</span> Personaliza el comportamiento del sistema
-                </p>
               </div>
             </CardContent>
           </Card>

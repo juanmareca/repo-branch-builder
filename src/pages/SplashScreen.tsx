@@ -1,13 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { APP_CONFIG } from '@/config/constants';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card } from '@/components/ui/card';
 import { Eye, EyeOff, User } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
-import { supabase } from '@/integrations/supabase/client';
 import techBackground from '@/assets/tech-background.jpg';
 
 interface SplashScreenProps {
@@ -21,37 +19,56 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ onLogin }) => {
   const [selectedSquadLead, setSelectedSquadLead] = useState('');
   const [employeeCode, setEmployeeCode] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [squadLeads, setSquadLeads] = useState<Array<{name: string, password: string}>>([]);
-  const [operationsUsers, setOperationsUsers] = useState<Array<{name: string, password: string}>>([]);
-  const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
-  // Cargar usuarios desde la base de datos
-  const loadUsers = async () => {
-    try {
-      setLoading(true);
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('name, password, role')
-        .in('role', ['squad_lead', 'operations'])
-        .eq('is_active', true)
-        .order('name');
-
-      if (error) throw error;
-
-      const squads = data?.filter(user => user.role === 'squad_lead') || [];
-      const ops = data?.filter(user => user.role === 'operations') || [];
-      
-      setSquadLeads(squads);
-      setOperationsUsers(ops);
-      
-      console.log(`✅ Cargados ${squads.length} squad leads y ${ops.length} usuarios de operaciones`);
-    } catch (error) {
-      console.error('❌ Error cargando usuarios:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  // Lista de Squad Leads ordenada alfabéticamente con sus códigos
+  const squadLeads = [
+    { name: 'ACOSTA SERRANO, CARLOS ALBERTO', code: '4003314' },
+    { name: 'AGUIRRE, FERNANDO LIONEL', code: '4002176' },
+    { name: 'ALE MARTOS, ALBERTO', code: '4000220' },
+    { name: 'BARRAGAN CARAMES, ALEJANDRO', code: '4001553' },
+    { name: 'CARBAJO SAINZ ROZAS, MIGUEL', code: '4000226' },
+    { name: 'CARBIA BOUZADA, YOLANDA', code: '4002088' },
+    { name: 'CARRO GARCIA, HELENA', code: '4000021' },
+    { name: 'CASTILLA JIMENEZ, JESUS', code: '4000128' },
+    { name: 'CASTILLO IZQUIERDO, FRANCISCO', code: '4000085' },
+    { name: 'CEBRIAN ARRABAL, RAFAEL', code: '4001029' },
+    { name: 'CORCHUELO MAYO, MARIA VICTORIA', code: '4002598' },
+    { name: 'CRUZ PEREZ, JORGE', code: '4001284' },
+    { name: 'CUELLAR GOMEZ, JAVIER', code: '4000111' },
+    { name: 'DE CRUCES RUANO, RAFAEL', code: '4001794' },
+    { name: 'DE LA FUENTE GONZALEZ, ANDONI', code: '4002916' },
+    { name: 'DE MESA GARCIA, MARIA DEL CARMEN', code: '4001855' },
+    { name: 'DEL CORRAL PELLON, CARMEN LUCIA', code: '4000015' },
+    { name: 'DOMINGUEZ HOLGADO, JOSE ANTONIO', code: '4002597' },
+    { name: 'DURAN TORRERO, RAFAEL DAVID', code: '4002888' },
+    { name: 'FERNANDEZ CUMACHE, RAMON ANDRES', code: '4000581' },
+    { name: 'GARCIA CORDERO, CESAR', code: '4000439' },
+    { name: 'GARCIA TABERNER, ADOLFO', code: '4002228' },
+    { name: 'GONZALEZ RAFAEL, RAUL', code: '4000352' },
+    { name: 'GONZALEZ SOMOANO, GREGORIO', code: '4000091' },
+    { name: 'GUIJARRO ESCALADA, VIRGINIA', code: '4002614' },
+    { name: 'GUTIERREZ BURGUILLO, ALBA', code: '4002206' },
+    { name: 'JIMENEZ HERNANDEZ, JAVIER', code: '4000525' },
+    { name: 'LANZOS HERNANDEZ, EDUARDO', code: '4000672' },
+    { name: 'LAZARO SAN ANDRES, JOSE MARIA', code: '4002657' },
+    { name: 'MARAIMA ALVAREZ, LEOMAR RAFAEL', code: '4000377' },
+    { name: 'MARCUS CRISAN, IONUT ALEXANDRU', code: '4000316' },
+    { name: 'MARTINEZ DE SORIA RUEDA, ANDER', code: '4001245' },
+    { name: 'MARTINEZ MARTIN, FRANCISCO', code: '4000465' },
+    { name: 'MELERO MILLAN, IVAN', code: '4001251' },
+    { name: 'MIGUEL NIEVA, EDUARDO', code: '4001833' },
+    { name: 'ORTEGA CUEVAS, ANGEL LUIS', code: '4000089' },
+    { name: 'ORTEGA MUNTANE, LUIS JAVIER', code: '4000112' },
+    { name: 'PORTEIRO EIROA, EZEQUIEL', code: '4000090' },
+    { name: 'RABAGO TORRE, VALENTIN', code: '4002133' },
+    { name: 'REVILLA MAILLO, JUAN MANUEL', code: '4002729' },
+    { name: 'RODRIGUEZ FERNANDEZ, BELEN', code: '4001527' },
+    { name: 'ROLDAN COSANO, EMILIO', code: '4000147' },
+    { name: 'ROMERO SALINAS, ESTEFANIA', code: '4000535' },
+    { name: 'ROQUE DIAZ, MANUEL', code: '4003058' },
+    { name: 'SOLAZ TORRES, LUIS', code: '4001949' }
+  ];
 
   // Reset form when role changes
   useEffect(() => {
@@ -61,49 +78,10 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ onLogin }) => {
     setEmployeeCode('');
   }, [selectedRole]);
 
-  useEffect(() => {
-    loadUsers();
-  }, []);
-
-  const handleLogin = async () => {
+  const handleLogin = () => {
     if (selectedRole === 'admin') {
-      // Verificar si existe admin en base de datos
-      try {
-        const { data: adminFromDB, error } = await supabase
-          .from('profiles')
-          .select('name, password')
-          .eq('role', 'admin')
-          .eq('name', username)
-          .single();
-
-        if (!error && adminFromDB) {
-          // Usar admin de base de datos
-          if (password === adminFromDB.password) {
-            localStorage.clear();
-            localStorage.setItem('currentUser', JSON.stringify({
-              id: 'admin',
-              name: username,
-              email: 'admin@stratesys.com',
-              role: 'admin'
-            }));
-            onLogin('admin', { name: username });
-            return;
-          }
-        }
-      } catch (error) {
-        console.log('Admin no encontrado en BD, usando hardcodeado');
-      }
-
-      // Fallback al admin hardcodeado
       if (username === 'admin' && password === 'admin123') {
-        localStorage.clear();
-        localStorage.setItem('currentUser', JSON.stringify({
-          id: 'admin',
-          name: 'admin',
-          email: 'admin@stratesys.com',
-          role: 'admin'
-        }));
-        onLogin('admin', { name: 'admin' });
+        onLogin('admin', { username });
       } else {
         toast({
           title: "Error de autenticación",
@@ -113,42 +91,22 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ onLogin }) => {
       }
     } else if (selectedRole === 'squad_lead') {
       const selectedLead = squadLeads.find(lead => lead.name === selectedSquadLead);
-      if (selectedLead && employeeCode === selectedLead.password) {
-        localStorage.clear();
-        localStorage.setItem('currentUser', JSON.stringify({
-          id: selectedSquadLead,
-          name: selectedSquadLead,
-          email: `${selectedSquadLead}@stratesys.com`,
-          role: 'squad_lead',
-          squadName: selectedSquadLead
-        }));
-        localStorage.setItem(APP_CONFIG.STORAGE_KEYS.CURRENT_SQUAD_LEAD, selectedSquadLead);
-        onLogin('squad_lead', { name: selectedSquadLead });
+      if (selectedLead && employeeCode === selectedLead.code) {
+        onLogin('squad_lead', { name: selectedSquadLead, code: employeeCode });
       } else {
         toast({
           title: "Error de autenticación",
-          description: "Squad Lead o contraseña incorrectos",
+          description: "Squad Lead o número de empleado incorrectos",
           variant: "destructive"
         });
       }
     } else if (selectedRole === 'operations') {
-      const selectedUser = operationsUsers.find(user => user.name === username);
-      if (selectedUser && password === selectedUser.password) {
-        localStorage.clear();
-        localStorage.setItem('currentUser', JSON.stringify({
-          id: username,
-          name: username,
-          email: `${username}@stratesys.com`,
-          role: 'operations'
-        }));
-        onLogin('operations', { name: username });
-      } else {
-        toast({
-          title: "Error de autenticación",
-          description: "Usuario o contraseña incorrectos",
-          variant: "destructive"
-        });
-      }
+      // Placeholder for operations login
+      toast({
+        title: "Función no disponible",
+        description: "El login de Operaciones aún no está configurado",
+        variant: "default"
+      });
     }
   };
 
@@ -276,39 +234,28 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ onLogin }) => {
                     </div>
                   </SelectTrigger>
                   <SelectContent className="bg-gray-800 border-gray-600 text-white max-h-48">
-                    {squadLeads.length > 0 ? squadLeads.map((lead) => (
+                    {squadLeads.map((lead) => (
                       <SelectItem 
-                        key={lead.name} 
+                        key={lead.code} 
                         value={lead.name}
                         className="text-white hover:bg-gray-700 focus:bg-gray-700"
                       >
                         {lead.name}
                       </SelectItem>
-                    )) : (
-                      <SelectItem value="no-squad-leads" disabled className="text-gray-500">
-                        No hay squad leads configurados
-                      </SelectItem>
-                    )}
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
               <div>
-                <label className="text-sm font-medium text-white">Contraseña:</label>
+                <label className="text-sm font-medium text-white">Número de Empleado:</label>
                 <div className="relative mt-1">
                   <Input
-                    type={showPassword ? 'text' : 'password'}
+                    type="text"
                     value={employeeCode}
                     onChange={(e) => setEmployeeCode(e.target.value)}
-                    placeholder="Ingrese contraseña"
-                    className="pr-10 bg-gray-800/80 border-gray-600 text-white placeholder:text-gray-300 focus:border-blue-400 focus:ring-blue-400/20 focus:bg-gray-800"
+                    placeholder="Ingrese número de empleado"
+                    className="bg-gray-800/80 border-gray-600 text-white placeholder:text-gray-300 focus:border-blue-400 focus:ring-blue-400/20 focus:bg-gray-800"
                   />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-300 hover:text-white transition-colors"
-                  >
-                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                  </button>
                 </div>
               </div>
             </>
@@ -355,34 +302,29 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ onLogin }) => {
             onClick={handleLogin} 
             className="w-full mt-6 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white border-0 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-[1.02]"
             disabled={
-              loading ||
               (selectedRole === 'admin' && (!username || !password)) ||
               (selectedRole === 'squad_lead' && (!selectedSquadLead || !employeeCode)) ||
               (selectedRole === 'operations' && (!username || !password))
             }
           >
-            {loading ? 'Cargando...' : 'Iniciar Sesión'}
+            Iniciar Sesión
           </Button>
 
           {selectedRole === 'squad_lead' && (
             <p className="text-xs text-gray-300 text-center mt-4">
-              {squadLeads.length > 0 
-                ? "Seleccione su nombre y use su contraseña asignada" 
-                : "No hay squad leads configurados. Contacte al administrador."}
+              Seleccione su nombre y use su número de empleado como contraseña
             </p>
           )}
 
           {selectedRole === 'admin' && (
             <p className="text-xs text-gray-300 text-center mt-4">
-              Usuario: admin • Contraseña: admin123 (por defecto)
+              Use sus credenciales de administrador para acceder al sistema
             </p>
           )}
 
           {selectedRole === 'operations' && (
             <p className="text-xs text-gray-300 text-center mt-4">
-              {operationsUsers.length > 0 
-                ? "Use sus credenciales asignadas por el administrador" 
-                : "No hay usuarios de operaciones configurados."}
+              Use sus credenciales de operaciones para acceder al sistema
             </p>
           )}
         </div>

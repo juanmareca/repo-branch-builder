@@ -1,13 +1,9 @@
 import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
 
 interface CurrentUser {
-  id: string;
   name: string;
-  email: string;
-  role: 'admin' | 'squad_lead' | 'operations';
+  role: 'admin' | 'squad_lead';
   squadName?: string;
-  employeeCode?: string;
 }
 
 export const useCurrentUser = () => {
@@ -15,48 +11,40 @@ export const useCurrentUser = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const loadCurrentUser = async () => {
-      try {
-        // Verificar si hay usuario en localStorage
-        const savedUser = localStorage.getItem('currentUser');
-        if (savedUser) {
-          const userData = JSON.parse(savedUser);
-          console.log('✅ Usuario cargado desde localStorage:', userData);
-          
-          // Si es squad lead, asegurar que squadName esté definido
-          if (userData.role === 'squad_lead' && userData.name && !userData.squadName) {
-            userData.squadName = userData.name;
-            // Actualizar localStorage con la información corregida
-            localStorage.setItem('currentUser', JSON.stringify(userData));
-          }
-          
-          setCurrentUser(userData);
-          setLoading(false);
-          return;
+    // Obtener el usuario actual del localStorage donde se guarda desde SplashScreen
+    const getUserFromContext = () => {
+      const path = window.location.pathname;
+      
+      if (path.includes('/squad-') || path === '/squad-dashboard') {
+        // Obtener el squad lead actual del localStorage
+        const savedSquadLead = localStorage.getItem('current-squad-lead');
+        console.log('useCurrentUser - savedSquadLead from localStorage:', savedSquadLead);
+        
+        if (savedSquadLead) {
+          return {
+            name: savedSquadLead,
+            role: 'squad_lead' as const,
+            squadName: `Squad de ${savedSquadLead}`
+          };
+        } else {
+          // Si no hay squad lead guardado, redirigir al splash
+          window.location.href = '/';
+          return null;
         }
-
-        console.log('❌ No hay usuario en localStorage');
-        setCurrentUser(null);
-        setLoading(false);
-      } catch (error) {
-        console.error('❌ Error loading current user:', error);
-        setCurrentUser(null);
-        setLoading(false);
+      } else {
+        // Usuario Administrador
+        return {
+          name: 'Admin',
+          role: 'admin' as const
+        };
       }
     };
 
-    loadCurrentUser();
-
-    // Escuchar cambios en la autenticación
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === 'SIGNED_OUT' || !session) {
-        setCurrentUser(null);
-      } else if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
-        loadCurrentUser();
-      }
-    });
-
-    return () => subscription.unsubscribe();
+    const user = getUserFromContext();
+    if (user) {
+      setCurrentUser(user);
+    }
+    setLoading(false);
   }, []);
 
   return { currentUser, loading };

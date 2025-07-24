@@ -18,7 +18,6 @@ import { useCurrentUser } from '@/hooks/useCurrentUser';
 import AssignmentSummary from '@/components/AssignmentSummary';
 import TeamAssignmentSummary from '@/components/TeamAssignmentSummary';
 import StaffingReport from '@/components/StaffingReport';
-import { APP_CONFIG } from '@/config/constants';
 
 interface Assignment {
   id: string;
@@ -51,7 +50,10 @@ interface Project {
   codigo_inicial: string;
 }
 
-const PROJECT_COLORS = APP_CONFIG.UI.PROJECT_COLORS;
+const PROJECT_COLORS = [
+  'bg-blue-500', 'bg-green-500', 'bg-purple-500', 'bg-orange-500', 
+  'bg-pink-500', 'bg-indigo-500', 'bg-teal-500', 'bg-red-500'
+];
 
 export default function SquadAssignments() {
   const navigate = useNavigate();
@@ -65,8 +67,8 @@ export default function SquadAssignments() {
   const [selectedOffice, setSelectedOffice] = useState<string>('');
   const [startDate, setStartDate] = useState<string>('');
   const [endDate, setEndDate] = useState<string>('');
-  const [percentage, setPercentage] = useState<string>(APP_CONFIG.WORK.DEFAULT_PERCENTAGE.toString());
-  const [assignmentType, setAssignmentType] = useState<string>(APP_CONFIG.WORK.DEFAULT_ASSIGNMENT_TYPE);
+  const [percentage, setPercentage] = useState<string>('100');
+  const [assignmentType, setAssignmentType] = useState<string>('development');
   const [showProjectSearch, setShowProjectSearch] = useState<boolean>(false);
   const [projectSearchTerm, setProjectSearchTerm] = useState<string>('');
   const [showConflictDialog, setShowConflictDialog] = useState<boolean>(false);

@@ -125,10 +125,7 @@ const Index = () => {
               <ChevronLeft className="h-4 w-4" />
               Panel de Squad Lead
             </Button>
-            <Button variant="outline" onClick={() => {
-              localStorage.removeItem('currentUser');
-              window.location.href = '/auth';
-            }} className="gap-2">
+            <Button variant="outline" onClick={() => window.location.reload()} className="gap-2">
               <LogOut className="h-4 w-4" />
               Cerrar sesión
             </Button>

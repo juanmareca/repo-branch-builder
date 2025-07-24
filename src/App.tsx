@@ -1,14 +1,13 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { ProtectedRoute } from "@/components/ProtectedRoute";
-import SplashScreen from "./pages/SplashScreen";
-import LoadingScreen from "./pages/LoadingScreen";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
+import SplashScreen from "./pages/SplashScreen";
+import LoadingScreen from "./pages/LoadingScreen";
 import AdminDashboard from "./pages/AdminDashboard";
 import SquadLeadDashboard from "./pages/SquadLeadDashboard";
 import SquadAssignments from "./pages/SquadAssignments";
@@ -19,60 +18,44 @@ import AuditLogs from "./pages/AuditLogs";
 import CapacitiesManagement from "./pages/CapacitiesManagement";
 import ProjectsManagement from "./pages/ProjectsManagement";
 import ResourcesManagement from "./pages/ResourcesManagement";
-import ConfigurationManagement from "./pages/ConfigurationManagement";
-import AuthPage from "./pages/AuthPage";
 
 const queryClient = new QueryClient();
 
 const App = () => {
-  const [currentUser, setCurrentUser] = useState(null);
-  const [showLoading, setShowLoading] = useState(false);
-  const [showSplash, setShowSplash] = useState(true);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [userRole, setUserRole] = useState<string>('');
+  const [userData, setUserData] = useState<any>(null);
 
-  useEffect(() => {
-    // Limpiar cualquier sesión anterior al iniciar
-    localStorage.removeItem('currentUser');
-    setCurrentUser(null);
-    setShowSplash(true);
-    
-    // Redirigir desde /auth a la raíz si es necesario
-    if (window.location.pathname === '/auth') {
-      window.history.replaceState(null, '', '/');
-    }
-  }, []);
-
-  const handleLogin = (role: string, userData: any) => {
-    setShowLoading(true);
-    setShowSplash(false);
+  const handleLogin = (role: string, userData?: any) => {
+    console.log('App - handleLogin called with role:', role);
+    setUserRole(role);
+    setUserData(userData);
+    setIsLoading(true);
   };
 
   const handleLoadingComplete = () => {
-    setShowLoading(false);
-    // El usuario ya está guardado en localStorage desde SplashScreen
-    const savedUser = localStorage.getItem('currentUser');
-    if (savedUser) {
-      setCurrentUser(JSON.parse(savedUser));
-    }
-  };
-
-  const renderCurrentPage = () => {
-    if (!currentUser) return null;
-
-    console.log('🔍 App.tsx - renderCurrentPage - currentUser:', currentUser);
+    console.log('App - Loading complete. UserRole is:', userRole);
+    setIsLoading(false);
+    setIsAuthenticated(true);
     
-    if (currentUser.role === 'admin') {
-      console.log('✅ Redirigiendo a AdminDashboard');
-      return <AdminDashboard />;
-    } else if (currentUser.role === 'squad_lead') {
-      console.log('✅ Redirigiendo a SquadLeadDashboard');
-      return <SquadLeadDashboard />;
-    } else {
-      console.log('✅ Redirigiendo a Index');
-      return <Index />;
+    // Limpiar el historial del navegador y forzar redirección correcta
+    if (userRole === 'admin') {
+      window.history.replaceState(null, '', '/admin');
+    } else if (userRole === 'squad_lead') {
+      window.history.replaceState(null, '', '/squad-dashboard');
     }
   };
 
-  if (showSplash) {
+  const handleLogout = () => {
+    setIsAuthenticated(false);
+    setUserRole('');
+    setUserData(null);
+  };
+
+  console.log('App render - isAuthenticated:', isAuthenticated, 'isLoading:', isLoading, 'userRole:', userRole);
+
+  if (!isAuthenticated && !isLoading) {
     return (
       <QueryClientProvider client={queryClient}>
         <TooltipProvider>
@@ -83,8 +66,8 @@ const App = () => {
       </QueryClientProvider>
     );
   }
-  
-  if (showLoading) {
+
+  if (isLoading) {
     return (
       <QueryClientProvider client={queryClient}>
         <TooltipProvider>
@@ -96,6 +79,8 @@ const App = () => {
     );
   }
 
+  // Cuando está autenticado, mostrar la aplicación con routing normal
+
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
@@ -103,24 +88,32 @@ const App = () => {
         <Sonner />
         <BrowserRouter>
           <Routes>
-            <Route path="/auth" element={<AuthPage />} />
-            <Route path="/" element={renderCurrentPage()} />
-            <Route path="/admin" element={<AdminDashboard />} />
-            <Route path="/holidays" element={<HolidaysManagement />} />
-            <Route path="/backups" element={<BackupsManagement />} />
-            <Route path="/audit-logs" element={<AuditLogs />} />
-            <Route path="/capacities" element={<CapacitiesManagement />} />
-            <Route path="/resources" element={<ResourcesManagement />} />
-            <Route path="/projects" element={<ProjectsManagement />} />
-            <Route path="/configuration" element={<ConfigurationManagement />} />
-            <Route path="/squad-dashboard" element={<SquadLeadDashboard />} />
-            <Route path="/squad-assignments" element={<SquadAssignments />} />
-            <Route path="/squad-team" element={<Index />} />
-            <Route path="/squad-projects" element={<ProjectsManagement />} />
-            <Route path="/squad-capacities" element={<CapacitiesManagement />} />
-            <Route path="/squad-holidays" element={<SquadLeadHolidaysManagement />} />
-            <Route path="/squad-availability" element={<Index />} />
-            <Route path="/squad-reports" element={<Index />} />
+            <Route path="/" element={
+              userRole === 'admin' ? <Navigate to="/admin" replace /> : 
+              userRole === 'squad_lead' ? <Navigate to="/squad-dashboard" replace /> :
+              <Index />
+            } />
+            
+            {/* Admin Routes */}
+            <Route path="/admin" element={userRole === 'admin' ? <AdminDashboard /> : <Navigate to="/" replace />} />
+            <Route path="/holidays" element={userRole === 'admin' ? <HolidaysManagement /> : <Navigate to="/" replace />} />
+            <Route path="/backups" element={userRole === 'admin' ? <BackupsManagement /> : <Navigate to="/" replace />} />
+            <Route path="/audit-logs" element={userRole === 'admin' ? <AuditLogs /> : <Navigate to="/" replace />} />
+            <Route path="/capacities" element={userRole === 'admin' ? <CapacitiesManagement /> : <Navigate to="/" replace />} />
+            <Route path="/resources" element={userRole === 'admin' ? <ResourcesManagement /> : <Navigate to="/" replace />} />
+            <Route path="/projects" element={userRole === 'admin' ? <ProjectsManagement /> : <Navigate to="/" replace />} />
+            
+            {/* Squad Lead Routes */}
+            <Route path="/squad-dashboard" element={userRole === 'squad_lead' ? <SquadLeadDashboard /> : <Navigate to="/" replace />} />
+            <Route path="/squad-assignments" element={userRole === 'squad_lead' ? <SquadAssignments /> : <Navigate to="/" replace />} />
+            <Route path="/squad-team" element={userRole === 'squad_lead' ? <Index /> : <Navigate to="/" replace />} />
+            <Route path="/squad-projects" element={userRole === 'squad_lead' ? <ProjectsManagement /> : <Navigate to="/" replace />} />
+            <Route path="/squad-capacities" element={userRole === 'squad_lead' ? <CapacitiesManagement /> : <Navigate to="/" replace />} />
+            <Route path="/squad-holidays" element={userRole === 'squad_lead' ? <SquadLeadHolidaysManagement /> : <Navigate to="/" replace />} />
+            <Route path="/squad-availability" element={userRole === 'squad_lead' ? <Index /> : <Navigate to="/" replace />} />
+            <Route path="/squad-reports" element={userRole === 'squad_lead' ? <Index /> : <Navigate to="/" replace />} />
+            
+            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>

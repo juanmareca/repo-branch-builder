@@ -15,7 +15,6 @@ import {
   CalendarDays,
   GripVertical
 } from 'lucide-react';
-import { APP_CONFIG } from '@/config/constants';
 
 interface DashboardCard {
   id: string;
@@ -30,10 +29,7 @@ interface DashboardCard {
 export default function SquadLeadDashboard() {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { currentUser, loading } = useCurrentUser();
-  
-  // Debug del usuario actual
-  console.log('🔍 SquadLeadDashboard - currentUser:', currentUser);
+  const { currentUser } = useCurrentUser();
   
   // Configuración por defecto de las tarjetas
   const defaultCards: DashboardCard[] = [
@@ -104,17 +100,13 @@ export default function SquadLeadDashboard() {
 
   // Cargar preferencias guardadas
   useEffect(() => {
-    if (currentUser) {
-      loadSavedOrder();
-    } else {
-      setIsLoading(false);
-    }
-  }, [currentUser]);
+    loadSavedOrder();
+  }, []);
 
   const loadSavedOrder = async () => {
     try {
       // Intentar cargar desde localStorage primero como respaldo
-      const localOrder = localStorage.getItem(APP_CONFIG.STORAGE_KEYS.SQUAD_DASHBOARD_ORDER);
+      const localOrder = localStorage.getItem('squad-dashboard-order');
       if (localOrder) {
         try {
           const savedOrder = JSON.parse(localOrder);
@@ -137,15 +129,13 @@ export default function SquadLeadDashboard() {
       }
 
       // Intentar cargar desde Supabase como secundario
-      // El código de empleado está en el campo password del currentUser
-      const employeeCode = (currentUser as any)?.password;
-      if (!employeeCode) return;
+      const squadLeadName = 'Demo Squad Lead';
       
       const { data, error } = await supabase
         .from('squad_lead_preferences')
         .select('card_order')
-        .eq('squad_lead_name', employeeCode)
-        .maybeSingle();
+        .eq('squad_lead_name', squadLeadName)
+        .single();
 
       if (!error && data && data.card_order && data.card_order.length > 0) {
         const orderedCards = data.card_order
@@ -158,7 +148,7 @@ export default function SquadLeadDashboard() {
         
         setCards([...orderedCards, ...missingCards]);
         // También guardar en localStorage
-        localStorage.setItem(APP_CONFIG.STORAGE_KEYS.SQUAD_DASHBOARD_ORDER, JSON.stringify(data.card_order));
+        localStorage.setItem('squad-dashboard-order', JSON.stringify(data.card_order));
       }
     } catch (error) {
       console.log('Error loading saved order:', error);
@@ -169,23 +159,16 @@ export default function SquadLeadDashboard() {
 
   const saveOrder = async (newOrder: string[]) => {
     // Siempre guardar en localStorage primero (siempre funciona)
-    localStorage.setItem(APP_CONFIG.STORAGE_KEYS.SQUAD_DASHBOARD_ORDER, JSON.stringify(newOrder));
+    localStorage.setItem('squad-dashboard-order', JSON.stringify(newOrder));
     
     // Intentar guardar en Supabase sin mostrar errores al usuario
     try {
-      // El código de empleado está en el campo password del currentUser
-      const employeeCode = (currentUser as any)?.password;
-      
-      // Solo guardar si tenemos el código de empleado
-      if (!employeeCode) {
-        console.log('Info: No se puede guardar en Supabase - falta código de empleado');
-        return;
-      }
+      const squadLeadName = 'Demo Squad Lead';
       
       const { error } = await supabase
         .from('squad_lead_preferences')
         .upsert({
-          squad_lead_name: employeeCode,
+          squad_lead_name: squadLeadName,
           card_order: newOrder
         });
 
@@ -293,8 +276,7 @@ export default function SquadLeadDashboard() {
     window.location.href = '/';
   };
 
-  // Si el usuario está cargando o no hay usuario, mostrar loading
-  if (loading || isLoading || !currentUser) {
+  if (isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-background to-muted p-4 flex items-center justify-center">
         <div className="text-center">
@@ -311,9 +293,7 @@ export default function SquadLeadDashboard() {
         {/* Header */}
         <div className="flex justify-between items-center mb-8">
           <div>
-            <h1 className="text-3xl font-bold text-foreground">
-              Panel de Squad Lead - {currentUser?.name || currentUser?.squadName || 'Cargando...'}
-            </h1>
+            <h1 className="text-3xl font-bold text-foreground">Panel de Squad Lead - {currentUser?.name || 'Squad Lead'}</h1>
             <p className="text-muted-foreground mt-2">Gestiona tu equipo y proyectos</p>
           </div>
           <Button variant="outline" onClick={handleLogout} className="gap-2">
