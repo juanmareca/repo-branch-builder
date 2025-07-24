@@ -11,28 +11,26 @@ export const useCurrentUser = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Simulamos el usuario actual basado en la URL o localStorage
-    // En una implementación real, esto vendría de un contexto de autenticación
+    // Obtener el usuario actual del localStorage donde se guarda desde SplashScreen
     const getUserFromContext = () => {
       const path = window.location.pathname;
       
       if (path.includes('/squad-') || path === '/squad-dashboard') {
-        // Limpiar cualquier dato incorrecto del localStorage
+        // Obtener el squad lead actual del localStorage
         const savedSquadLead = localStorage.getItem('current-squad-lead');
+        console.log('useCurrentUser - savedSquadLead from localStorage:', savedSquadLead);
         
-        // Si hay un valor guardado pero no es REVILLA MAILLO, JUAN MANUEL, lo limpiamos
-        if (savedSquadLead && savedSquadLead !== 'REVILLA MAILLO, JUAN MANUEL') {
-          localStorage.removeItem('current-squad-lead');
+        if (savedSquadLead) {
+          return {
+            name: savedSquadLead,
+            role: 'squad_lead' as const,
+            squadName: `Squad de ${savedSquadLead}`
+          };
+        } else {
+          // Si no hay squad lead guardado, redirigir al splash
+          window.location.href = '/';
+          return null;
         }
-        
-        // Establecer siempre REVILLA MAILLO, JUAN MANUEL como el usuario actual
-        localStorage.setItem('current-squad-lead', 'REVILLA MAILLO, JUAN MANUEL');
-        
-        return {
-          name: 'REVILLA MAILLO, JUAN MANUEL',
-          role: 'squad_lead' as const,
-          squadName: 'Squad de REVILLA MAILLO, JUAN MANUEL'
-        };
       } else {
         // Usuario Administrador
         return {
@@ -43,7 +41,9 @@ export const useCurrentUser = () => {
     };
 
     const user = getUserFromContext();
-    setCurrentUser(user);
+    if (user) {
+      setCurrentUser(user);
+    }
     setLoading(false);
   }, []);
 

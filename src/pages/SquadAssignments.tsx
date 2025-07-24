@@ -14,6 +14,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { useSquadData } from '@/hooks/useSquadData';
+import { useCurrentUser } from '@/hooks/useCurrentUser';
 import AssignmentSummary from '@/components/AssignmentSummary';
 import TeamAssignmentSummary from '@/components/TeamAssignmentSummary';
 import StaffingReport from '@/components/StaffingReport';
@@ -54,10 +55,11 @@ const PROJECT_COLORS = [
   'bg-pink-500', 'bg-indigo-500', 'bg-teal-500', 'bg-red-500'
 ];
 
-export default function SquadAssignments({ userRole, userData }: { userRole?: string; userData?: any }) {
+export default function SquadAssignments() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { persons: allPersons, squadLeads } = useSquadData();
+  const { currentUser } = useCurrentUser();
   
   const [selectedPerson, setSelectedPerson] = useState<string>('');
   const [selectedProject, setSelectedProject] = useState<string>('');
@@ -88,8 +90,8 @@ export default function SquadAssignments({ userRole, userData }: { userRole?: st
   const currentDate = new Date();
   const months = Array.from({ length: 3 }, (_, i) => addMonths(currentDate, i));
 
-  // Get current squad lead name
-  const currentSquadLeadName = userData?.name;
+  // Get current squad lead name from useCurrentUser hook
+  const currentSquadLeadName = currentUser?.name;
   
   // Filter persons for current squad lead and include the squad lead themselves
   const squadPersons = allPersons.filter(person => 
@@ -98,7 +100,7 @@ export default function SquadAssignments({ userRole, userData }: { userRole?: st
 
   useEffect(() => {
     fetchData();
-  }, [allPersons, userData]);
+  }, [allPersons, currentUser]);
 
   useEffect(() => {
     if (allPersons.length > 0 && currentSquadLeadName) {
@@ -569,7 +571,7 @@ export default function SquadAssignments({ userRole, userData }: { userRole?: st
             </div>
             <div>
               <h1 className="text-3xl font-bold text-foreground">
-                Asignaciones - REVILLA MAILLO, JUAN MANUEL
+                Asignaciones - {currentUser?.name || 'Squad Lead'}
               </h1>
               <p className="text-muted-foreground">
                 Gestiona asignaciones de proyectos y calendarios
