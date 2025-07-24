@@ -35,6 +35,7 @@ import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
+import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
 import SpainHolidaysMap from '@/components/SpainHolidaysMap';
 import * as XLSX from 'xlsx';
@@ -162,6 +163,7 @@ const SquadLeadHolidaysManagement = () => {
 
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { currentUser } = useCurrentUser();
 
   const fetchHolidays = async () => {
     try {
@@ -460,7 +462,7 @@ const SquadLeadHolidaysManagement = () => {
             </div>
             <div>
               <h1 className="text-3xl font-bold text-foreground">
-                Gestión de Festivos - REVILLA MAILLO, JUAN MANUEL
+                Gestión de Festivos - {currentUser?.name || 'Squad Lead'}
               </h1>
               <p className="text-muted-foreground">
                 Consulta los días festivos del calendario

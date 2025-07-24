@@ -129,7 +129,7 @@ export default function SquadLeadDashboard() {
       }
 
       // Intentar cargar desde Supabase como secundario
-      const squadLeadName = 'Demo Squad Lead';
+      const squadLeadName = currentUser?.name || 'Demo Squad Lead';
       
       const { data, error } = await supabase
         .from('squad_lead_preferences')
@@ -163,7 +163,7 @@ export default function SquadLeadDashboard() {
     
     // Intentar guardar en Supabase sin mostrar errores al usuario
     try {
-      const squadLeadName = 'Demo Squad Lead';
+      const squadLeadName = currentUser?.name || 'Demo Squad Lead';
       
       const { error } = await supabase
         .from('squad_lead_preferences')
