@@ -171,18 +171,18 @@ export default function SquadLeadDashboard() {
     
     // Intentar guardar en Supabase sin mostrar errores al usuario
     try {
-      const squadLeadName = currentUser?.name;
+      const employeeCode = currentUser?.employeeCode;
       
-      // Solo guardar si tenemos el nombre del squad lead
-      if (!squadLeadName) {
-        console.log('Info: No se puede guardar en Supabase - falta nombre del squad lead');
+      // Solo guardar si tenemos el código de empleado
+      if (!employeeCode) {
+        console.log('Info: No se puede guardar en Supabase - falta código de empleado');
         return;
       }
       
       const { error } = await supabase
         .from('squad_lead_preferences')
         .upsert({
-          squad_lead_name: squadLeadName,
+          squad_lead_name: employeeCode,
           card_order: newOrder
         });
 
