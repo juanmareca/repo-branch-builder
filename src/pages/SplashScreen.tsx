@@ -285,7 +285,7 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ onLogin }) => {
                         {lead.name}
                       </SelectItem>
                     )) : (
-                      <SelectItem value="" disabled className="text-gray-500">
+                      <SelectItem value="no-squad-leads" disabled className="text-gray-500">
                         No hay squad leads configurados
                       </SelectItem>
                     )}
