@@ -22,6 +22,7 @@ interface UserProfile {
   squad_name?: string;
   is_active: boolean;
   password?: string; // Para mostrar el password cuando está visible
+  tempPassword?: string; // Para editar temporalmente
 }
 
 interface NewUser {
@@ -594,7 +595,7 @@ export default function UserManagement() {
                             type="password"
                             placeholder="Dejar vacío para mantener actual"
                             onChange={(e) => setUsers(prev => prev.map(u => 
-                              u.id === user.id ? { ...u, newPassword: e.target.value } : u
+                              u.id === user.id ? { ...u, tempPassword: e.target.value } : u
                             ))}
                           />
                         </div>
@@ -621,7 +622,17 @@ export default function UserManagement() {
                         <Button variant="outline" onClick={() => setEditingUser(null)}>
                           Cancelar
                         </Button>
-                        <Button onClick={() => updateUser(user.id, user)}>
+                        <Button onClick={() => {
+                          const updatedUser = users.find(u => u.id === user.id);
+                          const updateData: any = {
+                            name: updatedUser?.name,
+                            role: updatedUser?.role
+                          };
+                          if (updatedUser?.tempPassword) {
+                            updateData.password = updatedUser.tempPassword;
+                          }
+                          updateUser(user.id, updateData);
+                        }}>
                           Guardar Cambios
                         </Button>
                       </div>
