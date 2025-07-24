@@ -190,6 +190,15 @@ export default function UserManagement() {
   };
 
   const uploadUsersFromExcel = async (file: File) => {
+    // PRIMERO: Preguntar al usuario INMEDIATAMENTE qué quiere hacer
+    const shouldReplace = confirm(
+      "🔄 CARGAR USUARIOS DESDE EXCEL\n\n" +
+      "¿Qué quieres hacer con los usuarios del archivo?\n\n" +
+      "• ACEPTAR = ELIMINAR todos los usuarios actuales y reemplazarlos con los del archivo\n" +
+      "• CANCELAR = AÑADIR los usuarios del archivo a los que ya existen\n\n" +
+      "¿Quieres REEMPLAZAR todos los usuarios existentes?"
+    );
+
     try {
       setLoading(true);
       const workbook = new ExcelJS.Workbook();
@@ -217,33 +226,31 @@ export default function UserManagement() {
           description: "No se encontraron usuarios válidos en el archivo",
           variant: "destructive"
         });
+        setLoading(false);
         return;
       }
 
-      // Preguntar al usuario si quiere sustituir o añadir
-      const shouldReplace = confirm(
-        `Se encontraron ${users.length} usuarios en el archivo.\n\n` +
-        "¿Quieres SUSTITUIR todos los usuarios existentes con estos nuevos?\n\n" +
-        "• Sí = Eliminar todos los usuarios actuales y crear solo estos nuevos\n" +
-        "• No = Añadir estos usuarios a los que ya existen"
-      );
+      console.log(`📋 Procesando ${users.length} usuarios. Modo: ${shouldReplace ? 'REEMPLAZAR' : 'AÑADIR'}`);
 
       if (shouldReplace) {
+        console.log('🗑️ Eliminando todos los usuarios existentes...');
         // Eliminar todos los usuarios existentes
         const { error: deleteError } = await supabase
           .from('profiles')
           .delete()
-          .neq('id', '00000000-0000-0000-0000-000000000000'); // Eliminar todos excepto un ID ficticio
+          .neq('id', '00000000-0000-0000-0000-000000000000'); // Eliminar todos
 
         if (deleteError) {
-          console.error('Error eliminando usuarios existentes:', deleteError);
+          console.error('❌ Error eliminando usuarios existentes:', deleteError);
           toast({
             title: "❌ Error",
             description: "Error al eliminar usuarios existentes",
             variant: "destructive"
           });
+          setLoading(false);
           return;
         }
+        console.log('✅ Usuarios existentes eliminados');
       }
 
       let createdCount = 0;
@@ -305,15 +312,22 @@ export default function UserManagement() {
       });
 
       // Recargar usuarios sin causar problemas de sesión
-      await loadUsers();
+      console.log('🔄 Recargando lista de usuarios...');
+      setTimeout(() => {
+        loadUsers();
+      }, 1000); // Esperar un segundo antes de recargar
     } catch (error: any) {
+      console.error('❌ Error crítico procesando archivo:', error);
       toast({
         title: "❌ Error al procesar archivo",
-        description: error.message,
+        description: `Error: ${error.message}. No se perdió la sesión.`,
         variant: "destructive",
       });
     } finally {
-      setLoading(false);
+      console.log('🏁 Finalizando carga de archivo...');
+      setTimeout(() => {
+        setLoading(false);
+      }, 500); // Asegurar que no hay race conditions
     }
   };
 
