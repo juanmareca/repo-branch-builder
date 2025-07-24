@@ -7,10 +7,11 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Eye, EyeOff, UserPlus, Users, Key, Edit, Trash2, Save, X } from 'lucide-react';
+import { Eye, EyeOff, UserPlus, Users, Key, Edit, Trash2, Save, X, Upload } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { APP_CONFIG } from '@/config/constants';
+import * as ExcelJS from 'exceljs';
 
 interface UserProfile {
   id: string;
@@ -168,166 +169,80 @@ export default function UserManagement() {
     }));
   };
 
-  const initializeDefaultUsers = async () => {
+  const uploadUsersFromExcel = async (file: File) => {
     try {
       setLoading(true);
-      console.log('🚀 Iniciando creación de usuarios...');
-
-      const defaultUsers = [
-        {
-          email: 'admin@empresa.com',
-          password: 'Admin123!',
-          name: 'Administrador',
-          role: 'admin' as const,
-          employee_code: 'ADMIN001'
-        },
-        {
-          email: 'operaciones@empresa.com',
-          password: 'Operations123!',
-          name: 'Operaciones',
-          role: 'operations' as const,
-          employee_code: 'OPR001'
-        }
-      ];
-
-      // Solo agregar los primeros 5 squad leads para evitar rate limit
-      const squadLeadUsers = APP_CONFIG.SQUAD_LEADS.slice(0, 5).map(sl => ({
-        email: `${sl.code}@empresa.com`,
-        password: `Squad${sl.code}!`,
-        name: sl.name,
-        role: 'squad_lead' as const,
-        employee_code: sl.code
-      }));
-
-      const allUsers = [...defaultUsers, ...squadLeadUsers];
-      console.log('👥 Total usuarios a crear:', allUsers.length);
+      const workbook = new ExcelJS.Workbook();
+      await workbook.xlsx.load(await file.arrayBuffer());
       
-      let createdCount = 0;
-      let existingCount = 0;
-      const errors: string[] = [];
-
-      for (let i = 0; i < allUsers.length; i++) {
-        const user = allUsers[i];
-        console.log(`🔍 [${i+1}/${allUsers.length}] Procesando: ${user.name}`);
-        
-        // Verificar si ya existe
-        const { data: existing, error: checkError } = await supabase
-          .from('profiles')
-          .select('email, role')
-          .eq('email', user.email)
-          .maybeSingle();
-
-        if (checkError) {
-          console.error('Error verificando usuario:', checkError);
-          errors.push(`Error verificando ${user.name}: ${checkError.message}`);
-          continue;
-        }
-
-        if (existing) {
-          console.log(`✅ Usuario ya existe: ${user.name}`);
-          existingCount++;
-          continue;
-        }
-
-        console.log(`➕ Creando usuario: ${user.name}`);
-
-        // Crear en Auth con retry para rate limits
-        let authSuccess = false;
-        let retries = 0;
-        const maxRetries = 3;
-
-        while (!authSuccess && retries < maxRetries) {
-          try {
-            const { data: authData, error: authError } = await supabase.auth.signUp({
-              email: user.email,
-              password: user.password,
-              options: {
-                data: {
-                  name: user.name,
-                  employee_code: user.employee_code
-                }
-              }
-            });
-
-            if (authError) {
-              if (authError.code === 'over_request_rate_limit') {
-                console.log(`⏳ Rate limit alcanzado, esperando 10 segundos... (intento ${retries + 1})`);
-                await new Promise(resolve => setTimeout(resolve, 10000));
-                retries++;
-                continue;
-              } else if (authError.message.includes('already registered')) {
-                console.log(`✅ Usuario ya registrado: ${user.name}`);
-                existingCount++;
-                authSuccess = true;
-                break;
-              } else {
-                throw authError;
-              }
-            } else {
-              console.log(`✅ Usuario creado en Auth: ${user.name}`);
-              
-              // Esperar para que se ejecute el trigger
-              await new Promise(resolve => setTimeout(resolve, 2000));
-
-              // Actualizar el rol en el perfil
-              if (authData?.user) {
-                const { error: updateError } = await supabase
-                  .from('profiles')
-                  .update({ 
-                    role: user.role,
-                    employee_code: user.employee_code
-                  })
-                  .eq('id', authData.user.id);
-
-                if (updateError) {
-                  console.error(`❌ Error actualizando perfil ${user.name}:`, updateError);
-                  errors.push(`Error perfil ${user.name}: ${updateError.message}`);
-                } else {
-                  console.log(`✅ Perfil actualizado: ${user.name} → ${user.role}`);
-                  createdCount++;
-                }
-              }
-              authSuccess = true;
-            }
-          } catch (error: any) {
-            console.error(`❌ Error creando ${user.name}:`, error);
-            errors.push(`Error ${user.name}: ${error.message}`);
-            break;
+      const worksheet = workbook.getWorksheet(1);
+      const users: Array<{name: string, password: string, role: string}> = [];
+      
+      // Leer desde la fila 2 (asumiendo que la fila 1 tiene headers)
+      worksheet.eachRow((row, rowNumber) => {
+        if (rowNumber > 1) {
+          const name = row.getCell(1).value?.toString() || '';
+          const password = row.getCell(2).value?.toString() || '';
+          const role = row.getCell(3).value?.toString() || 'operations';
+          
+          if (name && password) {
+            users.push({ name, password, role });
           }
         }
+      });
 
-        if (!authSuccess && retries >= maxRetries) {
-          errors.push(`${user.name}: Máximo de reintentos alcanzado`);
-        }
-
-        // Esperar entre usuarios para evitar rate limit
-        if (i < allUsers.length - 1) {
-          console.log('⏳ Esperando 3 segundos antes del siguiente usuario...');
-          await new Promise(resolve => setTimeout(resolve, 3000));
-        }
-      }
-
-      console.log(`📊 Resumen: ${createdCount} creados, ${existingCount} existían, ${errors.length} errores`);
-
-      if (errors.length > 0) {
-        console.error('❌ Errores encontrados:', errors);
+      if (users.length === 0) {
         toast({
-          title: "⚠️ Inicialización parcial",
-          description: `Creados: ${createdCount}, Existían: ${existingCount}, Errores: ${errors.length}. Revisa la consola para detalles.`,
+          title: "❌ Error",
+          description: "No se encontraron usuarios válidos en el archivo",
           variant: "destructive"
         });
-      } else {
-        toast({
-          title: "✅ Usuarios inicializados",
-          description: `Creados: ${createdCount}, Ya existían: ${existingCount}`,
-        });
+        return;
       }
 
-      await loadUsers();
-    } catch (error: any) {
-      console.error('💥 Error general:', error);
+      let createdCount = 0;
+      let errorCount = 0;
+
+      for (const user of users) {
+        try {
+          const email = `${user.name.toLowerCase().replace(/\s+/g, '.')}@empresa.com`;
+          
+          const { data: authData, error: authError } = await supabase.auth.signUp({
+            email,
+            password: user.password,
+            options: {
+              data: { name: user.name }
+            }
+          });
+
+          if (authError && !authError.message.includes('already registered')) {
+            throw authError;
+          }
+
+          if (authData.user) {
+            await supabase
+              .from('profiles')
+              .update({ role: user.role as any })
+              .eq('id', authData.user.id);
+          }
+
+          createdCount++;
+          await new Promise(resolve => setTimeout(resolve, 1000));
+        } catch (error) {
+          errorCount++;
+          console.error(`Error creando usuario ${user.name}:`, error);
+        }
+      }
+
       toast({
-        title: "❌ Error al inicializar usuarios",
+        title: "✅ Carga completada",
+        description: `Creados: ${createdCount}, Errores: ${errorCount}`,
+      });
+
+      loadUsers();
+    } catch (error: any) {
+      toast({
+        title: "❌ Error al procesar archivo",
         description: error.message,
         variant: "destructive",
       });
@@ -360,6 +275,29 @@ export default function UserManagement() {
             <UserPlus className="h-4 w-4 mr-2" />
             Nuevo Usuario
           </Button>
+          <div>
+            <Input
+              id="excel-upload"
+              type="file"
+              accept=".xlsx,.xls"
+              className="hidden"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) {
+                  uploadUsersFromExcel(file);
+                  e.target.value = '';
+                }
+              }}
+            />
+            <Button 
+              onClick={() => document.getElementById('excel-upload')?.click()} 
+              disabled={loading}
+              variant="outline"
+            >
+              <Upload className="h-4 w-4 mr-2" />
+              Subir Excel
+            </Button>
+          </div>
         </div>
       </div>
 
