@@ -19,7 +19,6 @@ import CapacitiesManagement from "./pages/CapacitiesManagement";
 import ProjectsManagement from "./pages/ProjectsManagement";
 import ResourcesManagement from "./pages/ResourcesManagement";
 import ConfigurationManagement from "./pages/ConfigurationManagement";
-import { APP_CONFIG } from "./config/constants";
 
 const queryClient = new QueryClient();
 
@@ -65,14 +64,38 @@ const App = () => {
   const renderCurrentPage = () => {
     if (!currentUser) return null;
 
-    if (currentUser.role === APP_CONFIG.AUTH.ROLES.ADMIN) {
+    if (currentUser.role === 'admin') {
       return <AdminDashboard />;
-    } else if (currentUser.role === APP_CONFIG.AUTH.ROLES.SQUAD_LEAD) {
+    } else if (currentUser.role === 'squad_lead') {
       return <SquadLeadDashboard />;
     } else {
       return <Index />;
     }
   };
+
+  if (showSplash) {
+    return (
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <SplashScreen onLogin={handleLogin} />
+        </TooltipProvider>
+      </QueryClientProvider>
+    );
+  }
+  
+  if (showLoading) {
+    return (
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <LoadingScreen onComplete={handleLoadingComplete} />
+        </TooltipProvider>
+      </QueryClientProvider>
+    );
+  }
 
   return (
     <QueryClientProvider client={queryClient}>
@@ -80,36 +103,26 @@ const App = () => {
         <Toaster />
         <Sonner />
         <BrowserRouter>
-          {showSplash && (
-            <SplashScreen onLogin={handleLogin} />
-          )}
-          
-          {showLoading && (
-            <LoadingScreen onComplete={handleLoadingComplete} />
-          )}
-
-          {!showSplash && !showLoading && currentUser && (
-            <Routes>
-              <Route path="/" element={renderCurrentPage()} />
-              <Route path="/admin" element={<AdminDashboard />} />
-              <Route path="/holidays" element={<HolidaysManagement />} />
-              <Route path="/backups" element={<BackupsManagement />} />
-              <Route path="/audit-logs" element={<AuditLogs />} />
-              <Route path="/capacities" element={<CapacitiesManagement />} />
-              <Route path="/resources" element={<ResourcesManagement />} />
-              <Route path="/projects" element={<ProjectsManagement />} />
-              <Route path="/configuration" element={<ConfigurationManagement />} />
-              <Route path="/squad-dashboard" element={<SquadLeadDashboard />} />
-              <Route path="/squad-assignments" element={<SquadAssignments />} />
-              <Route path="/squad-team" element={<Index />} />
-              <Route path="/squad-projects" element={<ProjectsManagement />} />
-              <Route path="/squad-capacities" element={<CapacitiesManagement />} />
-              <Route path="/squad-holidays" element={<SquadLeadHolidaysManagement />} />
-              <Route path="/squad-availability" element={<Index />} />
-              <Route path="/squad-reports" element={<Index />} />
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          )}
+          <Routes>
+            <Route path="/" element={renderCurrentPage()} />
+            <Route path="/admin" element={<AdminDashboard />} />
+            <Route path="/holidays" element={<HolidaysManagement />} />
+            <Route path="/backups" element={<BackupsManagement />} />
+            <Route path="/audit-logs" element={<AuditLogs />} />
+            <Route path="/capacities" element={<CapacitiesManagement />} />
+            <Route path="/resources" element={<ResourcesManagement />} />
+            <Route path="/projects" element={<ProjectsManagement />} />
+            <Route path="/configuration" element={<ConfigurationManagement />} />
+            <Route path="/squad-dashboard" element={<SquadLeadDashboard />} />
+            <Route path="/squad-assignments" element={<SquadAssignments />} />
+            <Route path="/squad-team" element={<Index />} />
+            <Route path="/squad-projects" element={<ProjectsManagement />} />
+            <Route path="/squad-capacities" element={<CapacitiesManagement />} />
+            <Route path="/squad-holidays" element={<SquadLeadHolidaysManagement />} />
+            <Route path="/squad-availability" element={<Index />} />
+            <Route path="/squad-reports" element={<Index />} />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
         </BrowserRouter>
       </TooltipProvider>
     </QueryClientProvider>
