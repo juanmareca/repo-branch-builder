@@ -142,11 +142,18 @@ export default function UsersUpload({ onUploadComplete }: UsersUploadProps) {
           continue;
         }
 
+        // Generar email válido desde el nombre
+        const emailBase = row.nombre.trim()
+          .toLowerCase()
+          .replace(/[^a-z\s]/g, '') // Quitar caracteres especiales
+          .replace(/\s+/g, '.') // Espacios por puntos
+          .replace(/^\.+|\.+$/g, ''); // Quitar puntos al inicio/final
+        
         usersToCreate.push({
           name: row.nombre.trim(),
           password: row.password.toString().trim(),
           role: validRole,
-          email: `${row.password.toString().trim()}@empresa.com` // Usar el password como email base
+          email: `${emailBase}@empresa.com`
         });
       }
 
