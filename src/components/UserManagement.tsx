@@ -119,6 +119,39 @@ export default function UserManagement() {
     }
   };
 
+  const deleteUser = async (userId: string, userName: string) => {
+    if (!confirm(`¿Estás seguro de que quieres eliminar el usuario "${userName}"?`)) {
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const { error } = await supabase
+        .from('profiles')
+        .delete()
+        .eq('id', userId);
+
+      if (error) throw error;
+
+      toast({
+        title: "✅ Usuario eliminado",
+        description: `El usuario ${userName} ha sido eliminado correctamente`,
+      });
+
+      // Recargar la lista de usuarios
+      loadUsers();
+    } catch (error: any) {
+      console.error('Error eliminando usuario:', error);
+      toast({
+        title: "❌ Error al eliminar usuario",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const updateUser = async (userId: string, updates: Partial<UserProfile>) => {
     try {
       setLoading(true);
@@ -352,29 +385,38 @@ export default function UserManagement() {
           <CardTitle>Usuarios del Sistema ({users.length})</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
-            {users.map((user) => (
-              <div key={user.id} className="border rounded-lg p-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-4">
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2">
-                        <h3 className="font-medium">{user.name}</h3>
-                        <Badge variant={user.role === 'admin' ? 'destructive' : user.role === 'squad_lead' ? 'default' : 'secondary'}>
-                          {user.role === 'admin' ? 'Admin' : user.role === 'squad_lead' ? 'Squad Lead' : 'Operaciones'}
-                        </Badge>
-                        {!user.is_active && <Badge variant="outline">Inactivo</Badge>}
-                      </div>
-                      <p className="text-sm text-muted-foreground">{user.email}</p>
-                      {user.employee_code && (
-                        <p className="text-xs text-muted-foreground">Código: {user.employee_code}</p>
-                      )}
-                      {user.squad_name && (
-                        <p className="text-xs text-muted-foreground">Squad: {user.squad_name}</p>
-                      )}
-                    </div>
+          {users.length === 0 && !loading ? (
+            <div className="text-center py-8 text-muted-foreground">
+              No hay usuarios registrados en el sistema.
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {users.map((user) => (
+                <div key={user.id} className="grid grid-cols-4 gap-4 p-3 border rounded-lg items-center">
+                  {/* Columna Nombre */}
+                  <div className="border p-2 rounded bg-background">
+                    <p style={{ fontFamily: 'Arial', fontSize: '12px', fontWeight: 'normal' }}>
+                      {user.name}
+                    </p>
                   </div>
-                  <div className="flex items-center gap-2">
+                  
+                  {/* Columna Password */}
+                  <div className="border p-2 rounded bg-background">
+                    <p style={{ fontFamily: 'Arial', fontSize: '12px', fontWeight: 'normal' }}>
+                      ••••••••
+                    </p>
+                  </div>
+                  
+                  {/* Columna Rol */}
+                  <div className="border p-2 rounded bg-background">
+                    <p style={{ fontFamily: 'Arial', fontSize: '12px', fontWeight: 'normal' }}>
+                      {user.role === 'admin' ? 'Administrador' : 
+                       user.role === 'squad_lead' ? 'Squad Lead' : 'Operaciones'}
+                    </p>
+                  </div>
+                  
+                  {/* Columna Acciones */}
+                  <div className="flex items-center gap-2 justify-end">
                     <div className="flex items-center gap-2">
                       <Label htmlFor={`active-${user.id}`} className="text-sm">Activo</Label>
                       <Switch
@@ -390,69 +432,72 @@ export default function UserManagement() {
                     >
                       <Edit className="h-4 w-4" />
                     </Button>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() => deleteUser(user.id, user.name)}
+                      className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
                   </div>
+
+                  {/* Panel de edición */}
+                  {editingUser === user.id && (
+                    <div className="col-span-4 mt-4 pt-4 border-t space-y-4">
+                      <div className="grid grid-cols-3 gap-4">
+                        <div>
+                          <Label>Nombre</Label>
+                          <Input
+                            value={user.name}
+                            onChange={(e) => setUsers(prev => prev.map(u => 
+                              u.id === user.id ? { ...u, name: e.target.value } : u
+                            ))}
+                          />
+                        </div>
+                        <div>
+                          <Label>Password</Label>
+                          <Input
+                            type="password"
+                            placeholder="Dejar vacío para mantener actual"
+                            onChange={(e) => setUsers(prev => prev.map(u => 
+                              u.id === user.id ? { ...u, newPassword: e.target.value } : u
+                            ))}
+                          />
+                        </div>
+                        <div>
+                          <Label>Rol</Label>
+                          <Select 
+                            value={user.role} 
+                            onValueChange={(value: any) => setUsers(prev => prev.map(u => 
+                              u.id === user.id ? { ...u, role: value } : u
+                            ))}
+                          >
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent className="bg-background border shadow-lg z-50">
+                              <SelectItem value="admin">Administrador</SelectItem>
+                              <SelectItem value="squad_lead">Squad Lead</SelectItem>
+                              <SelectItem value="operations">Operaciones</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+                      <div className="flex justify-end gap-2">
+                        <Button variant="outline" onClick={() => setEditingUser(null)}>
+                          Cancelar
+                        </Button>
+                        <Button onClick={() => updateUser(user.id, user)}>
+                          Guardar Cambios
+                        </Button>
+                      </div>
+                    </div>
+                  )}
                 </div>
-
-                {editingUser === user.id && (
-                  <div className="mt-4 pt-4 border-t space-y-4">
-                    <div className="grid grid-cols-3 gap-4">
-                      <div>
-                        <Label>Nombre</Label>
-                        <Input
-                          value={user.name}
-                          onChange={(e) => setUsers(prev => prev.map(u => 
-                            u.id === user.id ? { ...u, name: e.target.value } : u
-                          ))}
-                        />
-                      </div>
-                      <div>
-                        <Label>Password</Label>
-                        <Input
-                          type="password"
-                          placeholder="Dejar vacío para mantener actual"
-                          onChange={(e) => setUsers(prev => prev.map(u => 
-                            u.id === user.id ? { ...u, newPassword: e.target.value } : u
-                          ))}
-                        />
-                      </div>
-                      <div>
-                        <Label>Rol</Label>
-                        <Select 
-                          value={user.role} 
-                          onValueChange={(value: any) => setUsers(prev => prev.map(u => 
-                            u.id === user.id ? { ...u, role: value } : u
-                          ))}
-                        >
-                          <SelectTrigger>
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent className="bg-background border shadow-lg z-50">
-                            <SelectItem value="admin">Administrador</SelectItem>
-                            <SelectItem value="squad_lead">Squad Lead</SelectItem>
-                            <SelectItem value="operations">Operaciones</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </div>
-                    <div className="flex justify-end gap-2">
-                      <Button variant="outline" onClick={() => setEditingUser(null)}>
-                        Cancelar
-                      </Button>
-                      <Button onClick={() => updateUser(user.id, user)}>
-                        Guardar Cambios
-                      </Button>
-                    </div>
-                  </div>
-                )}
-              </div>
-            ))}
-
-            {users.length === 0 && !loading && (
-              <div className="text-center py-8 text-muted-foreground">
-                No hay usuarios registrados en el sistema.
-              </div>
-            )}
-          </div>
+              ))}
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>
