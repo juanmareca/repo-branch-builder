@@ -28,27 +28,15 @@ import { useNavigate } from 'react-router-dom';
 const AdminDashboard = () => {
   const { stats, loading, error } = useAdminStats();
   const navigate = useNavigate();
-  const [canNavigate, setCanNavigate] = useState(false);
-
-  // Habilitar navegación después de un pequeño delay para evitar clics accidentales
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setCanNavigate(true);
-    }, 1000);
-    return () => clearTimeout(timer);
-  }, []);
 
   const handleNavigation = (route: string) => {
-    if (canNavigate) {
-      console.log('Navigating to:', route);
-      navigate(route);
-    } else {
-      console.log('Navigation blocked, still loading...');
-    }
+    console.log('🔄 Navegando a:', route);
+    navigate(route);
   };
 
   const handleLogout = () => {
-    window.location.href = '/';
+    localStorage.removeItem('currentUser');
+    navigate('/auth');
   };
 
   if (loading) {
