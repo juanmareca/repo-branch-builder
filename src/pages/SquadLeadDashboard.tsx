@@ -32,6 +32,9 @@ export default function SquadLeadDashboard() {
   const { toast } = useToast();
   const { currentUser } = useCurrentUser();
   
+  // Debug del usuario actual
+  console.log('🔍 SquadLeadDashboard - currentUser:', currentUser);
+  
   // Configuración por defecto de las tarjetas
   const defaultCards: DashboardCard[] = [
     {
@@ -294,7 +297,9 @@ export default function SquadLeadDashboard() {
         {/* Header */}
         <div className="flex justify-between items-center mb-8">
           <div>
-            <h1 className="text-3xl font-bold text-foreground">Panel de Squad Lead - {currentUser?.name}</h1>
+            <h1 className="text-3xl font-bold text-foreground">
+              Panel de Squad Lead - {currentUser?.name || currentUser?.squadName || 'Cargando...'}
+            </h1>
             <p className="text-muted-foreground mt-2">Gestiona tu equipo y proyectos</p>
           </div>
           <Button variant="outline" onClick={handleLogout} className="gap-2">
