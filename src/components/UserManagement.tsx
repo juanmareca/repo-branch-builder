@@ -311,6 +311,53 @@ export default function UserManagement() {
     }
   };
 
+  const deleteAllUsers = async () => {
+    const confirmed = confirm(
+      "⚠️ ATENCIÓN: Esta acción eliminará TODOS los usuarios del sistema.\n\n" +
+      "¿Estás completamente seguro de que quieres eliminar todos los usuarios?\n\n" +
+      "Esta acción NO se puede deshacer."
+    );
+
+    if (!confirmed) return;
+
+    const doubleConfirm = confirm(
+      "🚨 ÚLTIMA CONFIRMACIÓN\n\n" +
+      "Esto eliminará PERMANENTEMENTE todos los usuarios.\n\n" +
+      "¿Confirmas que quieres proceder?"
+    );
+
+    if (!doubleConfirm) return;
+
+    try {
+      setLoading(true);
+      
+      const { error } = await supabase
+        .from('profiles')
+        .delete()
+        .neq('id', '00000000-0000-0000-0000-000000000000'); // Eliminar todos
+
+      if (error) {
+        throw error;
+      }
+
+      toast({
+        title: "✅ Usuarios eliminados",
+        description: "Todos los usuarios han sido eliminados del sistema",
+      });
+
+      await loadUsers();
+    } catch (error: any) {
+      console.error('Error eliminando todos los usuarios:', error);
+      toast({
+        title: "❌ Error",
+        description: `Error al eliminar usuarios: ${error.message}`,
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
     loadUsers();
   }, []);
@@ -358,6 +405,14 @@ export default function UserManagement() {
               Cargar Excel
             </Button>
           </div>
+          <Button 
+            onClick={deleteAllUsers}
+            disabled={loading}
+            variant="destructive"
+          >
+            <Trash2 className="h-4 w-4 mr-2" />
+            Eliminar Todos
+          </Button>
         </div>
       </div>
 
