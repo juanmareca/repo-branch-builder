@@ -131,7 +131,7 @@ export default function UsersUpload({ onUploadComplete }: UsersUploadProps) {
           continue;
         }
 
-        if (!row.password?.trim()) {
+        if (!row.password || !row.password.toString().trim()) {
           errors.push(`Fila ${rowNum}: Password requerido`);
           continue;
         }
