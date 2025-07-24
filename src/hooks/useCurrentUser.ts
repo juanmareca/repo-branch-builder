@@ -22,6 +22,14 @@ export const useCurrentUser = () => {
         if (savedUser) {
           const userData = JSON.parse(savedUser);
           console.log('✅ Usuario cargado desde localStorage:', userData);
+          
+          // Si es squad lead, asegurar que squadName esté definido
+          if (userData.role === 'squad_lead' && userData.name && !userData.squadName) {
+            userData.squadName = userData.name;
+            // Actualizar localStorage con la información corregida
+            localStorage.setItem('currentUser', JSON.stringify(userData));
+          }
+          
           setCurrentUser(userData);
           setLoading(false);
           return;
