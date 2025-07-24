@@ -5,8 +5,8 @@ export const APP_CONFIG = {
   // Configuración de autenticación
   AUTH: {
     ADMIN_CREDENTIALS: {
-      USERNAME: process.env.ADMIN_USERNAME || 'admin',
-      PASSWORD: process.env.ADMIN_PASSWORD || 'admin123'
+      USERNAME: 'admin',
+      PASSWORD: 'admin123'
     },
     ROLES: {
       ADMIN: 'admin',
