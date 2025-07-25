@@ -735,18 +735,16 @@ const StaffingReport: React.FC<StaffingReportProps> = ({ squadLeadName, squadPer
                       <td className="border p-2 text-center">{person.squadLead}</td>
                       {Object.keys(person.weeklyData).map((weekKey) => {
                         const weekData = person.weeklyData[weekKey];
-                        return (
-                          <React.Fragment key={weekKey}>
-                            <td className="border p-1 text-center">{weekData.jornadasFacturablesProyecto.toFixed(2)}</td>
-                            <td className="border p-1 text-center">{weekData.jornadasSTRProductos.toFixed(2)}</td>
-                            <td className="border p-1 text-center">{weekData.jornadasNoFacturablesAvailability.toFixed(2)}</td>
-                            <td className="border p-1 text-center">{weekData.jornadasNoFacturablesManagement.toFixed(2)}</td>
-                            <td className="border p-1 text-center">{weekData.jornadasNoFacturablesSAM.toFixed(2)}</td>
-                            <td className="border p-1 text-center">{weekData.jornadasFacturablesOtros.toFixed(2)}</td>
-                            <td className="border p-1 text-center">{weekData.jornadasNoDisponibles.toFixed(2)}</td>
-                            <td className="border p-1 text-center font-bold">{weekData.totalDiasLaborables.toFixed(2)}</td>
-                          </React.Fragment>
-                        );
+                        return [
+                          <td key={`${weekKey}-proyecto`} className="border p-1 text-center">{weekData.jornadasFacturablesProyecto.toFixed(2)}</td>,
+                          <td key={`${weekKey}-str`} className="border p-1 text-center">{weekData.jornadasSTRProductos.toFixed(2)}</td>,
+                          <td key={`${weekKey}-availability`} className="border p-1 text-center">{weekData.jornadasNoFacturablesAvailability.toFixed(2)}</td>,
+                          <td key={`${weekKey}-management`} className="border p-1 text-center">{weekData.jornadasNoFacturablesManagement.toFixed(2)}</td>,
+                          <td key={`${weekKey}-sam`} className="border p-1 text-center">{weekData.jornadasNoFacturablesSAM.toFixed(2)}</td>,
+                          <td key={`${weekKey}-otros`} className="border p-1 text-center">{weekData.jornadasFacturablesOtros.toFixed(2)}</td>,
+                          <td key={`${weekKey}-no-disponibles`} className="border p-1 text-center">{weekData.jornadasNoDisponibles.toFixed(2)}</td>,
+                          <td key={`${weekKey}-total`} className="border p-1 text-center font-bold">{weekData.totalDiasLaborables.toFixed(2)}</td>
+                        ];
                       })}
                     </tr>
                   ))}
