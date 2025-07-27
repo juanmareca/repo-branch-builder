@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { CalendarIcon, BarChart3, X, ChevronDown, ChevronRight, FileDown } from 'lucide-react';
+import { CalendarIcon, BarChart3, X, ChevronDown, ChevronRight, FileDown, AlertTriangle } from 'lucide-react';
 import { format, eachDayOfInterval, isWeekend } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
