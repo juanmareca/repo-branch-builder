@@ -18,6 +18,7 @@ import { useCurrentUser } from '@/hooks/useCurrentUser';
 import AssignmentSummary from '@/components/AssignmentSummary';
 import TeamAssignmentSummary from '@/components/TeamAssignmentSummary';
 import StaffingReport from '@/components/StaffingReport';
+import NewAssignmentCalendar from '@/components/NewAssignmentCalendar';
 
 interface Assignment {
   id: string;
@@ -713,7 +714,7 @@ export default function SquadAssignments() {
         {/* Espacio entre secciones */}
         <div className="h-8"></div>
 
-        {/* 3. Nueva Asignación */}
+        {/* 3. Nueva Asignación con Calendario Visual */}
         <Card className="mb-6">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -722,165 +723,13 @@ export default function SquadAssignments() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {/* Primera línea: Miembro, Calendario, Fechas */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
-              <div className="lg:col-span-1">
-                <Label htmlFor="person">Seleccionar Miembro del Equipo</Label>
-                <Select value={selectedPerson} onValueChange={setSelectedPerson}>
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Seleccionar persona..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {persons.map(person => (
-                      <SelectItem key={person.id} value={person.id}>
-                        {person.nombre} - {person.oficina}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <Label htmlFor="office">Calendario de Festivos</Label>
-                <Select value={selectedOffice} onValueChange={setSelectedOffice}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Seleccionar calendario..." />
-                  </SelectTrigger>
-                  <SelectContent className="z-50 bg-background">
-                    <SelectItem value="default">Usar calendario por defecto</SelectItem>
-                    {countries.length > 0 && (
-                      <>
-                        <div className="px-2 py-1 text-xs font-semibold text-muted-foreground">
-                          PAÍSES
-                        </div>
-                        {countries.map(country => (
-                          <SelectItem key={country} value={country}>
-                            {country}
-                          </SelectItem>
-                        ))}
-                      </>
-                    )}
-                    {communities.length > 0 && (
-                      <>
-                        <div className="px-2 py-1 text-xs font-semibold text-muted-foreground">
-                          COMUNIDADES AUTÓNOMAS
-                        </div>
-                        {communities.map(community => (
-                          <SelectItem key={community} value={community}>
-                            {community}
-                          </SelectItem>
-                        ))}
-                      </>
-                    )}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <Label htmlFor="start-date">Fecha Desde</Label>
-                <Input
-                  type="date"
-                  value={startDate}
-                  onChange={(e) => setStartDate(e.target.value)}
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="end-date">Fecha Hasta</Label>
-                <Input
-                  type="date"
-                  value={endDate}
-                  onChange={(e) => setEndDate(e.target.value)}
-                />
-              </div>
-            </div>
-
-            {/* Segunda línea: Proyecto, Porcentaje, Tipo */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
-              <div>
-                <Label htmlFor="project">Proyecto</Label>
-                <Dialog open={showProjectSearch} onOpenChange={setShowProjectSearch}>
-                  <DialogTrigger asChild>
-                    <Button variant="outline" className="w-full justify-start text-left">
-                      <div className="truncate">
-                        {selectedProjectName || "Seleccionar proyecto..."}
-                      </div>
-                      <Search className="ml-2 h-4 w-4 flex-shrink-0" />
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent className="max-w-lg">
-                    <DialogHeader>
-                      <DialogTitle>Buscar Proyecto</DialogTitle>
-                    </DialogHeader>
-                    <div className="space-y-4">
-                      <Input
-                        placeholder="Buscar por código o denominación..."
-                        value={projectSearchTerm}
-                        onChange={(e) => setProjectSearchTerm(e.target.value)}
-                      />
-                      <div className="max-h-96 overflow-y-auto space-y-2">
-                        {projects
-                          .filter(project => 
-                            projectSearchTerm === '' ||
-                            project.codigo_inicial.toLowerCase().includes(projectSearchTerm.toLowerCase()) ||
-                            project.denominacion.toLowerCase().includes(projectSearchTerm.toLowerCase())
-                          )
-                          .slice(0, 50)
-                          .map(project => (
-                            <div
-                              key={project.id}
-                              className="p-3 border rounded-lg cursor-pointer hover:bg-muted"
-                              onClick={() => {
-                                setSelectedProject(project.id);
-                                setSelectedProjectName(`${project.codigo_inicial} - ${project.denominacion}`);
-                                setShowProjectSearch(false);
-                                setProjectSearchTerm('');
-                              }}
-                            >
-                              <div className="font-medium">{project.codigo_inicial}</div>
-                              <div className="text-sm text-muted-foreground">{project.denominacion}</div>
-                            </div>
-                          ))}
-                      </div>
-                    </div>
-                  </DialogContent>
-                </Dialog>
-              </div>
-
-              <div>
-                <Label htmlFor="percentage">Porcentaje (1-100%)</Label>
-                <Input
-                  type="number"
-                  min="1"
-                  max="100"
-                  value={percentage}
-                  onChange={(e) => setPercentage(e.target.value)}
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="assignment-type">Tipo de Asignación</Label>
-                <Select value={assignmentType} onValueChange={setAssignmentType}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Seleccionar tipo..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="development">Desarrollo</SelectItem>
-                    <SelectItem value="testing">Testing</SelectItem>
-                    <SelectItem value="analysis">Análisis</SelectItem>
-                    <SelectItem value="management">Gestión</SelectItem>
-                    <SelectItem value="support">Soporte</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            <div className="mt-4">
-              <Button onClick={handleAssign} className="gap-2">
-                <Plus className="h-4 w-4" />
-                Asignar
-              </Button>
-            </div>
+            <NewAssignmentCalendar
+              persons={persons}
+              projects={projects}
+              assignments={assignments}
+              holidays={holidays}
+              onAssignmentCreated={fetchData}
+            />
           </CardContent>
         </Card>
 
